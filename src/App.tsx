@@ -1,0 +1,440 @@
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { AssetTypeProvider, useAssetType, type AssetTypeFilter } from './contexts/AssetTypeContext'
+import DashboardOperativo from './pages/DashboardOperativo'
+import DashboardGerencial from './pages/DashboardGerencial'
+import MaestroActivos from './pages/MaestroActivos'
+import DiagnosticoInicial from './pages/DiagnosticoInicial'
+import RegistroDiario from './pages/RegistroDiario'
+import RegistroFallas from './pages/RegistroFallas'
+import GestionPreventivos from './pages/GestionPreventivos'
+import Catalogos from './pages/Catalogos'
+import Reportes from './pages/Reportes'
+import MotorInteligencia from './pages/MotorInteligencia'
+import APMDesempenio from './pages/APMDesempenio'
+import MonitoreoAgua from './pages/MonitoreoAgua'
+import ControlPTAP from './pages/ControlPTAP'
+import EstacionesHidricas from './pages/EstacionesHidricas'
+import MantenimientoIntegrado from './pages/MantenimientoIntegrado'
+import PlanMantenimiento2026 from './pages/PlanMantenimiento2026'
+import LandingPage from './pages/LandingPage'
+import AuthPage from './pages/AuthPage'
+import UserManagement from './pages/UserManagement'
+import { toPng } from 'html-to-image'
+import { jsPDF } from 'jspdf'
+
+// Cada item de menú indica para qué tipo de activo aplica
+const menuItems = [
+    {
+        section: 'Mantenimiento Executive', items: [
+            { path: '/dashboard', label: 'Monitor Operativo', icon: 'dashboard', appliesTo: 'all' },
+            { path: '/activos', label: 'Maestro de Activos', icon: 'inventory_2', appliesTo: 'all' },
+            { path: '/diagnostico', label: 'Diagnostico Inicial', icon: 'assignment', appliesTo: 'all' },
+            { path: '/operacion-diaria', label: 'Operación Diaria', icon: 'edit_calendar', appliesTo: 'all' },
+            { path: '/fallas', label: 'Registro de Fallas', icon: 'report_problem', appliesTo: 'all' },
+            { path: '/preventivos', label: 'Planes Preventivos', icon: 'construction', appliesTo: 'all' },
+            { path: '/mantenimiento', label: 'Ordenes de Trabajo', icon: 'engineering', appliesTo: 'all' },
+            { path: '/apm', label: 'Salud del Activo (APM)', icon: 'health_and_safety', appliesTo: 'all' },
+        ]
+    },
+    {
+        section: 'Operación y Proyectos', items: [
+            { path: '/monitoreo-agua', label: 'Control Hídrico', icon: 'water_drop', appliesTo: 'stations' },
+            { path: '/control-ptap', label: 'PTAP Portachuelo', icon: 'settings_input_component', appliesTo: 'stations' },
+            { path: '/estaciones', label: 'Maestro Estaciones', icon: 'location_on', appliesTo: 'stations' },
+        ]
+    },
+    {
+        section: 'Estrategia & Admin', items: [
+            { path: '/plan-2026', label: 'Plan Estratégico 2026', icon: 'calendar_month', appliesTo: 'all' },
+            { path: '/inteligencia', label: 'Motor Semapach AI', icon: 'psychology', appliesTo: 'all' },
+            { path: '/dashboard-gerencial', label: 'KPIs Gerenciales', icon: 'monitoring', appliesTo: 'all' },
+            { path: '/user-management', label: 'Gestión Personal', icon: 'admin_panel_settings', appliesTo: 'all', roles: ['gerencia'] },
+            { path: '/catalogos', label: 'Catálogos', icon: 'list_alt', appliesTo: 'all' },
+            { path: '/reportes', label: 'Exportación Datos', icon: 'file_download', appliesTo: 'all' },
+        ]
+    },
+]
+
+const operatorTabs = [
+    { path: '/operacion-diaria', label: 'Mi Turno', icon: 'edit_calendar' },
+    { path: '/control-ptap', label: 'PTAP', icon: 'settings_input_component' },
+    { path: '/dashboard', label: 'Flota', icon: 'dashboard' },
+    { path: '/fallas', label: 'Fallas', icon: 'report_problem' },
+]
+
+function AssetTypeFilter() {
+    const { assetType, setAssetType } = useAssetType()
+    const types: { key: AssetTypeFilter; label: string; icon: string }[] = [
+        { key: 'fleet', label: 'Flota', icon: 'directions_car' },
+        { key: 'stations', label: 'Estaciones', icon: 'location_on' },
+    ]
+    return (
+        <div className="flex bg-slate-900/80 p-0.5 rounded-xl border border-slate-800 shrink-0 shadow-lg">
+            {types.map(t => (
+                <button key={t.key} onClick={() => setAssetType(t.key)} title={t.label}
+                    className={`flex items-center justify-center w-20 h-8 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider ${assetType === t.key ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40' : 'text-slate-500 hover:text-slate-300'}`}>
+                    <span className="material-symbols-outlined text-[16px] mr-1">{t.icon}</span>
+                    {t.label}
+                </button>
+            ))}
+        </div>
+    )
+}
+
+function ProtectedRoute({ children, reqRole }: { children: React.ReactNode, reqRole?: string }) {
+    const token = localStorage.getItem('token')
+    const userStr = localStorage.getItem('user')
+    const user = userStr ? JSON.parse(userStr) : null
+
+    if (!token) return <Navigate to="/" replace />
+
+    // Si se requiere un rol específico (ej. UserManagement solo para gerencia)
+    if (reqRole && user?.role !== reqRole) {
+        return <Navigate to="/dashboard" replace />
+    }
+
+    return <>{children}</>
+}
+
+function MainLayout() {
+    const [sidebarActive, setSidebarActive] = useState(false)
+    const [isHovered, setIsHovered] = useState(false)
+    const [isExporting, setIsExporting] = useState(false)
+    const { assetType } = useAssetType()
+    const location = useLocation()
+    const navigate = useNavigate()
+    const hoverTimeout = useRef<any>(null)
+
+    const userStr = localStorage.getItem('user')
+    const user = userStr ? JSON.parse(userStr) : null
+
+    // Determinar qué menú mostrar según la ruta actual
+    const isMaintenanceModule = location.pathname.includes('/dashboard') ||
+        location.pathname.includes('/activos') ||
+        location.pathname.includes('/fallas') ||
+        location.pathname.includes('/operacion') ||
+        location.pathname.includes('/preventivos') ||
+        location.pathname.includes('/diagnostico') ||
+        location.pathname.includes('/apm') ||
+        location.pathname.includes('/mantenimiento')
+
+    const visibleItems = menuItems.map(section => ({
+        ...section,
+        items: section.items.filter(item => {
+            // Si estamos en módulo de mantenimiento, mostrar solo mantenimiento
+            if (isMaintenanceModule) {
+                return section.section === 'Mantenimiento Executive' ||
+                    (section.section === 'Estrategia & Admin' && !item.roles) ||
+                    (item.roles && user && item.roles.includes(user.role))
+            }
+            // Si estamos en PTAP o Monitoreo de Agua, mostrar solo esas rutas específicas
+            if (location.pathname === '/control-ptap' || location.pathname === '/monitoreo-agua' || location.pathname === '/estaciones') {
+                return section.section === 'Estrategia & Admin' && (!item.roles || (user && item.roles.includes(user.role)))
+            }
+            // Por defecto mostrar todo
+            const matchAsset = item.appliesTo === 'all' || item.appliesTo === assetType
+            const matchRole = !item.roles || (user && item.roles.includes(user.role))
+            return matchAsset && matchRole
+        }),
+    })).filter(section => section.items.length > 0)
+
+    const currentLabel = menuItems.flatMap(s => s.items).find(i => i.path === location.pathname)?.label || 'Panel de Gestión'
+
+    const handleLogout = () => {
+        localStorage.clear()
+        window.location.href = '/'
+    }
+
+    const isExpanded = sidebarActive || isHovered
+
+    return (
+        <div className="flex bg-[#030712] text-slate-200 h-[100dvh] overflow-hidden font-body">
+
+            {/* SIDEBAR PREMIUM */}
+            <aside
+                onMouseEnter={() => { clearTimeout(hoverTimeout.current); setIsHovered(true) }}
+                onMouseLeave={() => { hoverTimeout.current = setTimeout(() => setIsHovered(false), 150) }}
+                className={`hidden lg:flex flex-col flex-shrink-0 inset-y-0 left-0 z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r border-slate-900/50 bg-[#05080f]/80 backdrop-blur-xl ${isExpanded ? 'w-72' : 'w-20'}`}>
+
+                <div className="h-20 flex items-center px-5 gap-3 border-b border-slate-900/30 flex-shrink-0">
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center rounded-xl flex-shrink-0 shadow-lg shadow-cyan-900/20">
+                        <span className="material-symbols-outlined text-white text-xl">water_drop</span>
+                    </div>
+                    {isExpanded && (
+                        <div className="overflow-hidden whitespace-nowrap animate-reveal">
+                            <h1 className="text-sm font-black tracking-tight text-white leading-none uppercase">EPS SEMAPACH</h1>
+                            <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest mt-1">Gerencia Op.</p>
+                        </div>
+                    )}
+                </div>
+
+                <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto no-scrollbar">
+                    {visibleItems.map((section) => (
+                        <div key={section.section} className="mb-6">
+                            {isExpanded && (
+                                <div className="px-3 py-2 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] animate-reveal">{section.section}</div>
+                            )}
+                            {section.items.map((item) => (
+                                <NavLink key={item.path} to={item.path}
+                                    className={({ isActive }) => `group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 ${isActive ? 'bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/10' : 'text-slate-500 hover:bg-slate-900/50 hover:text-slate-200'}`}>
+                                    <div className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${isExpanded ? '' : 'group-hover:bg-cyan-500/10'}`}>
+                                        <span className={`material-symbols-outlined text-[20px] ${isExpanded ? '' : 'group-hover:text-cyan-400'}`}>{item.icon}</span>
+                                    </div>
+                                    {isExpanded && <span className="text-sm truncate animate-reveal">{item.label}</span>}
+                                </NavLink>
+                            ))}
+                        </div>
+                    ))}
+                </nav>
+
+                <div className="p-4 border-t border-slate-900/30">
+                    <button onClick={handleLogout}
+                        className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/5 transition-all">
+                        <span className="material-symbols-outlined text-xl">logout</span>
+                        {isExpanded && <span className="text-xs font-bold uppercase tracking-widest">Cerrar Sesión</span>}
+                    </button>
+                </div>
+            </aside>
+
+            {/* CONTENIDO PRINCIPAL */}
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+                <header className="h-16 flex items-center justify-between px-6 bg-[#05080f]/50 backdrop-blur-md border-b border-slate-900/30 z-30 flex-shrink-0">
+                    <div className="flex items-center gap-4">
+                        {/* Botón Volver al Home */}
+                        <button onClick={() => navigate('/home')}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-cyan-500/30 rounded-xl transition-all group"
+                            title="Volver al selector de módulos">
+                            <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-cyan-400 transition-colors">home</span>
+                            <span className="text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-wider hidden sm:inline">Volver</span>
+                        </button>
+
+                        <div className="lg:hidden w-8 h-8 bg-cyan-500 flex items-center justify-center rounded-lg">
+                            <span className="material-symbols-outlined text-white text-base">water_drop</span>
+                        </div>
+                        <div>
+                            <h2 className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] leading-none mb-1">Módulo Actual</h2>
+                            <p className="text-sm font-black text-white uppercase tracking-tight">{currentLabel}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        {/* Mostrar filtro solo en módulo de Mantenimiento */}
+                        {location.pathname.includes('/dashboard') || location.pathname.includes('/activos') || location.pathname.includes('/fallas') || location.pathname.includes('/operacion') || location.pathname.includes('/preventivos') ? (
+                            <AssetTypeFilter />
+                        ) : null}
+
+                        <div className="hidden sm:flex items-center gap-3 px-4 py-1.5 glass-morphism rounded-full border-cyan-500/10 active:scale-95 cursor-pointer">
+                            <div className="w-6 h-6 bg-gold-gradient rounded-full flex items-center justify-center text-[10px] font-black text-white">
+                                {user?.username?.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="flex flex-col text-right">
+                                <span className="text-[9px] font-black text-white leading-none uppercase tracking-tight">{user?.username}</span>
+                                <span className="text-[8px] font-bold text-slate-500 leading-none uppercase tracking-widest mt-0.5">{user?.role}</span>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="flex-1 overflow-y-auto p-4 sm:p-8 no-scrollbar bg-mesh-premium">
+                    <div id="export-canvas" className="w-full max-w-[1500px] mx-auto pb-10">
+                        <Routes>
+                            <Route path="/dashboard" element={<DashboardOperativo />} />
+                            <Route path="/activos" element={<MaestroActivos />} />
+                            <Route path="/diagnostico" element={<DiagnosticoInicial />} />
+                            <Route path="/operacion-diaria" element={<RegistroDiario />} />
+                            <Route path="/fallas" element={<RegistroFallas />} />
+                            <Route path="/preventivos" element={<GestionPreventivos />} />
+                            <Route path="/dashboard-gerencial" element={<DashboardGerencial />} />
+                            <Route path="/inteligencia" element={<MotorInteligencia />} />
+                            <Route path="/apm" element={<APMDesempenio />} />
+                            <Route path="/monitoreo-agua" element={<MonitoreoAgua />} />
+                            <Route path="/control-ptap" element={<ControlPTAP />} />
+                            <Route path="/estaciones" element={<EstacionesHidricas />} />
+                            <Route path="/mantenimiento" element={<MantenimientoIntegrado />} />
+                            <Route path="/plan-2026" element={<PlanMantenimiento2026 />} />
+                            <Route path="/user-management" element={<ProtectedRoute reqRole="gerencia"><UserManagement /></ProtectedRoute>} />
+                            <Route path="/catalogos" element={<Catalogos />} />
+                            <Route path="/reportes" element={<Reportes />} />
+                            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                        </Routes>
+                    </div>
+                </div>
+
+                <footer className="hidden lg:flex h-10 items-center justify-between px-8 bg-[#05080f] border-t border-slate-900 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Status:</span>
+                        <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.4)]"></div>
+                        <span className="text-[9px] font-black text-cyan-500/60 uppercase tracking-tighter">Sincronización Total v1.4</span>
+                    </div>
+                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">EPS SEMAPACH — 2026</span>
+                </footer>
+            </main>
+        </div>
+    )
+}
+
+// ===== HOME CON SELECTOR DE MÓDULOS =====
+function HomeModules() {
+    const navigate = useNavigate()
+    const userStr = localStorage.getItem('user')
+    const user = userStr ? JSON.parse(userStr) : null
+
+    const modules = [
+        {
+            id: 'mantenimiento',
+            title: 'Gestión de Mantenimiento',
+            subtitle: 'Flota + Estaciones Hídricas',
+            icon: 'engineering',
+            description: 'Control integral de mantenimiento preventivo y correctivo.',
+            color: 'from-sky-500 to-blue-600',
+            shadow: 'shadow-sky-900/40',
+            route: '/dashboard'
+        },
+        {
+            id: 'ptap',
+            title: 'PTAP Portachuelo',
+            subtitle: 'Planta de Tratamiento',
+            icon: 'settings_input_component',
+            description: 'Monitoreo de parámetros de calidad de agua.',
+            color: 'from-emerald-500 to-teal-600',
+            shadow: 'shadow-emerald-900/40',
+            route: '/control-ptap'
+        },
+        {
+            id: 'presion',
+            title: 'Presión y Continuidad',
+            subtitle: 'Red de Distribución',
+            icon: 'water_pressure',
+            description: 'Control de presión y horas de servicio.',
+            color: 'from-violet-500 to-purple-600',
+            shadow: 'shadow-violet-900/40',
+            route: '/monitoreo-agua'
+        }
+    ]
+
+    const handleLogout = () => {
+        localStorage.clear()
+        navigate('/login')
+    }
+
+    return (
+        <div className="min-h-screen bg-mesh-premium flex flex-col items-center justify-center relative overflow-hidden px-4">
+
+            {/* Elementos Decorativos de Fondo */}
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gold-500/5 rounded-full blur-[120px]"></div>
+
+            {/* Header / Logo */}
+            <div className="absolute top-8 left-8 flex items-center gap-3 animate-reveal">
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-900/40">
+                    <span className="material-symbols-outlined text-white text-2xl">water_drop</span>
+                </div>
+                <div>
+                    <h1 className="text-xl font-black tracking-tighter text-white leading-none">EPS SEMAPACH</h1>
+                    <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest mt-1">Sistemas de Control</p>
+                </div>
+            </div>
+
+            {/* User Info + Logout */}
+            <div className="absolute top-8 right-8 flex items-center gap-4 animate-reveal">
+                {user && (
+                    <div className="hidden sm:flex items-center gap-3 px-4 py-2 glass-morphism rounded-full border-cyan-500/10">
+                        <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-[10px] font-black text-white">
+                            {user.username?.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col text-right">
+                            <span className="text-[9px] font-black text-white leading-none uppercase">{user.username}</span>
+                            <span className="text-[7px] font-bold text-slate-500 leading-none uppercase">{user.role}</span>
+                        </div>
+                    </div>
+                )}
+                <button onClick={handleLogout} className="btn-premium border border-rose-500/30 hover:border-rose-500 text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg">logout</span>
+                    <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">Salir</span>
+                </button>
+            </div>
+
+            {/* Contenido Principal */}
+            <div className="max-w-5xl w-full text-center z-10">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-morphism border-cyan-500/20 mb-8 animate-reveal" style={{ animationDelay: '0.2s' }}>
+                    <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">Plataforma Inteligente 2026</span>
+                </div>
+
+                <h2 className="text-5xl md:text-8xl font-black tracking-tight leading-[0.9] mb-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
+                    GERENCIA DE <br />
+                    <span className="gold-gradient-text">OPERACIONES</span>
+                </h2>
+
+                <p className="text-lg md:text-xl text-slate-400 font-medium max-w-2xl mx-auto mb-12 animate-reveal" style={{ animationDelay: '0.6s' }}>
+                    Selecciona el sistema al que deseas ingresar
+                </p>
+
+                {/* Grid de Módulos - 3 Columnas */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-reveal" style={{ animationDelay: '0.8s' }}>
+                    {modules.map((module) => (
+                        <button
+                            key={module.id}
+                            onClick={() => navigate(module.route)}
+                            className="group relative bg-slate-800/40 backdrop-blur-sm border border-slate-700 hover:border-slate-600 rounded-3xl p-8 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden"
+                        >
+                            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${module.color} opacity-10 rounded-bl-full transition-opacity group-hover:opacity-20`}></div>
+                            <div className={`w-16 h-16 bg-gradient-to-br ${module.color} rounded-2xl flex items-center justify-center shadow-lg ${module.shadow} mb-6 group-hover:scale-110 transition-transform`}>
+                                <span className="material-symbols-outlined text-white text-3xl">{module.icon}</span>
+                            </div>
+                            <h3 className="text-lg font-black text-white tracking-tight mb-1">{module.title}</h3>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">{module.subtitle}</p>
+                            <p className="text-sm text-slate-400 mb-6 line-clamp-2">{module.description}</p>
+                            <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider">
+                                <span className={`bg-gradient-to-r ${module.color} bg-clip-text text-transparent`}>Acceder</span>
+                                <span className="material-symbols-outlined text-lg group-hover:translate-x-2 transition-transform">arrow_forward</span>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Footer de la Landing */}
+            <div className="absolute bottom-8 w-full text-center animate-reveal" style={{ animationDelay: '1s' }}>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">
+                    Eficiencia & Poder Tecnológico en Gestión de Agua
+                </p>
+            </div>
+
+            {/* Efecto de Vidrio Inferior */}
+            <div className="absolute bottom-[-50px] left-0 w-full h-[150px] bg-gradient-to-t from-[#030712] to-transparent z-0"></div>
+        </div>
+    )
+}
+
+export default function App() {
+    return (
+        <BrowserRouter>
+            <AssetTypeProvider>
+                <Routes>
+                    {/* Redirección raíz a Landing Page descriptiva */}
+                    <Route path="/" element={<LandingPage />} />
+
+                    {/* Rutas Públicas */}
+                    <Route path="/login" element={<AuthPage />} />
+                    <Route path="/register" element={<AuthPage />} />
+
+                    {/* Home con módulos (protegido) */}
+                    <Route path="/home" element={
+                        <ProtectedRoute>
+                            <HomeModules />
+                        </ProtectedRoute>
+                    } />
+
+                    {/* Rutas Protegidas (Dashboard y módulos) */}
+                    <Route path="/*" element={
+                        <ProtectedRoute>
+                            <MainLayout />
+                        </ProtectedRoute>
+                    } />
+                </Routes>
+            </AssetTypeProvider>
+        </BrowserRouter>
+    )
+}

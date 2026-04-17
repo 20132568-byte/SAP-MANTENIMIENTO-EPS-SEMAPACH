@@ -1,0 +1,53 @@
+{
+  "summary": [
+    {
+      "mes": "2026-02",
+      "total": "63",
+      "avg_p": 6.47111111784738,
+      "avg_c": 10.1309523809524
+    },
+    {
+      "mes": "2026-03",
+      "total": "21",
+      "avg_p": 6.58809532579922,
+      "avg_c": 10.1547619047619
+    }
+  ],
+  "sample": [
+    {
+      "fecha": "2026-02-01T05:00:00.000Z",
+      "distrito": "Alto Larán",
+      "zona": "Alta",
+      "presion": 15.35,
+      "continuidad": 14.25
+    },
+    {
+      "fecha": "2026-02-01T05:00:00.000Z",
+      "distrito": "Alto Larán",
+      "zona": "Baja",
+      "presion": 7.07,
+      "continuidad": 14.75
+    },
+    {
+      "fecha": "2026-02-01T05:00:00.000Z",
+      "distrito": "Alto Larán",
+      "zona": "Media",
+      "presion": 15.06,
+      "continuidad": 13.5
+    },
+    {
+      "fecha": "2026-02-01T05:00:00.000Z",
+      "distrito": "Chincha Alta",
+      "zona": "Alta",
+      "presion": 13.44,
+      "continuidad": 17.75
+    },
+    {
+      "fecha": "2026-02-01T05:00:00.000Z",
+      "distrito": "Chincha Alta",
+      "zona": "Baja",
+      "presion": 6.41,
+      "continuidad": 18.5
+    }
+  ]
+}

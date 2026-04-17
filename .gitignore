@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.qwen
+*.db
+*.sqlite
+.DS_Store
+scratch
+*.log
+.gemini
+package-lock.json (opcional, pero mejor ignorarlo si vas a usar npm install fresco)

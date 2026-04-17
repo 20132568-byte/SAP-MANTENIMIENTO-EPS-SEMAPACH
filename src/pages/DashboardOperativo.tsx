@@ -1,0 +1,349 @@
+import { useState, useEffect } from 'react'
+import { api } from '../api/client'
+import { useAssetType } from '../contexts/AssetTypeContext'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+
+export default function DashboardOperativo() {
+    const { assetType } = useAssetType()
+    const [kpi, setKpi] = useState<any>(null)
+    const [assetKpis, setAssetKpis] = useState<any[]>([])
+    const [backlog, setBacklog] = useState<any[]>([])
+    const [assets, setAssets] = useState<any[]>([])
+    const [stations, setStations] = useState<any[]>([])
+    const [activeStations, setActiveStations] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [week, setWeek] = useState(() => {
+        const d = new Date(); d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+        const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+        return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`
+    })
+    const [fleetSector, setFleetSector] = useState('General')
+    const [toast, setToast] = useState<string | null>(null)
+
+    const { desde, hasta } = (() => {
+        const [y, w] = week.split('-W')
+        if (!y || !w) return { desde: '', hasta: '' }
+        const year = parseInt(y, 10); const d = new Date(year, 0, 4)
+        const day = d.getDay() || 7; d.setDate(d.getDate() - day + 1 + (parseInt(w, 10) - 1) * 7)
+        const st = new Date(d); const en = new Date(d); en.setDate(en.getDate() + 6)
+        return { desde: st.toISOString().split('T')[0], hasta: en.toISOString().split('T')[0] }
+    })()
+
+    // Filtrado estricto: solo muestra datos del modo seleccionado
+    const isFleetMode = assetType === 'fleet'
+    const isStationMode = assetType === 'stations'
+
+    useEffect(() => {
+        setLoading(true)
+        // Limpiar datos previos
+        setKpi(null); setAssetKpis([]); setBacklog([]); setAssets([]); setStations([]); setActiveStations([])
+
+        const loadData = async () => {
+            try {
+                const promises: Promise<any>[] = []
+
+                if (isFleetMode) {
+                    // MODO FLOTA: Solo datos de flota vehicular
+                    const params: any = { desde, hasta, categoria: 'fleet' }
+                    if (fleetSector) params.sector = fleetSector
+
+                    promises.push(api.getKPIGlobal(params.desde, params.hasta, params.sector, params.categoria))
+                    promises.push(api.getKPIPorActivo(params.desde, params.hasta, params.sector, params.categoria))
+                    promises.push(api.getPreventiveBacklog())
+                    promises.push(api.getAssets({ categoria: 'fleet' }))
+                } else if (isStationMode) {
+                    // MODO ESTACIONES: Solo datos de estaciones hídricas
+                    const params: any = { desde, hasta, categoria: 'stations' }
+
+                    promises.push(api.getKPIGlobal(params.desde, params.hasta, undefined, params.categoria))
+                    promises.push(api.getKPIPorActivo(params.desde, params.hasta, undefined, params.categoria))
+                    promises.push(api.getPreventiveBacklog())
+                    promises.push(api.getAssets({ categoria: 'stations' }))
+                    promises.push(api.getStations())
+                }
+
+                const results = await Promise.all(promises)
+                let idx = 0
+
+                if (isFleetMode || isStationMode) {
+                    setKpi(results[idx++])
+                    setAssetKpis(results[idx++])
+                    setBacklog(results[idx++])
+                    setAssets(results[idx++])
+                }
+
+                if (isStationMode) {
+                    const allStations = results[idx++]
+                    setStations(allStations)
+                    // Filtrar estaciones que tienen mantenimiento en esta semana
+                    const stationsWithActivity: any[] = []
+                    for (const s of allStations) {
+                        const maint = await api.getStationMaintenance(s.id, { desde, hasta })
+                        if (maint.length > 0) {
+                            stationsWithActivity.push({ ...s, maintenanceCount: maint.length })
+                        }
+                    }
+                    setActiveStations(stationsWithActivity)
+                }
+                setLoading(false)
+            } catch (e: any) {
+                console.error("Dashboard error:", e)
+                setToast(`Error cargando datos: ${e.message || String(e)}`)
+                setLoading(false)
+            }
+        }
+
+        loadData()
+    }, [desde, hasta, fleetSector, assetType, isFleetMode, isStationMode])
+
+    const fleetSectores = ['General', ...Array.from(new Set(assets.map(a => a.tipo_unidad))).filter(Boolean)]
+
+    if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full" /></div>
+
+    const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+    const backlogByStatus = backlog.reduce((acc: any, b) => {
+        acc[b.estado_preventivo] = (acc[b.estado_preventivo] || 0) + 1
+        return acc
+    }, {})
+    const backlogChartData = Object.entries(backlogByStatus).map(([name, value]) => ({ name, value }))
+
+    return (
+        <div className="animate-fade-in-up space-y-6">
+            {/* Header Premium */}
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-6 sm:p-8 shadow-2xl">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-sky-900/40">
+                            <span className="material-symbols-outlined text-white text-3xl">monitoring</span>
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-black text-white uppercase tracking-tight">Dashboard Operativo</h2>
+                            <p className="text-xs font-bold text-sky-400 uppercase tracking-widest mt-1">
+                                {assetType === 'fleet' ? 'Inteligencia de Flota Vehicular' : 'Control de Estaciones Hídricas'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 bg-slate-900/60 p-2.5 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+                        <div className="flex items-center gap-2.5 pl-3">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Período:</span>
+                            <input type="week" value={week} onChange={e => setWeek(e.target.value)}
+                                className="text-xs font-black text-slate-100 bg-slate-800/80 border border-slate-600 rounded-xl py-2 px-3 focus:ring-sky-500 focus:border-sky-500" />
+                        </div>
+                        {isFleetMode && fleetSectores.length > 1 && (
+                            <>
+                                <div className="h-6 w-px bg-slate-700"></div>
+                                <div className="flex items-center gap-2.5 pr-2">
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">🚗 Sector:</span>
+                                    <select value={fleetSector} onChange={e => setFleetSector(e.target.value)}
+                                        className="text-xs font-black text-slate-100 bg-slate-800/80 border border-slate-600 rounded-xl py-2 px-3 focus:ring-sky-500 focus:border-sky-500">
+                                        {fleetSectores.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ========== SECCIÓN FLOTA ========== */}
+            {isFleetMode && kpi && (
+                <>
+                    {/* KPIs Flota - Estilo Premium */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-emerald-500/30 transition-all duration-300 group">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider block mb-1">Disponibilidad</span>
+                                    <div className="text-4xl font-black text-white">{kpi.disponibilidad_global?.toFixed(1) ?? '—'}%</div>
+                                </div>
+                                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <span className="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
+                                </div>
+                            </div>
+                            <div className="w-full bg-slate-700/30 h-2 rounded-full overflow-hidden">
+                                <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${kpi.disponibilidad_global ?? 0}%` }}></div>
+                            </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-amber-500/30 transition-all duration-300 group">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider block mb-1">MTTR</span>
+                                    <div className="text-4xl font-black text-white">{kpi.mttr_global?.toFixed(1) ?? '—'}<span className="text-lg text-slate-400 ml-1">h</span></div>
+                                </div>
+                                <div className="w-14 h-14 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <span className="material-symbols-outlined text-amber-400 text-3xl">timer</span>
+                                </div>
+                            </div>
+                            <div className="text-[9px] text-amber-300/60 font-medium">Meta: &lt;5h</div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-rose-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-rose-500/30 transition-all duration-300 group">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <span className="text-[10px] font-black text-rose-400 uppercase tracking-wider block mb-1">Fallas Correctivas</span>
+                                    <div className="text-4xl font-black text-white">{kpi.fallas_correctivas ?? '—'}</div>
+                                </div>
+                                <div className="w-14 h-14 bg-gradient-to-br from-rose-500/20 to-rose-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <span className="material-symbols-outlined text-rose-400 text-3xl">warning</span>
+                                </div>
+                            </div>
+                            <div className="text-[9px] text-rose-300/60 font-medium">Total: {kpi.total_fallas ?? '—'}</div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-sky-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-sky-500/30 transition-all duration-300 group">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider block mb-1">Preventivos</span>
+                                    <div className="text-4xl font-black text-white">{kpi.preventivos_ejecutados ?? '—'}</div>
+                                </div>
+                                <div className="w-14 h-14 bg-gradient-to-br from-sky-500/20 to-sky-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <span className="material-symbols-outlined text-sky-400 text-3xl">engineering</span>
+                                </div>
+                            </div>
+                            <div className="text-[9px] text-sky-300/60 font-medium">Costo: S/ {kpi.costo_preventivo?.toFixed(0) ?? '—'}</div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Backlog */}
+                        {backlog.length > 0 && (
+                            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
+                                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sky-400 text-sm">directions_car</span>
+                                        Backlog Preventivo
+                                    </h3>
+                                    <span className="text-[10px] font-black text-slate-500 bg-slate-700/50 px-2 py-1 rounded-lg">{backlog.length} activos</span>
+                                </div>
+                                <div className="p-5">
+                                    <div className="grid grid-cols-4 gap-2 mb-4">
+                                        {Object.entries(backlogByStatus).map(([status, count]) => (
+                                            <div key={status} className="text-center">
+                                                <div className={`text-lg font-black ${status === 'Vencido' ? 'text-rose-400' : status === 'Crítico' ? 'text-amber-400' : status === 'Próximo' ? 'text-sky-400' : 'text-emerald-400'}`}>{count as number}</div>
+                                                <div className="text-[9px] font-bold text-slate-500 uppercase">{status}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <ResponsiveContainer width="100%" height={160}>
+                                        <PieChart>
+                                            <Pie data={backlogChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70}>
+                                                {backlogChartData.map((entry, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Ranking */}
+                        {assetKpis.length > 0 && (
+                            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
+                                <div className="px-5 py-4 border-b border-slate-700">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest">Ranking por Disponibilidad</h3>
+                                </div>
+                                <div className="overflow-x-auto max-h-80 overflow-y-auto no-scrollbar">
+                                    <table className="w-full text-xs">
+                                        <thead>
+                                            <tr className="border-b border-slate-700/50 bg-slate-800/50">
+                                                <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">#</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Activo</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase hidden sm:table-cell">Tipo</th>
+                                                <th className="text-center px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Disponibilidad</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[...assetKpis].sort((a, b) => (a.disponibilidad ?? 100) - (b.disponibilidad ?? 100)).slice(0, 10).map((a, i) => {
+                                                const asset = assets.find(x => x.codigo_patrimonial === a.asset_codigo)
+                                                const dispColor = (a.disponibilidad ?? 0) >= 90 ? 'text-emerald-400' : (a.disponibilidad ?? 0) >= 75 ? 'text-amber-400' : 'text-rose-400'
+                                                return (
+                                                    <tr key={a.asset_id} className="border-b border-slate-700/30 hover:bg-slate-700/20">
+                                                        <td className="px-4 py-3 font-mono text-slate-500 font-bold">{i + 1}</td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="text-white font-medium">{asset?.placa_principal || a.asset_codigo}</div>
+                                                            <div className="text-[10px] text-slate-500 font-mono">{a.asset_codigo}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-slate-300 hidden sm:table-cell">{a.asset_tipo}</td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <div className="w-16 bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                                                    <div className={`${dispColor.replace('text-', 'bg-')} h-full rounded-full`} style={{ width: `${a.disponibilidad ?? 0}%` }}></div>
+                                                                </div>
+                                                                <span className={`font-mono font-bold ${dispColor}`}>{a.disponibilidad?.toFixed(1) ?? '—'}%</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
+
+            {/* ========== SECCIÓN ESTACIONES ========== */}
+            {isStationMode && (
+                <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
+                    <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+                        <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest flex items-center gap-2">
+                            <span className="material-symbols-outlined text-purple-400 text-sm">location_on</span>
+                            Estaciones con Actividad esta Semana
+                        </h3>
+                        <span className="text-[10px] font-black text-slate-500 bg-slate-700/50 px-2 py-1 rounded-lg">
+                            {stations.length} estaciones
+                        </span>
+                    </div>
+                    {stations.length > 0 ? (
+                        <div className="p-5">
+                            {activeStations.length > 0 ? (
+                                <>
+                                    <p className="text-[10px] text-slate-400 mb-3">
+                                        <span className="text-emerald-400 font-bold">{activeStations.length}</span> tienen mantenimiento programado esta semana
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {activeStations.map(s => (
+                                            <div key={s.id} className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-3">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse"></span>
+                                                <div className="min-w-0">
+                                                    <span className="text-xs text-white font-medium truncate block">{s.nombre}</span>
+                                                    <span className="text-[10px] text-slate-500 font-bold uppercase">{s.tipo}{s.distrito ? ` · ${s.distrito}` : ''} · {s.maintenanceCount} mtto(s)</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {stations.slice(0, 9).map(s => (
+                                        <div key={s.id} className="flex items-center gap-3 bg-slate-700/30 rounded-lg px-4 py-3 opacity-60">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-slate-500 flex-shrink-0"></span>
+                                            <div className="min-w-0">
+                                                <span className="text-xs text-slate-300 font-medium truncate block">{s.nombre}</span>
+                                                <span className="text-[10px] text-slate-500 font-bold uppercase">{s.tipo}{s.distrito ? ` · ${s.distrito}` : ''}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {stations.length > 9 && (
+                                <p className="text-[10px] text-slate-500 mt-4 text-center">
+                                    ··· mostrando 9 de {stations.length} ···
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="p-8 text-center">
+                            <span className="material-symbols-outlined text-4xl text-slate-600 block mb-2">location_off</span>
+                            <p className="text-sm text-slate-500">No hay estaciones registradas en el sistema</p>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
