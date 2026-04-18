@@ -134,20 +134,23 @@ export default function RegistroFallas() {
 
     return (
         <div className="animate-fade-in-up space-y-8">
-            <div className="bg-slate-800/50 border border-slate-700 p-responsive rounded-3xl mb-10 shadow-premium-xl flex flex-col md:flex-row md:items-center justify-between gap-8">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-rose-600 rounded-3xl flex items-center justify-center shadow-lg shadow-rose-900/40">
-                        <span className="material-symbols-outlined text-white text-3xl">report_problem</span>
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-10 rounded-[2.5rem] mb-12 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-10">
+                <div className="flex items-center gap-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-rose-500 to-rose-700 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-rose-900/50 transform hover:scale-110 transition-transform">
+                        <span className="material-symbols-outlined text-white text-4xl">report_problem</span>
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tight">Registro de Fallas</h2>
-                        <p className="text-sm font-bold text-rose-400 uppercase tracking-widest mt-1 italic">Control de Eventos Correctivos y Análisis de MTTR</p>
+                        <h2 className="text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter">Registro de Fallas</h2>
+                        <p className="text-xs lg:text-sm font-black text-rose-400 uppercase tracking-[0.3em] mt-2 flex items-center gap-3">
+                            <span className="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
+                            Control de Eventos Correctivos & Análisis de MTTR
+                        </p>
                     </div>
                 </div>
                 
                 <button onClick={openNew}
-                    className="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-widest px-10 py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-rose-900/40 hover:-translate-y-1">
-                    <span className="material-symbols-outlined text-[20px]">add_alert</span>
+                    className="bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white text-xs font-black uppercase tracking-[0.2em] px-12 py-6 rounded-2xl transition-all flex items-center justify-center gap-4 shadow-2xl shadow-rose-900/40 hover:-translate-y-1 active:scale-95 group">
+                    <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">add_alert</span>
                     Reportar Incidente
                 </button>
             </div>
@@ -162,12 +165,12 @@ export default function RegistroFallas() {
                 
                 <div className="h-10 w-px bg-slate-700 hidden lg:block mx-2"></div>
                 
-                <div className="flex items-center gap-10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.4)]"></div>
+                <div className="flex items-center gap-12">
+                    <div className="flex items-center gap-4 bg-rose-500/10 px-6 py-4 rounded-3xl border border-rose-500/20">
+                        <div className="w-4 h-4 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.6)]"></div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-black text-slate-100 leading-none">{failures.length}</span>
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] mt-1">Eventos Reportados</span>
+                            <span className="text-4xl font-black text-white leading-none tracking-tighter">{failures.length}</span>
+                            <span className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] mt-1">Eventos Reportados</span>
                         </div>
                     </div>
                 </div>
@@ -350,8 +353,8 @@ export default function RegistroFallas() {
                                                 <span className="material-symbols-outlined text-[20px]">precision_manufacturing</span>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-black text-slate-200 uppercase tracking-tight">{asset?.placa_principal || 'S/P'}</p>
-                                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{f.asset_codigo}</p>
+                                                <p className="text-lg font-black text-white uppercase tracking-tight group-hover:text-rose-400 transition-colors">{asset?.placa_principal || 'S/P'}</p>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">{f.asset_codigo}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -362,10 +365,10 @@ export default function RegistroFallas() {
                                     </td>
                                     <td>
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-black text-rose-500 font-mono tracking-tighter">{f.duracion_horas?.toFixed(2)}h</span>
-                                            <div className="flex items-center gap-1.5 mt-0.5">
-                                                <span className="text-[9px] font-bold text-slate-500 uppercase">Tiempo Fuera</span>
-                                                {f.inmovilizo_unidad && <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>}
+                                            <span className="text-2xl font-black text-rose-400 font-mono tracking-tighter">{f.duracion_horas?.toFixed(2)}<span className="text-xs ml-1 font-black uppercase text-slate-500">h</span></span>
+                                            <div className="flex items-center gap-1.5 mt-1">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiempo Fuera</span>
+                                                {f.inmovilizo_unit && <span className="w-2 h-2 bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>}
                                             </div>
                                         </div>
                                     </td>

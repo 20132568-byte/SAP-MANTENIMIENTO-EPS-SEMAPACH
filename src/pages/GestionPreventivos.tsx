@@ -126,20 +126,23 @@ export default function GestionPreventivos() {
 
     return (
         <div className="animate-fade-in-up space-y-8">
-            <div className="bg-slate-800/50 border border-slate-700 p-responsive rounded-3xl mb-10 shadow-premium-xl flex flex-col md:flex-row md:items-center justify-between gap-8">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-sky-600 rounded-3xl flex items-center justify-center shadow-lg shadow-sky-900/40">
-                        <span className="material-symbols-outlined text-white text-3xl">event_repeat</span>
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-10 rounded-[2.5rem] mb-12 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-10">
+                <div className="flex items-center gap-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-sky-500 to-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-sky-900/50 transform hover:scale-110 transition-transform">
+                        <span className="material-symbols-outlined text-white text-4xl">event_repeat</span>
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tight">Gestión de Preventivos</h2>
-                        <p className="text-sm font-bold text-sky-400 uppercase tracking-widest mt-1 italic">Gestión de Ciclos y Mantenimiento Programado</p>
+                        <h2 className="text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter">Gestión de Preventivos</h2>
+                        <p className="text-xs lg:text-sm font-black text-sky-400 uppercase tracking-[0.3em] mt-2 flex items-center gap-3">
+                            <span className="w-2 h-2 bg-sky-400 rounded-full animate-pulse"></span>
+                            Ciclos Maestros & Mantenimiento Programado
+                        </p>
                     </div>
                 </div>
                 
                 <button onClick={openNewForm}
-                    className="bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-black uppercase tracking-widest px-10 py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-sky-900/40 hover:-translate-y-1">
-                    <span className="material-symbols-outlined text-[20px]">add_task</span>
+                    className="bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white text-xs font-black uppercase tracking-[0.2em] px-12 py-6 rounded-2xl transition-all flex items-center justify-center gap-4 shadow-2xl shadow-sky-900/40 hover:-translate-y-1 active:scale-95 group">
+                    <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">add_task</span>
                     Registrar Ejecución
                 </button>
             </div>
@@ -156,36 +159,39 @@ export default function GestionPreventivos() {
                     </div>
                 </div>
                 
-                <div className="lg:col-span-4 bg-slate-800/50 border border-slate-700 rounded-3xl shadow-premium-xl flex items-center gap-8 !p-8">
-                    <div className="h-28 w-28 flex-shrink-0 relative">
+                <div className="lg:col-span-4 bg-slate-800/40 border border-slate-700/50 rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-6 p-10 hover:border-sky-500/30 transition-colors group">
+                    <div className="h-56 w-56 flex-shrink-0 relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie 
                                     data={backlogStats} 
-                                    innerRadius={32} 
-                                    outerRadius={45} 
-                                    paddingAngle={8} 
+                                    innerRadius={70} 
+                                    outerRadius={105} 
+                                    paddingAngle={6} 
                                     dataKey="value"
                                     stroke="none"
                                 >
                                     {backlogStats.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                        <Cell key={`cell-${index}`} fill={entry.color} className="focus:outline-none" />
                                     ))}
                                 </Pie>
                             </PieChart>
                         </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-xl font-black text-slate-100 leading-none">{backlog.length}</span>
-                            <span className="text-[8px] font-bold text-slate-500 uppercase">Activos</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none group-hover:scale-110 transition-transform">
+                            <span className="text-5xl font-black text-white leading-none tracking-tighter">{backlog.length}</span>
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-1">Activos</span>
                         </div>
                     </div>
-                    <div className="flex-1">
-                        <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-4 block">Salud de Preventivos</span>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div className="w-full">
+                        <span className="text-[11px] font-black text-sky-400 uppercase tracking-[0.4em] mb-6 block text-center">Estado Global de Salud</span>
+                        <div className="grid grid-cols-2 gap-4">
                             {backlogStats.map((s, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: s.color }}></div>
-                                    <span className="text-[9px] font-black text-slate-400 uppercase">{s.name}</span>
+                                <div key={i} className="flex items-center gap-3 bg-slate-900/40 p-3 rounded-xl border border-slate-800/50 group-hover:border-slate-700/50 transition-colors">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }}></div>
+                                    <div className="flex flex-col">
+                                        <span className="text-lg font-black text-white leading-none">{s.value}</span>
+                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{s.name}</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -304,16 +310,16 @@ export default function GestionPreventivos() {
                                                     <span className="material-symbols-outlined text-[20px]">settings_backup_restore</span>
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-slate-100 uppercase tracking-tight">
+                                                    <p className="text-lg font-black text-slate-100 uppercase tracking-tight">
                                                         {(() => { const a = assets.find((x: any) => x.id === b.asset_id); return a?.placa_principal || b.asset_codigo })()}
                                                     </p>
-                                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{b.asset_codigo}</p>
+                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">{b.asset_codigo}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="text-xs font-black text-slate-400 uppercase italic">{b.asset_tipo}</td>
+                                        <td className="text-sm font-black text-slate-300 uppercase italic">{b.asset_tipo}</td>
                                         <td className="text-center">
-                                            <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${estadoColors[b.estado_preventivo] || 'text-slate-400 bg-slate-800/50'}`}>
+                                            <span className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg ${estadoColors[b.estado_preventivo] || 'text-slate-400 bg-slate-800/50'}`}>
                                                 {b.estado_preventivo}
                                             </span>
                                         </td>
@@ -327,7 +333,10 @@ export default function GestionPreventivos() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="p-6 text-xs font-black text-slate-100 font-mono">{b.lectura_actual} {b.unidad_control === 'horometro' ? 'h' : 'km'}</td>
+                                        <td className="p-8 text-xl font-black text-white font-mono flex items-center gap-2">
+                                            {b.lectura_actual.toLocaleString()}
+                                            <span className="text-[10px] text-slate-500 uppercase font-black">{b.unidad_control === 'horometro' ? 'Hrs' : 'Km'}</span>
+                                        </td>
                                         <td>
                                             <div className="flex flex-col">
                                                 <span className="text-xs font-black text-sky-400 font-mono">{b.siguiente_objetivo != null ? `${b.siguiente_objetivo} ${b.unidad_control === 'horometro' ? 'h' : 'km'}` : '---'}</span>
