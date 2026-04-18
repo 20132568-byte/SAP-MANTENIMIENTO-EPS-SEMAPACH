@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, Navigate } from 'react-router-dom';
 import { api } from '../api/client';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -18,7 +19,18 @@ const ZONAS = ['Alta', 'Media', 'Baja'];
 type TabType = 'captura' | 'estadisticas' | 'consolidado';
 
 export default function MonitoreoAgua() {
-    const [activeTab, setActiveTab] = useState<TabType>('captura');
+    const location = useLocation();
+    
+    // Determinar qué componente mostrar basado en la URL
+    const isOperacion = location.pathname.includes('/operacion');
+    const isEstadisticas = location.pathname.includes('/dashboard');
+    const isConsolidado = location.pathname.includes('/consolidado');
+
+    // Si estamos en la ruta base /monitoreo-agua, redirigir a la primera pestaña
+    if (location.pathname === '/monitoreo-agua' || location.pathname === '/monitoreo-agua/') {
+        return <Navigate to="/monitoreo-agua/operacion" replace />;
+    }
+
     const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
     const [filtroDistrito, setFiltroDistrito] = useState('Todos');
 
@@ -114,25 +126,7 @@ export default function MonitoreoAgua() {
                         </div>
                     </div>
 
-                    <div className="flex bg-slate-900/60 p-2 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
-                        {[
-                            { id: 'captura', label: 'Operación', icon: 'edit_calendar' },
-                            { id: 'estadisticas', label: 'Dashboard', icon: 'analytics' },
-                            { id: 'consolidado', label: 'Consolidado', icon: 'table_view' }
-                        ].map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id as TabType)}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${activeTab === tab.id
-                                        ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/40'
-                                        : 'text-slate-500 hover:text-sky-400 hover:bg-slate-800/50'
-                                    }`}
-                            >
-                                <span className="material-symbols-outlined text-base">{tab.icon}</span>
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
+
                 </div>
             </div>
 
@@ -186,10 +180,10 @@ export default function MonitoreoAgua() {
                 )}
             </div>
 
-            {/* CONTENIDO DE PESTAÑAS */}
+            {/* CONTENIDO DINÁMICO SEGÚN RUTA */}
             <div className="space-y-12">
-                {/* 1. PESTAÑA CAPTURA */}
-                {activeTab === 'captura' && (
+                {/* 1. SECCIÓN OPERACIÓN */}
+                {isOperacion && (
                     <>
                         {!showDataEntry ? (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in-up">
@@ -327,8 +321,8 @@ export default function MonitoreoAgua() {
                     </>
                 )}
 
-                {/* 2. PESTAÑA ESTADÍSTICAS */}
-                {activeTab === 'estadisticas' && (
+                {/* 2. SECCIÓN DASHBOARD */}
+                {isEstadisticas && (
                     <div className="animate-fade-in-up space-y-12">
                         {/* KPI Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -395,8 +389,8 @@ export default function MonitoreoAgua() {
                     </div>
                 )}
 
-                {/* 3. PESTAÑA CONSOLIDADO */}
-                {activeTab === 'consolidado' && (
+                {/* 3. SECCIÓN CONSOLIDADO */}
+                {isConsolidado && (
                     <div className="bg-slate-800/50 border border-slate-700 rounded-3xl overflow-hidden shadow-premium-xl animate-fade-in-up">
                         <div className="p-8 border-b border-slate-700 bg-slate-950/20 flex items-center justify-between">
                             <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">

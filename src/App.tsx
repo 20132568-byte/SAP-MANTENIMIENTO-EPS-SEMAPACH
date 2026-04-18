@@ -44,16 +44,29 @@ const menuItems = [
             { path: '/estaciones', label: 'Maestro Estaciones', icon: 'location_on', appliesTo: 'stations' },
         ]
     },
-    {
-        section: 'Estrategia & Admin', items: [
-            { path: '/plan-2026', label: 'Plan Estratégico 2026', icon: 'calendar_month', appliesTo: 'all' },
-            { path: '/inteligencia', label: 'Motor Semapach AI', icon: 'psychology', appliesTo: 'all' },
-            { path: '/dashboard-gerencial', label: 'KPIs Gerenciales', icon: 'monitoring', appliesTo: 'all' },
-            { path: '/user-management', label: 'Gestión Personal', icon: 'admin_panel_settings', appliesTo: 'all', roles: ['gerencia'] },
-            { path: '/catalogos', label: 'Catálogos', icon: 'list_alt', appliesTo: 'all' },
-            { path: '/reportes', label: 'Exportación Datos', icon: 'file_download', appliesTo: 'all' },
-        ]
     },
+]
+
+const ptapMenuItems = [
+    {
+        section: 'Módulo Portachuelo', items: [
+            { path: '/control-ptap/proceso', label: 'Control Fisicoquímico', icon: 'biotech' },
+            { path: '/control-ptap/dashboard', label: 'Dashboard Diario', icon: 'analytics' },
+            { path: '/control-ptap/cloro', label: 'Consumo Cloro', icon: 'gas_meter' },
+            { path: '/control-ptap/dosis', label: 'Calculadora de Dosis', icon: 'calculate' },
+            { path: '/control-ptap/cronograma', label: 'Cronograma Semanal', icon: 'event_note' },
+        ]
+    }
+]
+
+const waterMenuItems = [
+    {
+        section: 'Control Hídrico', items: [
+            { path: '/monitoreo-agua/operacion', label: 'Operación Diaria', icon: 'edit_calendar' },
+            { path: '/monitoreo-agua/dashboard', label: 'Dashboard Análisis', icon: 'analytics' },
+            { path: '/monitoreo-agua/consolidado', label: 'Reporte Consolidado', icon: 'table_view' },
+        ]
+    }
 ]
 
 const operatorTabs = [
@@ -119,27 +132,36 @@ function MainLayout() {
         location.pathname.includes('/apm') ||
         location.pathname.includes('/mantenimiento')
 
-    const visibleItems = menuItems.map(section => ({
+    const isPTAPModule = location.pathname.startsWith('/control-ptap')
+    const isWaterModule = location.pathname.startsWith('/monitoreo-agua')
+
+    let currentMenu = menuItems;
+    if (isPTAPModule) currentMenu = ptapMenuItems;
+    else if (isWaterModule) currentMenu = waterMenuItems;
+
+    const visibleItems = currentMenu.map(section => ({
         ...section,
-        items: section.items.filter(item => {
-            // Si estamos en módulo de mantenimiento, mostrar solo mantenimiento
-            if (isMaintenanceModule) {
-                return section.section === 'Mantenimiento Executive' ||
-                    (section.section === 'Estrategia & Admin' && !item.roles) ||
-                    (item.roles && user && item.roles.includes(user.role))
+        items: (section.items as any[]).filter(item => {
+            // Si es el menú global, aplicar filtros de activo y mantenimiento
+            if (!isPTAPModule && !isWaterModule) {
+                if (isMaintenanceModule) {
+                    return section.section === 'Mantenimiento Executive' ||
+                        (section.section === 'Estrategia & Admin' && !item.roles) ||
+                        (item.roles && user && item.roles.includes(user.role))
+                }
+                if (location.pathname === '/estaciones') {
+                    return section.section === 'Estrategia & Admin' && (!item.roles || (user && item.roles.includes(user.role)))
+                }
+                const matchAsset = item.appliesTo === 'all' || item.appliesTo === assetType
+                const matchRole = !item.roles || (user && item.roles.includes(user.role))
+                return matchAsset && matchRole
             }
-            // Si estamos en PTAP o Monitoreo de Agua, mostrar solo esas rutas específicas
-            if (location.pathname === '/control-ptap' || location.pathname === '/monitoreo-agua' || location.pathname === '/estaciones') {
-                return section.section === 'Estrategia & Admin' && (!item.roles || (user && item.roles.includes(user.role)))
-            }
-            // Por defecto mostrar todo
-            const matchAsset = item.appliesTo === 'all' || item.appliesTo === assetType
-            const matchRole = !item.roles || (user && item.roles.includes(user.role))
-            return matchAsset && matchRole
+            // Para PTAP y Water, mostrar todo lo definido en su sub-menú
+            return true
         }),
     })).filter(section => section.items.length > 0)
 
-    const currentLabel = menuItems.flatMap(s => s.items).find(i => i.path === location.pathname)?.label || 'Panel de Gestión'
+    const currentLabel = [...menuItems, ...ptapMenuItems, ...waterMenuItems].flatMap(s => s.items).find(i => i.path === location.pathname)?.label || 'Panel de Gestión'
 
     const handleLogout = () => {
         localStorage.clear()
@@ -248,8 +270,8 @@ function MainLayout() {
                             <Route path="/dashboard-gerencial" element={<DashboardGerencial />} />
                             <Route path="/inteligencia" element={<MotorInteligencia />} />
                             <Route path="/apm" element={<APMDesempenio />} />
-                            <Route path="/monitoreo-agua" element={<MonitoreoAgua />} />
-                            <Route path="/control-ptap" element={<ControlPTAP />} />
+                            <Route path="/monitoreo-agua/*" element={<MonitoreoAgua />} />
+                            <Route path="/control-ptap/*" element={<ControlPTAP />} />
                             <Route path="/estaciones" element={<EstacionesHidricas />} />
                             <Route path="/mantenimiento" element={<MantenimientoIntegrado />} />
                             <Route path="/plan-2026" element={<PlanMantenimiento2026 />} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation, Navigate } from 'react-router-dom';
 import ControlProceso from '../components/ptap/ControlProceso';
 import ConsumoCloro from '../components/ptap/ConsumoCloro';
 import CalculadoraDosis from '../components/ptap/CalculadoraDosis';
@@ -6,18 +7,20 @@ import CronogramaSemanal from '../components/ptap/CronogramaSemanal';
 
 import DashboardPTAP from '../components/ptap/DashboardPTAP';
 
-type TabType = 'proceso' | 'dashboard' | 'cloro' | 'dosis' | 'cronograma';
-
 export default function ControlPTAP() {
-    const [activeTab, setActiveTab] = useState<TabType>('proceso');
+    const location = useLocation();
+    
+    // Determinar qué componente mostrar basado en la URL
+    const isProceso = location.pathname.includes('/proceso');
+    const isDashboard = location.pathname.includes('/dashboard');
+    const isCloro = location.pathname.includes('/cloro');
+    const isDosis = location.pathname.includes('/dosis');
+    const isCronograma = location.pathname.includes('/cronograma');
 
-    const tabs = [
-        { id: 'proceso', label: 'Control Fisicoquímico', icon: 'biotech' },
-        { id: 'dashboard', label: 'Dashboard Diario', icon: 'analytics' },
-        { id: 'cloro', label: 'Consumo Cloro', icon: 'gas_meter' },
-        { id: 'dosis', label: 'Calculadora', icon: 'calculate' },
-        { id: 'cronograma', label: 'Cronograma', icon: 'event_note' },
-    ] as const;
+    // Si estamos en la ruta base /control-ptap, redirigir a la primera pestaña
+    if (location.pathname === '/control-ptap' || location.pathname === '/control-ptap/') {
+        return <Navigate to="/control-ptap/proceso" replace />;
+    }
 
     return (
         <div className="animate-fade-in-up space-y-8 min-h-screen text-slate-100 p-4 md:p-8">
@@ -43,47 +46,29 @@ export default function ControlPTAP() {
                 </div>
             </div>
 
-            {/* NAVEGACIÓN DE PESTAÑAS */}
-            <div className="bg-slate-800/50 border border-slate-700 p-2 rounded-3xl shadow-premium-xl">
-                <div className="flex flex-wrap gap-2">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                activeTab === tab.id
-                                ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-900/40'
-                                : 'text-slate-500 hover:text-emerald-400 hover:bg-slate-800'
-                            }`}
-                        >
-                            <span className="material-symbols-outlined text-[20px]">{tab.icon}</span>
-                            <span className="hidden sm:inline">{tab.label}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
 
-            {/* CONTENIDO DE PESTAÑAS */}
+
+            {/* CONTENIDO DINÁMICO SEGÚN RUTA */}
             <div className="space-y-8">
-                {activeTab === 'proceso' && (
+                {isProceso && (
                     <div className="animate-fade-in-up">
                         <ControlProceso />
                     </div>
                 )}
 
-                {activeTab === 'dashboard' && (
+                {isDashboard && (
                     <div className="animate-fade-in-up">
                         <DashboardPTAP />
                     </div>
                 )}
 
-                {activeTab === 'cloro' && (
+                {isCloro && (
                     <div className="animate-fade-in-up">
                         <ConsumoCloro />
                     </div>
                 )}
 
-                {activeTab === 'dosis' && (
+                {isDosis && (
                     <div className="animate-fade-in-up">
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                             <CalculadoraDosis />
@@ -92,7 +77,7 @@ export default function ControlPTAP() {
                     </div>
                 )}
 
-                {activeTab === 'cronograma' && (
+                {isCronograma && (
                     <div className="animate-fade-in-up">
                         <CronogramaSemanal />
                     </div>
