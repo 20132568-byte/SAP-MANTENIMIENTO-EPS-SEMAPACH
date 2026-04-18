@@ -3,12 +3,17 @@ import { dbAll, dbGet, dbRun } from '../database.js'
 
 export const diagnosisRouter = Router()
 
-diagnosisRouter.get('/', async (_req, res) => {
-  res.json(await dbAll(`
+diagnosisRouter.get('/', async (req, res) => {
+  const { categoria } = req.query
+  let sql = `
     SELECT d.*, a.codigo_patrimonial as asset_codigo, a.tipo_unidad as asset_tipo
-    FROM initial_diagnosis d LEFT JOIN assets a ON d.asset_id = a.id
-    ORDER BY d.fecha_diagnostico DESC
-  `))
+    FROM initial_diagnosis d LEFT JOIN assets a ON d.asset_id = a.id WHERE 1=1
+  `
+  const params: any[] = []
+  if (categoria) { sql += ' AND a.categoria = ?'; params.push(categoria) }
+  sql += ' ORDER BY d.fecha_diagnostico DESC'
+  
+  res.json(await dbAll(sql, ...params))
 })
 
 diagnosisRouter.get('/:assetId', async (req, res) => {

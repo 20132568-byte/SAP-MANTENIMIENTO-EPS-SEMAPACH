@@ -4,13 +4,14 @@ import { dbAll, dbGet, dbRun } from '../database.js'
 export const preventiveRouter = Router()
 
 preventiveRouter.get('/events', async (req, res) => {
-    const { asset_id } = req.query
+    const { asset_id, categoria } = req.query
     let sql = `
     SELECT pe.*, a.codigo_patrimonial as asset_codigo, a.tipo_unidad as asset_tipo
     FROM preventive_events pe LEFT JOIN assets a ON pe.asset_id = a.id WHERE 1=1
   `
     const params: any[] = []
     if (asset_id) { sql += ' AND pe.asset_id = ?'; params.push(Number(asset_id)) }
+    if (categoria) { sql += ' AND a.categoria = ?'; params.push(categoria) }
     sql += ' ORDER BY pe.fecha_mantenimiento DESC'
     res.json(await dbAll(sql, ...params))
 })
@@ -82,9 +83,17 @@ preventiveRouter.delete('/events/:id', async (req, res) => {
     res.json({ ok: true })
 })
 
-preventiveRouter.get('/backlog', async (_req, res) => {
+preventiveRouter.get('/backlog', async (req, res) => {
+    const { categoria } = req.query
+    let assetsSql = 'SELECT * FROM assets WHERE activo = 1'
+    const assetsParams: any[] = []
+    if (categoria) {
+        assetsSql += ' AND categoria = ?'
+        assetsParams.push(categoria)
+    }
+
     const [assets, configs] = await Promise.all([
-        dbAll('SELECT * FROM assets WHERE activo = 1'),
+        dbAll(assetsSql, ...assetsParams),
         dbAll('SELECT * FROM preventive_config')
     ])
     

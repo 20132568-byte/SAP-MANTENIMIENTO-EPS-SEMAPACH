@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
+import { useAssetType } from '../contexts/AssetTypeContext'
 
 export default function DiagnosticoInicial() {
+    const { assetType } = useAssetType()
     const [assets, setAssets] = useState<any[]>([])
     const [diagnoses, setDiagnoses] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -14,8 +16,15 @@ export default function DiagnosticoInicial() {
         recomendacion_manual: '', prioridad_manual: ''
     })
 
-    useEffect(() => { api.getAssets().then(setAssets); loadDiag() }, [])
-    const loadDiag = () => { setLoading(true); api.getDiagnoses().then(d => { setDiagnoses(d); setLoading(false) }) }
+    useEffect(() => { 
+        api.getAssets({ categoria: assetType }).then(setAssets); 
+        loadDiag() 
+    }, [assetType])
+
+    const loadDiag = () => { 
+        setLoading(true); 
+        api.getDiagnoses({ categoria: assetType }).then(d => { setDiagnoses(d); setLoading(false) }) 
+    }
     const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
 
     const startDiag = (asset: any) => {

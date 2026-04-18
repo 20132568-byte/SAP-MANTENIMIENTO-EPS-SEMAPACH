@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
+import { useAssetType } from '../contexts/AssetTypeContext'
 
 const emptyForm = {
     fecha: new Date().toISOString().split('T')[0], asset_id: '', operador_id: '',
@@ -11,6 +12,7 @@ const emptyForm = {
 }
 
 export default function RegistroFallas() {
+    const { assetType } = useAssetType()
     const [failures, setFailures] = useState<any[]>([])
     const [assets, setAssets] = useState<any[]>([])
     const [operators, setOperators] = useState<any[]>([])
@@ -23,7 +25,7 @@ export default function RegistroFallas() {
     const [form, setForm] = useState<any>({ ...emptyForm })
 
     useEffect(() => {
-        api.getAssets().then(setAssets)
+        api.getAssets({ categoria: assetType }).then(setAssets)
         api.getOperators().then(setOperators)
         Promise.all([
             api.getCatalog('clasificacion_falla'), api.getCatalog('sistema_afectado'),
@@ -35,10 +37,13 @@ export default function RegistroFallas() {
                 tipos: tip.map((c: any) => c.valor),
             })
         })
-    }, [])
+    }, [assetType])
 
-    const loadFailures = () => { setLoading(true); api.getFailures().then(d => { setFailures(d); setLoading(false) }) }
-    useEffect(() => { loadFailures() }, [])
+    const loadFailures = () => { 
+        setLoading(true); 
+        api.getFailures({ categoria: assetType }).then(d => { setFailures(d); setLoading(false) }) 
+    }
+    useEffect(() => { loadFailures() }, [assetType])
 
     const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
     const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500) }

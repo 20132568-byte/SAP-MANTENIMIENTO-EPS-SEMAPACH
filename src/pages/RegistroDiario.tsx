@@ -67,9 +67,9 @@ export default function RegistroDiario() {
 
     const loadRecords = () => {
         setLoading(true)
-        api.getDailyRecords({ fecha }).then(data => { setRecords(data); setLoading(false) })
+        api.getDailyRecords({ fecha, categoria: assetType }).then(data => { setRecords(data); setLoading(false) })
     }
-    useEffect(() => { loadRecords() }, [fecha])
+    useEffect(() => { loadRecords() }, [fecha, assetType])
 
     const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
     const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500) }

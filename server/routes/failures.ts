@@ -4,7 +4,7 @@ import { dbAll, dbGet, dbRun } from '../database.js'
 export const failuresRouter = Router()
 
 failuresRouter.get('/', async (req, res) => {
-  const { asset_id, desde, hasta, solo_correctivas } = req.query
+  const { asset_id, desde, hasta, solo_correctivas, categoria } = req.query
   let sql = `
     SELECT f.*, a.codigo_patrimonial as asset_codigo, a.tipo_unidad as asset_tipo,
            o.nombre as operador_nombre
@@ -15,6 +15,7 @@ failuresRouter.get('/', async (req, res) => {
   `
   const params: any[] = []
   if (asset_id) { sql += ' AND f.asset_id = ?'; params.push(Number(asset_id)) }
+  if (categoria) { sql += ' AND a.categoria = ?'; params.push(categoria) }
   if (desde) { sql += ' AND f.fecha >= ?'; params.push(desde) }
   if (hasta) { sql += ' AND f.fecha <= ?'; params.push(hasta) }
   if (solo_correctivas === '1') { sql += ' AND f.es_correctiva_no_programada = 1' }

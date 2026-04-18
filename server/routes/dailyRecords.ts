@@ -4,7 +4,7 @@ import { dbAll, dbGet, dbRun } from '../database.js'
 export const dailyRecordsRouter = Router()
 
 dailyRecordsRouter.get('/', async (req, res) => {
-  const { fecha, asset_id, desde, hasta } = req.query
+  const { fecha, asset_id, desde, hasta, categoria } = req.query
   let sql = `
     SELECT dr.*, a.codigo_patrimonial as asset_codigo, a.tipo_unidad as asset_tipo,
            o.nombre as operador_nombre
@@ -16,6 +16,7 @@ dailyRecordsRouter.get('/', async (req, res) => {
   const params: any[] = []
   if (fecha) { sql += ' AND dr.fecha = ?'; params.push(fecha) }
   if (asset_id) { sql += ' AND dr.asset_id = ?'; params.push(Number(asset_id)) }
+  if (categoria) { sql += ' AND a.categoria = ?'; params.push(categoria) }
   if (desde) { sql += ' AND dr.fecha >= ?'; params.push(desde) }
   if (hasta) { sql += ' AND dr.fecha <= ?'; params.push(hasta) }
   sql += ' ORDER BY dr.fecha DESC, a.codigo_patrimonial ASC'

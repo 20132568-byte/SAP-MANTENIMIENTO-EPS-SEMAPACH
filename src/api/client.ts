@@ -72,7 +72,10 @@ export const api = {
     getPreventiveBacklog: () => request<any[]>('/preventive/backlog'),
 
     // === Diagnóstico inicial ===
-    getDiagnoses: () => request<any[]>('/diagnosis'),
+    getDiagnoses: (params?: Record<string, string>) => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+        return request<any[]>(`/diagnosis${qs}`)
+    },
     getDiagnosis: (assetId: number) => request<any | null>(`/diagnosis/${assetId}`),
     createDiagnosis: (data: any) => request<any>('/diagnosis', { method: 'POST', body: JSON.stringify(data) }),
     updateDiagnosis: (assetId: number, data: any) => request<any>(`/diagnosis/${assetId}`, { method: 'PUT', body: JSON.stringify(data) }),

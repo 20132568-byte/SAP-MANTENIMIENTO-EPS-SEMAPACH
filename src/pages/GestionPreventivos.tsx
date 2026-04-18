@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
+import { useAssetType } from '../contexts/AssetTypeContext'
 import { 
     PieChart, Pie, Cell, ResponsiveContainer 
 } from 'recharts';
 
 export default function GestionPreventivos() {
+    const { assetType } = useAssetType()
     const [events, setEvents] = useState<any[]>([])
     const [backlog, setBacklog] = useState<any[]>([])
     const [configs, setConfigs] = useState<any[]>([])
@@ -21,14 +23,16 @@ export default function GestionPreventivos() {
     })
 
     useEffect(() => {
-        api.getAssets().then(setAssets)
+        api.getAssets({ categoria: assetType }).then(setAssets)
         loadAll()
-    }, [])
+    }, [assetType])
 
     const loadAll = () => {
         setLoading(true)
         Promise.all([
-            api.getPreventiveEvents(), api.getPreventiveBacklog(), api.getPreventiveConfig()
+            api.getPreventiveEvents({ categoria: assetType }), 
+            api.getPreventiveBacklog({ categoria: assetType }), 
+            api.getPreventiveConfig()
         ]).then(([ev, bl, cf]) => { setEvents(ev); setBacklog(bl); setConfigs(cf); setLoading(false) })
     }
 
