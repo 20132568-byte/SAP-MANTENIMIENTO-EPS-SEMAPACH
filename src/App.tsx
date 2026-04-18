@@ -362,51 +362,46 @@ function HomeModules() {
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gold-500/5 rounded-full blur-[120px]"></div>
 
-            {/* Header / Logo */}
-            <header className="fixed top-0 left-0 w-full p-6 flex flex-col sm:flex-row items-center justify-between gap-6 z-50 bg-gradient-to-b from-[#030712] via-[#030712]/80 to-transparent">
-                <div className="flex items-center gap-3 animate-reveal">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-900/40">
-                        <span className="material-symbols-outlined text-white text-xl sm:text-2xl">water_drop</span>
+            {/* Header / Logo — Ultra Compacto y Responsivo */}
+            <header className="fixed top-0 left-0 w-full p-4 flex items-center justify-between z-50 bg-[#030712]/90 backdrop-blur-md border-b border-white/5">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-900/40">
+                        <span className="material-symbols-outlined text-white text-lg">water_drop</span>
                     </div>
-                    <div>
-                        <h1 className="text-base sm:text-xl font-black tracking-tighter text-white leading-none">EPS SEMAPACH</h1>
-                        <p className="text-[8px] sm:text-[10px] text-cyan-400 font-bold uppercase tracking-widest mt-1">Sistemas de Control</p>
+                    <div className="hidden xs:block">
+                        <h1 className="text-xs font-black tracking-tighter text-white uppercase leading-none">EPS SEMAPACH</h1>
+                        <p className="text-[7px] text-cyan-400 font-bold uppercase tracking-widest mt-0.5">Sistemas</p>
                     </div>
                 </div>
 
-                {/* User Info + Logout */}
-                <div className="flex items-center gap-3 sm:gap-4 animate-reveal">
+                <div className="flex items-center gap-2">
                     {user && (
-                        <div className="flex items-center gap-3 px-3 sm:px-4 py-2 glass-morphism rounded-full border-cyan-500/10">
-                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-black text-white">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10 max-w-[120px] sm:max-w-none">
+                            <div className="w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center text-[8px] font-black text-white flex-shrink-0">
                                 {user.username?.substring(0, 2).toUpperCase()}
                             </div>
-                            <div className="flex flex-col text-right">
-                                <span className="text-[8px] sm:text-[9px] font-black text-white leading-none uppercase">{user.username}</span>
-                                <span className="text-[7px] font-bold text-slate-500 leading-none uppercase">{user.role}</span>
-                            </div>
+                            <span className="text-[9px] font-black text-white uppercase truncate">{user.username}</span>
                         </div>
                     )}
-                    <button onClick={handleLogout} className="btn-premium border border-rose-500/30 hover:border-rose-500 text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 py-2 px-4 rounded-xl">
+                    <button onClick={handleLogout} className="w-9 h-9 border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 flex items-center justify-center rounded-xl transition-all">
                         <span className="material-symbols-outlined text-lg">logout</span>
-                        <span className="text-[10px] font-black uppercase tracking-wider hidden xs:inline">Salir</span>
                     </button>
                 </div>
             </header>
 
-            {/* Contenido Principal */}
-            <div className="max-w-5xl w-full text-center z-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-morphism border-cyan-500/20 mb-8 animate-reveal" style={{ animationDelay: '0.2s' }}>
-                    <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">Plataforma Inteligente 2026</span>
+            {/* Contenido Principal — Espaciado Ajustado para Móvil */}
+            <div className="max-w-5xl w-full text-center z-10 pt-24 pb-12">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/5 border border-cyan-500/20 mb-6 animate-reveal">
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse"></span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-400">Inteligencia Operativa 2026</span>
                 </div>
 
-                <h2 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[0.9] mb-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
+                <h2 className="text-2xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[0.95] mb-4 animate-reveal">
                     GERENCIA DE <br />
                     <span className="gold-gradient-text">OPERACIONES</span>
                 </h2>
 
-                <p className="text-base sm:text-lg md:text-xl text-slate-400 font-medium max-w-2xl mx-auto mb-10 animate-reveal" style={{ animationDelay: '0.6s' }}>
+                <p className="text-xs sm:text-lg text-slate-400 font-medium max-w-lg mx-auto mb-8 animate-reveal">
                     Selecciona el sistema al que deseas ingresar
                 </p>
 
