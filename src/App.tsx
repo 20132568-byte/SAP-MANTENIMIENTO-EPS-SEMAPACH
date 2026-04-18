@@ -49,11 +49,11 @@ const menuItems = [
 const ptapMenuItems = [
     {
         section: 'Módulo Portachuelo', items: [
-            { path: '/control-ptap/proceso', label: 'Control Fisicoquímico', icon: 'biotech' },
-            { path: '/control-ptap/dashboard', label: 'Dashboard Diario', icon: 'analytics' },
-            { path: '/control-ptap/cloro', label: 'Consumo Cloro', icon: 'gas_meter' },
-            { path: '/control-ptap/dosis', label: 'Calculadora de Dosis', icon: 'calculate' },
-            { path: '/control-ptap/cronograma', label: 'Cronograma Semanal', icon: 'event_note' },
+            { path: '/control-ptap/proceso', label: 'Control Fisicoquímico', icon: 'biotech', appliesTo: 'all' },
+            { path: '/control-ptap/dashboard', label: 'Dashboard Diario', icon: 'analytics', appliesTo: 'all' },
+            { path: '/control-ptap/cloro', label: 'Consumo Cloro', icon: 'gas_meter', appliesTo: 'all' },
+            { path: '/control-ptap/dosis', label: 'Calculadora de Dosis', icon: 'calculate', appliesTo: 'all' },
+            { path: '/control-ptap/cronograma', label: 'Cronograma Semanal', icon: 'event_note', appliesTo: 'all' },
         ]
     }
 ]
@@ -61,9 +61,9 @@ const ptapMenuItems = [
 const waterMenuItems = [
     {
         section: 'Control Hídrico', items: [
-            { path: '/monitoreo-agua/operacion', label: 'Operación Diaria', icon: 'edit_calendar' },
-            { path: '/monitoreo-agua/dashboard', label: 'Dashboard Análisis', icon: 'analytics' },
-            { path: '/monitoreo-agua/consolidado', label: 'Reporte Consolidado', icon: 'table_view' },
+            { path: '/monitoreo-agua/operacion', label: 'Operación Diaria', icon: 'edit_calendar', appliesTo: 'all' },
+            { path: '/monitoreo-agua/dashboard', label: 'Dashboard Análisis', icon: 'analytics', appliesTo: 'all' },
+            { path: '/monitoreo-agua/consolidado', label: 'Reporte Consolidado', icon: 'table_view', appliesTo: 'all' },
         ]
     }
 ]

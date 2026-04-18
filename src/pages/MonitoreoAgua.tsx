@@ -138,7 +138,7 @@ export default function MonitoreoAgua() {
                         <div className="flex items-center bg-slate-900/50 px-6 py-3.5 rounded-2xl border border-slate-700 shadow-inner group transition-all focus-within:ring-2 focus-within:ring-sky-500/20 focus-within:bg-slate-900">
                             <span className="material-symbols-outlined text-sky-500 text-[22px] flex-shrink-0">calendar_month</span>
                             <div className="h-6 w-px bg-slate-700 mx-4"></div>
-                            {activeTab === 'captura' ? (
+                            {isOperacion ? (
                                 <input
                                     type="date"
                                     value={fecha}
@@ -157,7 +157,7 @@ export default function MonitoreoAgua() {
                     </div>
                 </div>
 
-                {activeTab === 'captura' && (
+                {isOperacion && (
                     <div className="flex gap-4">
                         <button
                             onClick={() => setShowDataEntry(!showDataEntry)}
