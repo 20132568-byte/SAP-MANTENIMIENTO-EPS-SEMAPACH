@@ -122,7 +122,11 @@ function MainLayout() {
     const user = userStr ? JSON.parse(userStr) : null
 
     // Determinar qué menú mostrar según la ruta actual
-    const isMaintenanceModule = location.pathname.includes('/dashboard') ||
+    const isPTAPModule = location.pathname.startsWith('/control-ptap')
+    const isWaterModule = location.pathname.startsWith('/monitoreo-agua')
+
+    const isMaintenanceModule = !isPTAPModule && !isWaterModule && (
+        location.pathname.includes('/dashboard') ||
         location.pathname.includes('/activos') ||
         location.pathname.includes('/fallas') ||
         location.pathname.includes('/operacion') ||
@@ -130,9 +134,7 @@ function MainLayout() {
         location.pathname.includes('/diagnostico') ||
         location.pathname.includes('/apm') ||
         location.pathname.includes('/mantenimiento')
-
-    const isPTAPModule = location.pathname.startsWith('/control-ptap')
-    const isWaterModule = location.pathname.startsWith('/monitoreo-agua')
+    )
 
     let currentMenu = menuItems;
     if (isPTAPModule) currentMenu = ptapMenuItems;
@@ -242,7 +244,7 @@ function MainLayout() {
                     <div className="flex items-center gap-2 sm:gap-6">
                         {/* Mostrar filtro solo en módulo de Mantenimiento y en pantallas no móviles */}
                         <div className="hidden md:block">
-                            {(location.pathname.includes('/dashboard') || location.pathname.includes('/activos') || location.pathname.includes('/fallas') || location.pathname.includes('/operacion') || location.pathname.includes('/preventivos')) && (
+                            {isMaintenanceModule && (
                                 <AssetTypeFilter />
                             )}
                         </div>
@@ -302,7 +304,7 @@ function MainLayout() {
                     <div className="flex items-center gap-2">
                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Status:</span>
                         <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.4)]"></div>
-                        <span className="text-[9px] font-black text-cyan-500/60 uppercase tracking-tighter">Sincronización Total v1.4</span>
+                        <span className="text-[9px] font-black text-cyan-500/60 uppercase tracking-tighter">v1.5 Premium Core</span>
                     </div>
                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">EPS SEMAPACH — 2026</span>
                 </footer>
