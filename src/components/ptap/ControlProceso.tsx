@@ -173,18 +173,18 @@ export default function ControlProceso() {
         };
 
         return (
-            <div className="bg-slate-900/40 border border-slate-800/60 p-3 rounded-2xl relative overflow-hidden group hover:border-sky-500/30 transition-all duration-300">
-                <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1.5 opacity-80">{label}</div>
-                <div className="flex items-center gap-1.5">
+            <div className="bg-slate-900/30 border border-white/5 p-2.5 rounded-xl hover:bg-slate-800/40 transition-colors">
+                <div className="text-[6px] font-black text-slate-500 uppercase tracking-widest mb-1">{label}</div>
+                <div className="flex items-center justify-between gap-1">
                     <input
                         type="number"
                         step="0.01"
                         value={localValue}
                         onChange={(e) => handleChange(e.target.value)}
                         onBlur={handleBlur}
-                        className={`w-full bg-transparent border-none p-0 text-lg font-black focus:ring-0 leading-none ${type ? getStatusColor(value, type) : 'text-slate-100'}`}
+                        className={`w-full bg-transparent border-none p-0 text-base font-black focus:ring-0 leading-none ${type ? getStatusColor(value, type) : 'text-slate-200'}`}
                     />
-                    {unit && <span className="text-[8px] font-bold text-slate-600 uppercase italic flex-shrink-0">{unit}</span>}
+                    {unit && <span className="text-[7px] font-bold text-slate-600 uppercase flex-shrink-0">{unit}</span>}
                 </div>
             </div>
         );
@@ -194,78 +194,71 @@ export default function ControlProceso() {
         <div className="pb-32 px-4 md:px-0"> {/* Padding inferior para navegación */}
             <div className="max-w-7xl mx-auto space-y-8">
                 <div className="bg-slate-900/40 border border-slate-700/50 rounded-[2.5rem] overflow-hidden backdrop-blur-md shadow-2xl">
-                    {/* Header Refinado y Responsivo */}
-                    <div className="p-6 md:p-8 border-b border-white/5 bg-slate-900/60 backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-900/40 flex-shrink-0">
-                                <span className="material-symbols-outlined text-white text-2xl">water_ec</span>
+                    {/* Header Ejecutivo de Alta Densidad */}
+                    <div className="p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-white/5 bg-slate-900/40">
+                        <div className="flex items-center gap-3 self-start md:self-auto">
+                            <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-sky-900/20">
+                                <span className="material-symbols-outlined text-white text-xl">monitoring</span>
                             </div>
                             <div>
-                                <h4 className="text-base font-black text-white uppercase tracking-tight">PTAP Portachuelo</h4>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                                    <p className="text-[9px] font-bold text-sky-400 uppercase tracking-[0.15em]">Monitoreo Operativo en Tiempo Real</p>
-                                </div>
+                                <h4 className="text-xs font-black text-white uppercase tracking-tighter">PTAP Portachuelo</h4>
+                                <p className="text-[8px] font-bold text-sky-500 uppercase tracking-widest leading-none mt-0.5">Operativo Tiempo Real</p>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 w-full md:w-auto">
-                            <div className="bg-slate-800/50 border border-white/5 px-4 py-2.5 rounded-2xl flex flex-col min-w-[140px]">
-                                <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1 px-1">Fecha</label>
+
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <div className="flex-1 md:flex-none flex items-center bg-slate-800/50 border border-white/5 rounded-xl px-3 py-2">
+                                <span className="material-symbols-outlined text-slate-500 text-sm mr-2">calendar_today</span>
                                 <input 
                                     type="date" 
                                     value={selectedDate} 
                                     onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="bg-transparent border-none text-white text-xs font-black focus:ring-0 p-0"
+                                    className="bg-transparent border-none text-white text-[10px] font-black focus:ring-0 p-0 w-full"
                                 />
-                            </div>
-                            <div className="bg-slate-800/50 border border-white/5 px-4 py-2.5 rounded-2xl hidden lg:flex flex-col min-w-[120px]">
-                                <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">Caudal L/S</div>
-                                <div className="text-sm font-black text-white">{lectura.caudal.toFixed(1)}</div>
                             </div>
                             <button 
                                 onClick={handleSave}
                                 disabled={saving}
-                                className={`${success ? 'bg-emerald-600' : 'bg-sky-600'} text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center gap-2 disabled:opacity-50 flex-1 md:flex-none justify-center`}
+                                className={`${success ? 'bg-emerald-600' : 'bg-sky-600'} flex-1 md:flex-none text-white px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all`}
                             >
-                                {loading ? <span className="material-symbols-outlined text-sm animate-spin">refresh</span> : 
-                                 <span className="material-symbols-outlined text-sm">{success ? 'done' : 'send'}</span>}
-                                {saving ? '...' : success ? 'OK' : 'Enviar Datos'}
+                                <span className="material-symbols-outlined text-sm">{success ? 'check' : 'publish'}</span>
+                                {saving ? '...' : success ? 'LISTO' : 'ENVIAR'}
                             </button>
                         </div>
                     </div>
 
-                    <div className="p-6 md:p-8 space-y-10">
-                        {/* SECCIÓN: DOSIFICACIÓN */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                <h5 className="text-[9px] font-black text-amber-500 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-                                    <div className="w-1 h-3 bg-amber-500 rounded-full"></div>
-                                    Dosificación (mg/L)
+                    <div className="p-4 md:p-8 space-y-8">
+                        {/* DOSIFICACIÓN Y APERTURA EN UNA SOLA FILA RESPONSIVA */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-slate-800/20 border border-white/5 p-4 rounded-2xl">
+                                <h5 className="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center gap-2 opacity-80">
+                                    <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
+                                    Dosis (mg/L)
                                 </h5>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <InputField label="Aluminio" value={lectura.dosis.aluminio} unit="mg/L" onChange={(v:any) => setLectura({...lectura, dosis: {...lectura.dosis, aluminio: v}})} />
                                     <InputField label="Aniónico" value={lectura.dosis.anionico} unit="mg/L" onChange={(v:any) => setLectura({...lectura, dosis: {...lectura.dosis, anionico: v}})} />
                                 </div>
                             </div>
-                            <div className="space-y-4">
-                                <h5 className="text-[9px] font-black text-amber-400 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-                                    <div className="w-1 h-3 bg-amber-400 rounded-full opacity-60"></div>
+                            <div className="bg-slate-800/20 border border-white/5 p-4 rounded-2xl">
+                                <h5 className="text-[8px] font-black text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2 opacity-80">
+                                    <span className="w-1 h-3 bg-amber-400 rounded-full"></span>
                                     Apertura (%)
                                 </h5>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <InputField label="Aluminio %" value={lectura.apertura.aluminio} unit="%" onChange={(v:any) => setLectura({...lectura, apertura: {...lectura.apertura, aluminio: v}})} />
                                     <InputField label="Aniónico %" value={lectura.apertura.anionico} unit="%" onChange={(v:any) => setLectura({...lectura, apertura: {...lectura.apertura, anionico: v}})} />
                                 </div>
                             </div>
                         </div>
 
-                        {/* SECCIÓN: AGUA DE INGRESO */}
-                        <div className="space-y-4">
-                            <h5 className="text-[9px] font-black text-sky-400 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-                                <div className="w-1 h-3 bg-sky-500 rounded-full"></div>
+                        {/* AGUA CRUDA — GRIDS DE ALTA DENSIDAD */}
+                        <div className="bg-slate-800/20 border border-white/5 p-4 rounded-2xl">
+                            <h5 className="text-[8px] font-black text-sky-400 uppercase tracking-widest mb-3 flex items-center gap-2 opacity-80">
+                                <span className="w-1 h-3 bg-sky-400 rounded-full"></span>
                                 Caracterización Agua Cruda
                             </h5>
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
                                 <InputField label="Turbiedad" value={lectura.ingreso.turbiedad} unit="NTU" onChange={(v:any) => setLectura({...lectura, ingreso: {...lectura.ingreso, turbiedad: v}})} />
                                 <InputField label="Conduct." value={lectura.ingreso.conductividad} unit="uS" onChange={(v:any) => setLectura({...lectura, ingreso: {...lectura.ingreso, conductividad: v}})} />
                                 <InputField label="Color" value={lectura.ingreso.color} unit="UPC" onChange={(v:any) => setLectura({...lectura, ingreso: {...lectura.ingreso, color: v}})} />
@@ -277,43 +270,34 @@ export default function ControlProceso() {
                             </div>
                         </div>
 
-                        {/* SECCIÓN: PROCESO INTERMEDIO */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="space-y-4 bg-white/5 p-4 rounded-3xl border border-white/5">
-                                <div className="flex items-center justify-between mb-2">
-                                     <h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest pl-2 border-l-2 border-indigo-500">Decantador</h5>
-                                     <span className="material-symbols-outlined text-indigo-500/40 text-sm">waves</span>
-                                </div>
-                                <div className="grid grid-cols-3 gap-3">
+                        {/* PROCESO INTERMEDIO — DISEÑO COMPACTO */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white/5 border border-white/5 p-4 rounded-2xl">
+                                <h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest pl-2 border-l-2 border-indigo-500 mb-3">Decantador</h5>
+                                <div className="grid grid-cols-3 gap-2">
                                     <InputField label="Turb." value={lectura.decantador.turbiedad} unit="NTU" onChange={(v:any) => setLectura({...lectura, decantador: {...lectura.decantador, turbiedad: v}})} />
                                     <InputField label="Color" value={lectura.decantador.color} unit="UPC" onChange={(v:any) => setLectura({...lectura, decantador: {...lectura.decantador, color: v}})} />
                                     <InputField label="pH" value={lectura.decantador.ph} unit="PH" onChange={(v:any) => setLectura({...lectura, decantador: {...lectura.decantador, ph: v}})} />
                                 </div>
                             </div>
-
-                            <div className="space-y-4 bg-white/5 p-4 rounded-3xl border border-white/5">
-                                <div className="flex items-center justify-between mb-2">
-                                     <h5 className="text-[8px] font-black text-emerald-400 uppercase tracking-widest pl-2 border-l-2 border-emerald-500">Filtración</h5>
-                                     <span className="material-symbols-outlined text-emerald-500/40 text-sm">filter_list</span>
-                                </div>
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <InputField label="Turb. In" value={lectura.filtros.ingreso.turbiedad} unit="NTU" onChange={(v:any) => setLectura({...lectura, filtros: {...lectura.filtros, ingreso: {...lectura.filtros.ingreso, turbiedad: v}}})} />
-                                        <InputField label="Turb. Out" value={lectura.filtros.salida.turbiedad} unit="NTU" onChange={(v:any) => setLectura({...lectura, filtros: {...lectura.filtros, salida: {...lectura.filtros.salida, turbiedad: v}}})} />
-                                        <InputField label="pH Out" value={lectura.filtros.salida.ph} unit="pH" onChange={(v:any) => setLectura({...lectura, filtros: {...lectura.filtros, salida: {...lectura.filtros.salida, ph: v}}})} />
-                                    </div>
+                            <div className="bg-white/5 border border-white/5 p-4 rounded-2xl">
+                                <h5 className="text-[8px] font-black text-emerald-400 uppercase tracking-widest pl-2 border-l-2 border-emerald-500 mb-3">Filtración</h5>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <InputField label="Turb. In" value={lectura.filtros.ingreso.turbiedad} unit="NTU" onChange={(v:any) => setLectura({...lectura, filtros: {...lectura.filtros, ingreso: {...lectura.filtros.ingreso, turbiedad: v}}})} />
+                                    <InputField label="Turb. Out" value={lectura.filtros.salida.turbiedad} unit="NTU" onChange={(v:any) => setLectura({...lectura, filtros: {...lectura.filtros, salida: {...lectura.filtros.salida, turbiedad: v}}})} />
+                                    <InputField label="pH Out" value={lectura.filtros.salida.ph} unit="pH" onChange={(v:any) => setLectura({...lectura, filtros: {...lectura.filtros, salida: {...lectura.filtros.salida, ph: v}}})} />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                        {/* SECCIÓN: AGUA TRATADA */}
-                        <div className="space-y-4">
-                            <h5 className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-                                <div className="w-1 h-3 bg-emerald-500 rounded-full"></div>
+                        {/* AGUA TRATADA — DISEÑO DE ALTA DENSIDAD */}
+                        <div className="bg-slate-800/20 border border-white/5 p-4 rounded-2xl">
+                            <h5 className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-3 flex items-center gap-2 opacity-80">
+                                <span className="w-1 h-3 bg-emerald-500 rounded-full"></span>
                                 Calidad Agua Tratada
                             </h5>
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
                                 <InputField label="Turbiedad" value={lectura.tratada.turbiedad} unit="NTU" type="turbiedad" onChange={(v:any) => setLectura({...lectura, tratada: {...lectura.tratada, turbiedad: v}})} />
                                 <InputField label="Conduct." value={lectura.tratada.conductividad} unit="uS" onChange={(v:any) => setLectura({...lectura, tratada: {...lectura.tratada, conductividad: v}})} />
                                 <InputField label="Color" value={lectura.tratada.color} unit="UPC" type="color" onChange={(v:any) => setLectura({...lectura, tratada: {...lectura.tratada, color: v}})} />
