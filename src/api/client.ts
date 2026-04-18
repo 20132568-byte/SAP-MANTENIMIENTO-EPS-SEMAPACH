@@ -131,4 +131,8 @@ export const api = {
         const qs = params ? '?' + new URLSearchParams(params).toString() : ''
         return request<any>(`/stations/intelligence/station-rankings${qs}`)
     },
+
+    // === Autenticación ===
+    login: (data: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+    register: (data: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
 }

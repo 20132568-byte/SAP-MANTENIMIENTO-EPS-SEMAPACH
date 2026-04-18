@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { api } from '../api/client'
 
 const AuthPage: React.FC = () => {
     const navigate = useNavigate()
@@ -23,34 +24,22 @@ const AuthPage: React.FC = () => {
         setError('')
         setMessage('')
 
-        const url = isLogin ? '/api/auth/login' : '/api/auth/register'
-
         try {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(isLogin
-                    ? { identifier: formData.identifier, password: formData.password }
-                    : { username: formData.username, dni: formData.dni, password: formData.password, role: formData.role }
-                )
-            })
-            const data = await res.json()
-
-            if (!res.ok) {
-                setError(data.message || 'Error en la solicitud')
-                return
-            }
+            const data = isLogin
+                ? await api.login({ identifier: formData.identifier, password: formData.password })
+                : await api.register({ username: formData.username, dni: formData.dni, password: formData.password, role: formData.role })
 
             if (isLogin) {
                 localStorage.setItem('token', data.token)
                 localStorage.setItem('user', JSON.stringify(data.user))
-                window.location.href = '/home' // Redirigir al Home de módulos
+                window.location.href = '/home'
             } else {
                 setMessage(data.message)
                 setFormData({ username: '', dni: '', identifier: '', password: '', role: 'operario' })
             }
-        } catch (err) {
-            setError('Error de conexión con el servidor')
+        } catch (err: any) {
+            console.error('Auth Error:', err)
+            setError(err.message || 'Error de conexión con el servidor')
         } finally {
             setLoading(false)
         }
