@@ -44,7 +44,6 @@ const menuItems = [
             { path: '/estaciones', label: 'Maestro Estaciones', icon: 'location_on', appliesTo: 'stations' },
         ]
     },
-    },
 ]
 
 const ptapMenuItems = [
