@@ -415,8 +415,10 @@ function HomeModules() {
                         >
                             {/* Decoración de Fondo Industrial */}
                             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/[0.02] rounded-full blur-3xl group-hover:bg-cyan-500/10 transition-colors duration-700"></div>
-                            <div className="absolute top-4 right-8 text-[40px] font-black text-white/[0.03] uppercase tracking-tighter select-none pointer-events-none group-hover:text-white/[0.05] transition-all">
-                                {module.id === 'mantenimiento' ? 'MNT' : module.id === 'ptap' ? 'PTAP' : 'PRES'}
+                            <div className="absolute top-6 right-8 opacity-[0.05] group-hover:opacity-10 transition-all duration-500">
+                                <span className="material-symbols-outlined text-6xl text-white select-none pointer-events-none">
+                                    {module.id === 'mantenimiento' ? 'precision_manufacturing' : module.id === 'ptap' ? 'water_full' : 'water_pressure'}
+                                </span>
                             </div>
 
                             {/* Icono con Glow */}
@@ -428,8 +430,8 @@ function HomeModules() {
                             {/* Etiquetas y Título */}
                             <div className="space-y-4">
                                 <div>
-                                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-gradient-to-r ${module.color} text-white mb-3 shadow-lg shadow-black/20`}>
-                                        {module.subtitle.split(' ')[0]}
+                                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-[8.5px] font-black uppercase tracking-widest bg-gradient-to-r ${module.color} text-white mb-4 shadow-lg shadow-black/20`}>
+                                        {module.id === 'mantenimiento' ? 'Flota + Estaciones' : module.subtitle.split(' ')[0]}
                                     </div>
                                     <h3 className="text-xl font-black text-white tracking-tight leading-tight group-hover:text-cyan-400 transition-colors">
                                         {module.title}

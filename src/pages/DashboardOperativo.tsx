@@ -151,89 +151,108 @@ export default function DashboardOperativo() {
                 <>
                     {/* KPIs Flota - Estilo Premium */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-emerald-500/30 transition-all duration-300 group">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:border-emerald-500/30 transition-all duration-300 group">
+                            <div className="flex items-center justify-between mb-6">
                                 <div>
-                                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider block mb-1">Disponibilidad</span>
-                                    <div className="text-4xl font-black text-white">{kpi.disponibilidad_global?.toFixed(2) ?? '—'}%</div>
+                                    <span className="text-xs font-black text-emerald-400 uppercase tracking-wider block mb-2">Disponibilidad Global</span>
+                                    <div className="text-5xl lg:text-6xl font-black text-white">{kpi.disponibilidad_global?.toFixed(2) ?? '—'}<span className="text-2xl text-slate-500 ml-1">%</span></div>
                                 </div>
-                                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <span className="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
+                                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                                    <span className="material-symbols-outlined text-emerald-400 text-4xl">check_circle</span>
                                 </div>
                             </div>
-                            <div className="w-full bg-slate-700/30 h-2 rounded-full overflow-hidden">
-                                <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${kpi.disponibilidad_global ?? 0}%` }}></div>
+                            <div className="w-full bg-slate-700/30 h-3 rounded-full overflow-hidden shadow-inner">
+                                <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full transition-all duration-1000" style={{ width: `${kpi.disponibilidad_global ?? 0}%` }}></div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-amber-500/30 transition-all duration-300 group">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:border-amber-500/30 transition-all duration-300 group">
+                            <div className="flex items-center justify-between mb-6">
                                 <div>
-                                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider block mb-1">MTTR</span>
-                                    <div className="text-4xl font-black text-white">{kpi.mttr_global?.toFixed(2) ?? '—'}<span className="text-lg text-slate-400 ml-1">h</span></div>
+                                    <span className="text-xs font-black text-amber-400 uppercase tracking-wider block mb-2">MTTR Estimado</span>
+                                    <div className="text-5xl lg:text-6xl font-black text-white">{kpi.mttr_global?.toFixed(2) ?? '—'}<span className="text-2xl text-slate-500 ml-1">h</span></div>
                                 </div>
-                                <div className="w-14 h-14 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <span className="material-symbols-outlined text-amber-400 text-3xl">timer</span>
+                                <div className="w-20 h-20 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                                    <span className="material-symbols-outlined text-amber-400 text-4xl">timer</span>
                                 </div>
                             </div>
-                            <div className="text-[9px] text-amber-300/60 font-medium">Meta: &lt;5h</div>
+                            <div className="text-xs bg-amber-500/10 inline-block px-3 py-1 rounded-full text-amber-300/80 font-black uppercase tracking-widest">Meta: &lt;5h</div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-rose-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-rose-500/30 transition-all duration-300 group">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-rose-500/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:border-rose-500/30 transition-all duration-300 group">
+                            <div className="flex items-center justify-between mb-6">
                                 <div>
-                                    <span className="text-[10px] font-black text-rose-400 uppercase tracking-wider block mb-1">Fallas Correctivas</span>
-                                    <div className="text-4xl font-black text-white">{kpi.fallas_correctivas ?? '—'}</div>
+                                    <span className="text-xs font-black text-rose-400 uppercase tracking-wider block mb-2">Fallas Críticas</span>
+                                    <div className="text-5xl lg:text-6xl font-black text-white">{kpi.fallas_correctivas ?? '—'}</div>
                                 </div>
-                                <div className="w-14 h-14 bg-gradient-to-br from-rose-500/20 to-rose-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <span className="material-symbols-outlined text-rose-400 text-3xl">warning</span>
+                                <div className="w-20 h-20 bg-gradient-to-br from-rose-500/20 to-rose-600/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                                    <span className="material-symbols-outlined text-rose-400 text-4xl">warning</span>
                                 </div>
                             </div>
-                            <div className="text-[9px] text-rose-300/60 font-medium">Total: {kpi.total_fallas ?? '—'}</div>
+                            <div className="text-xs bg-rose-500/10 inline-block px-3 py-1 rounded-full text-rose-300/80 font-black uppercase tracking-widest">Total: {kpi.total_fallas ?? '—'}</div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-sky-500/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-sky-500/30 transition-all duration-300 group">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-sky-500/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:border-sky-500/30 transition-all duration-300 group">
+                            <div className="flex items-center justify-between mb-6">
                                 <div>
-                                    <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider block mb-1">Preventivos</span>
-                                    <div className="text-4xl font-black text-white">{kpi.preventivos_ejecutados ?? '—'}</div>
+                                    <span className="text-xs font-black text-sky-400 uppercase tracking-wider block mb-2">Preventivos Realizados</span>
+                                    <div className="text-5xl lg:text-6xl font-black text-white">{kpi.preventivos_ejecutados ?? '—'}</div>
                                 </div>
-                                <div className="w-14 h-14 bg-gradient-to-br from-sky-500/20 to-sky-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <span className="material-symbols-outlined text-sky-400 text-3xl">engineering</span>
+                                <div className="w-20 h-20 bg-gradient-to-br from-sky-500/20 to-sky-600/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                                    <span className="material-symbols-outlined text-sky-400 text-4xl">engineering</span>
                                 </div>
                             </div>
-                            <div className="text-[9px] text-sky-300/60 font-medium">Costo: S/ {kpi.costo_preventivo?.toFixed(2) ?? '—'}</div>
+                            <div className="text-xs bg-sky-500/10 inline-block px-3 py-1 rounded-full text-sky-300/80 font-black uppercase tracking-widest">Inversión: S/ {kpi.costo_preventivo?.toLocaleString() ?? '—'}</div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Backlog */}
                         {backlog.length > 0 && (
-                            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
-                                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
-                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-sky-400 text-sm">directions_car</span>
-                                        Backlog Preventivo
+                            <div className="bg-slate-800/50 border border-slate-700 rounded-3xl overflow-hidden shadow-premium-lg">
+                                <div className="px-8 py-6 border-b border-slate-700 flex items-center justify-between bg-slate-900/40">
+                                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-sky-400 text-xl">directions_car</span>
+                                        Estado de Backlog Preventivo
                                     </h3>
-                                    <span className="text-[10px] font-black text-slate-500 bg-slate-700/50 px-2 py-1 rounded-lg">{backlog.length} activos</span>
+                                    <span className="text-xs font-black text-slate-100 bg-slate-700 px-4 py-1.5 rounded-xl shadow-lg border border-white/5">{backlog.length} activos</span>
                                 </div>
-                                <div className="p-5">
-                                    <div className="grid grid-cols-4 gap-2 mb-4">
+                                <div className="p-10 flex flex-col items-center">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full mb-12">
                                         {Object.entries(backlogByStatus).map(([status, count]) => (
-                                            <div key={status} className="text-center">
-                                                <div className={`text-lg font-black ${status === 'Vencido' ? 'text-rose-400' : status === 'Crítico' ? 'text-amber-400' : status === 'Próximo' ? 'text-sky-400' : 'text-emerald-400'}`}>{count as number}</div>
-                                                <div className="text-[9px] font-bold text-slate-500 uppercase">{status}</div>
+                                            <div key={status} className="bg-slate-900/50 p-5 rounded-2xl border border-slate-700/50 shadow-inner group hover:border-emerald-500/30 transition-all duration-300 text-center">
+                                                <div className={`text-4xl font-black mb-1 ${status === 'Vencido' ? 'text-rose-400' : status === 'Crítico' ? 'text-amber-400' : status === 'Próximo' ? 'text-sky-400' : 'text-emerald-400'}`}>{count as number}</div>
+                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">{status}</div>
                                             </div>
                                         ))}
                                     </div>
-                                    <ResponsiveContainer width="100%" height={160}>
-                                        <PieChart>
-                                            <Pie data={backlogChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70}>
-                                                {backlogChartData.map((entry, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                                            </Pie>
-                                            <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
+                                    <div className="w-full h-[320px] relative">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie 
+                                                    data={backlogChartData} 
+                                                    dataKey="value" 
+                                                    nameKey="name" 
+                                                    cx="50%" 
+                                                    cy="50%" 
+                                                    innerRadius={80} 
+                                                    outerRadius={130}
+                                                    paddingAngle={5}
+                                                    stroke="none"
+                                                >
+                                                    {backlogChartData.map((entry, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} className="focus:outline-none" />)}
+                                                </Pie>
+                                                <Tooltip 
+                                                    contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 16, fontSize: 12, fontWeight: 'bold', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} 
+                                                    itemStyle={{ color: '#fff' }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                            <span className="text-4xl font-black text-white leading-none">{backlog.length}</span>
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Activos</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
