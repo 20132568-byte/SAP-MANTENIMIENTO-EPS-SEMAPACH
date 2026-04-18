@@ -429,9 +429,9 @@ function HomeModules() {
                 </div>
             </div>
 
-            {/* Footer de la Landing */}
-            <div className="absolute bottom-8 w-full text-center animate-reveal" style={{ animationDelay: '1s' }}>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">
+            {/* Footer de la Landing — Ahora parte del flujo para evitar solapamientos */}
+            <div className="mt-12 mb-8 w-full text-center animate-reveal">
+                <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4">
                     Eficiencia & Poder Tecnológico en Gestión de Agua
                 </p>
             </div>
