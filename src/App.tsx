@@ -82,11 +82,11 @@ function AssetTypeFilter() {
         { key: 'stations', label: 'Estaciones', icon: 'location_on' },
     ]
     return (
-        <div className="flex bg-slate-900/80 p-0.5 rounded-xl border border-slate-800 shrink-0 shadow-lg">
+        <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 shrink-0 shadow-lg gap-1">
             {types.map(t => (
                 <button key={t.key} onClick={() => setAssetType(t.key)} title={t.label}
-                    className={`flex items-center justify-center w-20 h-8 rounded-lg transition-all text-[10px] font-black uppercase tracking-wider ${assetType === t.key ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40' : 'text-slate-500 hover:text-slate-300'}`}>
-                    <span className="material-symbols-outlined text-[16px] mr-1">{t.icon}</span>
+                    className={`flex items-center justify-center px-4 h-8 rounded-lg transition-all text-[9.5px] font-black uppercase tracking-widest min-w-[100px] ${assetType === t.key ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <span className="material-symbols-outlined text-[15px] mr-2">{t.icon}</span>
                     {t.label}
                 </button>
             ))}
