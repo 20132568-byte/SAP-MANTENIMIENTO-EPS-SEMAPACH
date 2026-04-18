@@ -63,7 +63,7 @@ export default function PlanMantenimiento2026() {
                 </div>
                 <div className="bg-gradient-to-br from-amber-600/20 to-amber-800/10 rounded-xl border border-amber-500/20 p-4">
                     <div className="text-[10px] text-amber-300 font-black uppercase tracking-wider">% Ejecución</div>
-                    <div className="text-xl font-black text-amber-400 mt-1">{porcentajeEjecucion.toFixed(1)}%</div>
+                    <div className="text-xl font-black text-amber-400 mt-1">{porcentajeEjecucion.toFixed(2)}%</div>
                 </div>
                 <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/10 rounded-xl border border-purple-500/20 p-4">
                     <div className="text-[10px] text-purple-300 font-black uppercase tracking-wider">Actividades</div>
@@ -75,7 +75,7 @@ export default function PlanMantenimiento2026() {
             <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-black text-slate-400 uppercase">Ejecución Presupuestal General</span>
-                    <span className="text-xs font-bold text-white">{porcentajeEjecucion.toFixed(1)}%</span>
+                    <span className="text-xs font-bold text-white">{porcentajeEjecucion.toFixed(2)}%</span>
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-3">
                     <div className="bg-gradient-to-r from-sky-500 to-emerald-500 h-3 rounded-full transition-all duration-500" style={{ width: `${Math.min(porcentajeEjecucion, 100)}%` }} />

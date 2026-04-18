@@ -197,7 +197,7 @@ export default function MantenimientoIntegrado() {
                         </div>
                         <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
                             <div className="text-xs text-slate-400 font-bold uppercase">Horas</div>
-                            <div className="text-2xl font-black text-sky-400">{totalHoras.toFixed(1)}h</div>
+                            <div className="text-2xl font-black text-sky-400">{totalHoras.toFixed(2)}h</div>
                         </div>
                         <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
                             <div className="text-xs text-slate-400 font-bold uppercase">Componentes</div>

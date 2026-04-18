@@ -155,7 +155,7 @@ export default function DashboardOperativo() {
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider block mb-1">Disponibilidad</span>
-                                    <div className="text-4xl font-black text-white">{kpi.disponibilidad_global?.toFixed(1) ?? '—'}%</div>
+                                    <div className="text-4xl font-black text-white">{kpi.disponibilidad_global?.toFixed(2) ?? '—'}%</div>
                                 </div>
                                 <div className="w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <span className="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
@@ -170,7 +170,7 @@ export default function DashboardOperativo() {
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider block mb-1">MTTR</span>
-                                    <div className="text-4xl font-black text-white">{kpi.mttr_global?.toFixed(1) ?? '—'}<span className="text-lg text-slate-400 ml-1">h</span></div>
+                                    <div className="text-4xl font-black text-white">{kpi.mttr_global?.toFixed(2) ?? '—'}<span className="text-lg text-slate-400 ml-1">h</span></div>
                                 </div>
                                 <div className="w-14 h-14 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <span className="material-symbols-outlined text-amber-400 text-3xl">timer</span>
@@ -202,7 +202,7 @@ export default function DashboardOperativo() {
                                     <span className="material-symbols-outlined text-sky-400 text-3xl">engineering</span>
                                 </div>
                             </div>
-                            <div className="text-[9px] text-sky-300/60 font-medium">Costo: S/ {kpi.costo_preventivo?.toFixed(0) ?? '—'}</div>
+                            <div className="text-[9px] text-sky-300/60 font-medium">Costo: S/ {kpi.costo_preventivo?.toFixed(2) ?? '—'}</div>
                         </div>
                     </div>
 
@@ -271,7 +271,7 @@ export default function DashboardOperativo() {
                                                                 <div className="w-16 bg-slate-700 h-1.5 rounded-full overflow-hidden">
                                                                     <div className={`${dispColor.replace('text-', 'bg-')} h-full rounded-full`} style={{ width: `${a.disponibilidad ?? 0}%` }}></div>
                                                                 </div>
-                                                                <span className={`font-mono font-bold ${dispColor}`}>{a.disponibilidad?.toFixed(1) ?? '—'}%</span>
+                                                                <span className={`font-mono font-bold ${dispColor}`}>{a.disponibilidad?.toFixed(2) ?? '—'}%</span>
                                                             </div>
                                                         </td>
                                                     </tr>

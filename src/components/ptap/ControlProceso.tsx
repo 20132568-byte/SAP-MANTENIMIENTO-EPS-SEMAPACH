@@ -149,21 +149,50 @@ export default function ControlProceso() {
         return 'text-emerald-400';
     };
 
-    const InputField = ({ label, value, unit, type, onChange }: any) => (
-        <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-2xl relative overflow-hidden group hover:border-sky-500/50 transition-all duration-300 shadow-sm">
-            <div className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-2">{label}</div>
-            <div className="flex items-baseline gap-2">
-                <input
-                    type="number"
-                    value={value}
-                    onChange={(e) => onChange(Number(e.target.value))}
-                    className={`w-full bg-transparent border-none p-0 text-xl font-black focus:ring-0 leading-none ${type ? getStatusColor(value, type) : 'text-white'}`}
-                />
-                {unit && <span className="text-[9px] font-black text-slate-600 uppercase italic opacity-70">{unit}</span>}
+    const InputField = ({ label, value, unit, type, onChange }: any) => {
+        const [localValue, setLocalValue] = useState(value.toFixed(2));
+
+        // Sincronizar localmente si el valor externo cambia (ej. al cargar datos)
+        useEffect(() => {
+            setLocalValue(value.toFixed(2));
+        }, [value]);
+
+        const handleChange = (val: string) => {
+            setLocalValue(val);
+            const num = parseFloat(val);
+            if (!isNaN(num)) {
+                // Redondear a 2 decimales para el estado global
+                const rounded = Math.round(num * 100) / 100;
+                onChange(rounded);
+            }
+        };
+
+        const handleBlur = () => {
+            // Al perder el foco, formateamos a 2 decimales fijos
+            const num = parseFloat(localValue);
+            if (!isNaN(num)) {
+                setLocalValue(num.toFixed(2));
+            }
+        };
+
+        return (
+            <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-2xl relative overflow-hidden group hover:border-sky-500/50 transition-all duration-300 shadow-sm">
+                <div className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-2">{label}</div>
+                <div className="flex items-baseline gap-2">
+                    <input
+                        type="number"
+                        step="0.01"
+                        value={localValue}
+                        onChange={(e) => handleChange(e.target.value)}
+                        onBlur={handleBlur}
+                        className={`w-full bg-transparent border-none p-0 text-xl font-black focus:ring-0 leading-none ${type ? getStatusColor(value, type) : 'text-white'}`}
+                    />
+                    {unit && <span className="text-[9px] font-black text-slate-600 uppercase italic opacity-70">{unit}</span>}
+                </div>
+                <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-sky-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
-            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-sky-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="pb-32 px-4 md:px-0"> {/* Padding inferior para navegación */}

@@ -141,10 +141,10 @@ export default function DashboardGerencial() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {kpi && (
                     <>
-                        <KPICard label="Disponibilidad" value={`${kpi.disponibilidad_global?.toFixed(1) ?? '—'}%`} icon="check_circle" color="emerald" />
-                        <KPICard label="MTTR" value={`${kpi.mttr_global?.toFixed(1) ?? '—'}h`} icon="timer" color="amber" />
+                        <KPICard label="Disponibilidad" value={`${kpi.disponibilidad_global?.toFixed(2) ?? '—'}%`} icon="check_circle" color="emerald" />
+                        <KPICard label="MTTR" value={`${kpi.mttr_global?.toFixed(2) ?? '—'}h`} icon="timer" color="amber" />
                         <KPICard label="Fallas Correctivas" value={kpi.fallas_correctivas ?? '—'} icon="warning" color="rose" />
-                        <KPICard label="Costo Total" value={`S/ ${kpi.costo_total?.toFixed(0) ?? '—'}`} icon="payments" color="sky" />
+                        <KPICard label="Costo Total" value={`S/ ${kpi.costo_total?.toFixed(2) ?? '—'}`} icon="payments" color="sky" />
                     </>
                 )}
                 {showStations && (
@@ -172,7 +172,7 @@ export default function DashboardGerencial() {
                                     <div className="w-24 bg-slate-700 h-2 rounded-full overflow-hidden hidden sm:block">
                                         <div className={`${barColor(a.disponibilidad)} h-full rounded-full transition-all duration-500`} style={{ width: `${a.disponibilidad ?? 0}%` }}></div>
                                     </div>
-                                    <span className={`text-xs font-black font-mono w-12 text-right ${dispColor(a.disponibilidad)}`}>{a.disponibilidad?.toFixed(1) ?? '—'}%</span>
+                                    <span className={`text-xs font-black font-mono w-12 text-right ${dispColor(a.disponibilidad)}`}>{a.disponibilidad?.toFixed(2) ?? '—'}%</span>
                                 </div>
                             </div>
                         ))}

@@ -43,7 +43,7 @@ const LandingPage: React.FC = () => {
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[120px]"></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.1]"></div>
             </div>
 
             {/* HEADER */}
@@ -134,9 +134,9 @@ const LandingPage: React.FC = () => {
                         <div className="aspect-square rounded-[3rem] bg-gradient-to-br from-slate-900 to-[#030712] border border-slate-800 p-2 overflow-hidden shadow-2xl relative">
                             <div className="absolute inset-0 bg-blue-500/5 mix-blend-overlay"></div>
                             <img 
-                                src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=2070" 
+                                src="/images/landing-industrial.png" 
                                 alt="Industrial Management" 
-                                className="w-full h-full object-cover rounded-[2.5rem] grayscale hover:grayscale-0 transition-all duration-1000"
+                                className="w-full h-full object-cover rounded-[2.5rem] grayscale group-hover:grayscale-0 transition-all duration-1000"
                             />
                         </div>
                         {/* STATS OVERLAY */}

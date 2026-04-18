@@ -684,8 +684,8 @@ export default function RegistroDiario() {
                                         <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest block mb-0.5">Recorrido Neto</span>
                                         <span className="text-sm font-black text-slate-200">
                                             {selectedAsset?.forma_control === 'Horómetro'
-                                                ? (form.horometro_final && form.horometro_inicial ? `${(form.horometro_final - form.horometro_inicial).toFixed(1)} h` : '---')
-                                                : (form.km_inicial !== '' && form.km_final !== '' ? `${Number(form.km_final) - Number(form.km_inicial)} km` : '---')}
+                                                ? (form.horometro_final && form.horometro_inicial ? `${(form.horometro_final - form.horometro_inicial).toFixed(2)} h` : '---')
+                                                : (form.km_inicial !== '' && form.km_final !== '' ? `${(Number(form.km_final) - Number(form.km_inicial)).toFixed(2)} km` : '---')}
                                         </span>
                                     </div>
                                 </div>
@@ -765,7 +765,7 @@ export default function RegistroDiario() {
                                             ) : (
                                                 <>
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className="text-sm font-black text-slate-100 font-mono italic">{r.horas_reales?.toFixed(1)}h</span>
+                                                        <span className="text-sm font-black text-slate-100 font-mono italic">{r.horas_reales?.toFixed(2)}h</span>
                                                         {r.horas_reales > 8 && <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>}
                                                     </div>
                                                     <span className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">
@@ -780,7 +780,7 @@ export default function RegistroDiario() {
                                     <td>
                                         {r.horas_parada > 0 ? (
                                             <span className="px-4 py-1.5 bg-rose-500/10 text-rose-400 text-[9px] font-black rounded-xl uppercase tracking-widest border border-rose-500/20 shadow-sm inline-block">
-                                                {r.horas_parada.toFixed(1)}h Down
+                                                {r.horas_parada.toFixed(2)}h Down
                                             </span>
                                         ) : (
                                             <span className="text-[10px] font-black text-slate-600 uppercase italic">{isPendiente ? '---' : '100% On-Line'}</span>
@@ -789,7 +789,7 @@ export default function RegistroDiario() {
                                     <td>
                                         <div className="flex flex-col">
                                             <span className="text-sm font-black text-slate-200 font-mono tracking-tight">
-                                                {r.km_recorridos != null ? `+${Number(r.km_recorridos).toFixed(1)}` : '---'}
+                                                {r.km_recorridos != null ? `+${Number(r.km_recorridos).toFixed(2)}` : '---'}
                                             </span>
                                             <span className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">
                                                 {isPendiente ? 'Pendiente cierre' : 'Diferencia Neta'}
@@ -873,19 +873,19 @@ export default function RegistroDiario() {
                                 <div className="flex flex-col items-center">
                                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Jornada</span>
                                     <span className="text-sm font-black text-slate-200 font-mono">
-                                        {isPendiente ? (r.hora_inicio_jornada || '--:--') : `${r.horas_reales?.toFixed(1)}h`}
+                                        {isPendiente ? (r.hora_inicio_jornada || '--:--') : `${r.horas_reales?.toFixed(2)}h`}
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-center border-x border-slate-700">
                                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Parada</span>
                                     <span className={`text-sm font-black font-mono ${r.horas_parada > 0 ? 'text-rose-400' : 'text-slate-700'}`}>
-                                        {r.horas_parada > 0 ? `${r.horas_parada.toFixed(1)}h` : '--'}
+                                        {r.horas_parada > 0 ? `${r.horas_parada.toFixed(2)}h` : '--'}
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-center">
                                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Km</span>
                                     <span className="text-sm font-black text-slate-200 font-mono">
-                                        {r.km_recorridos != null ? `+${Number(r.km_recorridos).toFixed(0)}` : '--'}
+                                        {r.km_recorridos != null ? `+${Number(r.km_recorridos).toFixed(2)}` : '--'}
                                     </span>
                                 </div>
                             </div>

@@ -427,7 +427,7 @@ export default function RegistroFallas() {
                             <div className="grid grid-cols-3 gap-2 bg-slate-900/50 rounded-2xl p-3">
                                 <div className="flex flex-col items-center">
                                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Duracion</span>
-                                    <span className="text-sm font-black text-rose-400 font-mono">{f.duracion_horas?.toFixed(1) || '--'}h</span>
+                                    <span className="text-sm font-black text-rose-400 font-mono">{f.duracion_horas?.toFixed(2) || '0.00'}h</span>
                                 </div>
                                 <div className="flex flex-col items-center border-x border-slate-700">
                                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Sistema</span>
@@ -436,7 +436,7 @@ export default function RegistroFallas() {
                                 <div className="flex flex-col items-center">
                                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Costo</span>
                                     <span className="text-sm font-black text-slate-200 font-mono">
-                                        {f.costo_reparacion != null ? `S/${Number(f.costo_reparacion).toFixed(0)}` : '--'}
+                                        {f.costo_reparacion != null ? `S/${Number(f.costo_reparacion).toFixed(2)}` : 'S/0.00'}
                                     </span>
                                 </div>
                             </div>

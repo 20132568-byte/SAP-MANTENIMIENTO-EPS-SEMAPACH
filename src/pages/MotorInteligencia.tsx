@@ -295,7 +295,7 @@ export default function MotorInteligencia() {
                                             <span className="text-[10px] font-black text-slate-600 w-4 font-mono">{i + 1}</span>
                                             <span className="text-xs font-black text-slate-100 uppercase">{(() => { const x = assets.find(ax => ax.codigo_patrimonial === a.asset_codigo); return x?.placa_principal || a.asset_codigo })()}</span>
                                         </div>
-                                        <span className={`text-xs font-black font-mono ${a.disponibilidad < 70 ? 'text-rose-500' : 'text-amber-400'}`}>{a.disponibilidad.toFixed(1)}%</span>
+                                        <span className={`text-xs font-black font-mono ${a.disponibilidad < 70 ? 'text-rose-500' : 'text-amber-400'}`}>{a.disponibilidad.toFixed(2)}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -311,7 +311,7 @@ export default function MotorInteligencia() {
                                 {rankings.stationWorst.map((e: any, i) => (
                                     <div key={i} className="flex items-center justify-between px-5 py-3 hover:bg-slate-800">
                                         <span className="text-xs font-black text-slate-100 uppercase">{e.nombre}</span>
-                                        <span className="text-xs font-black text-rose-400 font-mono">S/ {(Number(e.costo_correctivo) || 0).toFixed(0)}</span>
+                                        <span className="text-xs font-black text-rose-400 font-mono">S/ {(Number(e.costo_correctivo) || 0).toFixed(2)}</span>
                                     </div>
                                 ))}
                             </div>
