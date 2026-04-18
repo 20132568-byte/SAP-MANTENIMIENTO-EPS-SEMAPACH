@@ -117,12 +117,12 @@ export default function MonitoreoAgua() {
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-6 sm:p-8 shadow-2xl">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-sky-900/40">
-                            <span className="material-symbols-outlined text-white text-3xl">water_drop</span>
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-sky-900/40">
+                            <span className="material-symbols-outlined text-white text-2xl md:text-3xl">water_drop</span>
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-white uppercase tracking-tight">Monitoreo de Agua</h2>
-                            <p className="text-xs font-bold text-sky-400 uppercase tracking-widest mt-1">Control de Continuidad y Presiones</p>
+                            <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tight">Monitoreo de Agua</h2>
+                            <p className="text-[10px] md:text-xs font-bold text-sky-400 uppercase tracking-widest mt-1">Control de Continuidad y Presiones</p>
                         </div>
                     </div>
 

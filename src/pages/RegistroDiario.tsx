@@ -283,12 +283,12 @@ export default function RegistroDiario() {
         <div className="animate-fade-in-up space-y-8">
             <div className="card-premium-white mb-10 border-none shadow-premium-xl flex flex-col md:flex-row md:items-center justify-between gap-8">
                 <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-sky-500 rounded-3xl flex items-center justify-center shadow-lg shadow-sky-900/40">
-                        <span className="material-symbols-outlined text-white text-3xl">edit_calendar</span>
+                    <div className="w-12 h-12 md:w-16 md:h-16 bg-sky-500 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-lg shadow-sky-900/40 flex-shrink-0">
+                        <span className="material-symbols-outlined text-white text-2xl md:text-3xl">edit_calendar</span>
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tight">Registro Diario</h2>
-                        <p className="text-sm font-bold text-sky-400 uppercase tracking-widest mt-1 italic">Control de Jornadas — Inicio y Cierre de Operación</p>
+                        <h2 className="text-xl md:text-3xl font-black text-slate-100 uppercase tracking-tight">Registro Diario</h2>
+                        <p className="text-[10px] md:text-sm font-bold text-sky-400 uppercase tracking-widest mt-1 italic">Control de Jornadas — Inicio y Cierre</p>
                     </div>
                 </div>
 
