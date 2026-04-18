@@ -71,8 +71,8 @@ const waterMenuItems = [
 
 const operatorTabs = [
     { path: '/operacion-diaria', label: 'Mi Turno', icon: 'edit_calendar' },
-    { path: '/control-ptap', label: 'PTAP', icon: 'settings_input_component' },
-    { path: '/dashboard', label: 'Flota', icon: 'dashboard' },
+    { path: '/control-ptap/proceso', label: 'PTAP', icon: 'precision_manufacturing' },
+    { path: '/dashboard', label: 'Flota', icon: 'directions_car' },
     { path: '/fallas', label: 'Fallas', icon: 'report_problem' },
 ]
 
@@ -221,38 +221,40 @@ function MainLayout() {
 
             {/* CONTENIDO PRINCIPAL */}
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-                <header className="h-16 flex items-center justify-between px-6 bg-[#05080f]/50 backdrop-blur-md border-b border-slate-900/30 z-30 flex-shrink-0">
-                    <div className="flex items-center gap-4">
+                <header className="h-16 flex items-center justify-between px-4 sm:px-6 bg-[#05080f]/50 backdrop-blur-md border-b border-slate-900/30 z-30 flex-shrink-0">
+                    <div className="flex items-center gap-3 sm:gap-4">
                         {/* Botón Volver al Home */}
                         <button onClick={() => navigate('/home')}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-cyan-500/30 rounded-xl transition-all group"
+                            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-cyan-500/30 rounded-xl transition-all group"
                             title="Volver al selector de módulos">
                             <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-cyan-400 transition-colors">home</span>
-                            <span className="text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-wider hidden sm:inline">Volver</span>
+                            <span className="text-[8px] sm:text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-wider hidden xs:inline">Volver</span>
                         </button>
 
-                        <div className="lg:hidden w-8 h-8 bg-cyan-500 flex items-center justify-center rounded-lg">
+                        <div className="xs:hidden w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center rounded-lg shadow-lg shadow-cyan-900/40">
                             <span className="material-symbols-outlined text-white text-base">water_drop</span>
                         </div>
-                        <div>
+                        <div className="hidden xs:block">
                             <h2 className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] leading-none mb-1">Módulo Actual</h2>
-                            <p className="text-sm font-black text-white uppercase tracking-tight">{currentLabel}</p>
+                            <p className="text-xs sm:text-sm font-black text-white uppercase tracking-tight truncate max-w-[120px] sm:max-w-none">{currentLabel}</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        {/* Mostrar filtro solo en módulo de Mantenimiento */}
-                        {location.pathname.includes('/dashboard') || location.pathname.includes('/activos') || location.pathname.includes('/fallas') || location.pathname.includes('/operacion') || location.pathname.includes('/preventivos') ? (
-                            <AssetTypeFilter />
-                        ) : null}
+                    <div className="flex items-center gap-2 sm:gap-6">
+                        {/* Mostrar filtro solo en módulo de Mantenimiento y en pantallas no móviles */}
+                        <div className="hidden md:block">
+                            {(location.pathname.includes('/dashboard') || location.pathname.includes('/activos') || location.pathname.includes('/fallas') || location.pathname.includes('/operacion') || location.pathname.includes('/preventivos')) && (
+                                <AssetTypeFilter />
+                            )}
+                        </div>
 
-                        <div className="hidden sm:flex items-center gap-3 px-4 py-1.5 glass-morphism rounded-full border-cyan-500/10 active:scale-95 cursor-pointer">
-                            <div className="w-6 h-6 bg-gold-gradient rounded-full flex items-center justify-center text-[10px] font-black text-white">
+                        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 glass-morphism rounded-full border-cyan-500/10 active:scale-95 cursor-pointer">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gold-gradient rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-black text-white">
                                 {user?.username?.substring(0, 2).toUpperCase()}
                             </div>
                             <div className="flex flex-col text-right">
-                                <span className="text-[9px] font-black text-white leading-none uppercase tracking-tight">{user?.username}</span>
-                                <span className="text-[8px] font-bold text-slate-500 leading-none uppercase tracking-widest mt-0.5">{user?.role}</span>
+                                <span className="text-[8px] sm:text-[9px] font-black text-white leading-none uppercase tracking-tight truncate max-w-[60px] sm:max-w-none">{user?.username}</span>
+                                <span className="text-[7px] sm:text-[8px] font-bold text-slate-500 leading-none uppercase tracking-widest mt-0.5">{user?.role}</span>
                             </div>
                         </div>
                     </div>
@@ -282,6 +284,20 @@ function MainLayout() {
                         </Routes>
                     </div>
                 </div>
+
+                {/* BOTTOM NAVIGATION PARA MÓVILES */}
+                <nav className="lg:hidden h-16 bg-[#05080f]/90 backdrop-blur-xl border-t border-slate-900/50 flex items-center justify-around px-2 z-50">
+                    {operatorTabs.map(tab => {
+                        const isActive = location.pathname.startsWith(tab.path);
+                        return (
+                            <NavLink key={tab.path} to={tab.path}
+                                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+                                <span className={`material-symbols-outlined text-[22px] ${isActive ? 'fill-1' : ''}`}>{tab.icon}</span>
+                                <span className="text-[8px] font-black uppercase tracking-widest">{tab.label}</span>
+                            </NavLink>
+                        );
+                    })}
+                </nav>
 
                 <footer className="hidden lg:flex h-10 items-center justify-between px-8 bg-[#05080f] border-t border-slate-900 flex-shrink-0">
                     <div className="flex items-center gap-2">
@@ -348,34 +364,36 @@ function HomeModules() {
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gold-500/5 rounded-full blur-[120px]"></div>
 
             {/* Header / Logo */}
-            <div className="absolute top-8 left-8 flex items-center gap-3 animate-reveal">
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-900/40">
-                    <span className="material-symbols-outlined text-white text-2xl">water_drop</span>
-                </div>
-                <div>
-                    <h1 className="text-xl font-black tracking-tighter text-white leading-none">EPS SEMAPACH</h1>
-                    <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest mt-1">Sistemas de Control</p>
-                </div>
-            </div>
-
-            {/* User Info + Logout */}
-            <div className="absolute top-8 right-8 flex items-center gap-4 animate-reveal">
-                {user && (
-                    <div className="hidden sm:flex items-center gap-3 px-4 py-2 glass-morphism rounded-full border-cyan-500/10">
-                        <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-[10px] font-black text-white">
-                            {user.username?.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div className="flex flex-col text-right">
-                            <span className="text-[9px] font-black text-white leading-none uppercase">{user.username}</span>
-                            <span className="text-[7px] font-bold text-slate-500 leading-none uppercase">{user.role}</span>
-                        </div>
+            <header className="fixed top-0 left-0 w-full p-6 flex flex-col sm:flex-row items-center justify-between gap-6 z-50 bg-gradient-to-b from-[#030712] via-[#030712]/80 to-transparent">
+                <div className="flex items-center gap-3 animate-reveal">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-900/40">
+                        <span className="material-symbols-outlined text-white text-xl sm:text-2xl">water_drop</span>
                     </div>
-                )}
-                <button onClick={handleLogout} className="btn-premium border border-rose-500/30 hover:border-rose-500 text-rose-400 hover:bg-rose-500/10 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-lg">logout</span>
-                    <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">Salir</span>
-                </button>
-            </div>
+                    <div>
+                        <h1 className="text-base sm:text-xl font-black tracking-tighter text-white leading-none">EPS SEMAPACH</h1>
+                        <p className="text-[8px] sm:text-[10px] text-cyan-400 font-bold uppercase tracking-widest mt-1">Sistemas de Control</p>
+                    </div>
+                </div>
+
+                {/* User Info + Logout */}
+                <div className="flex items-center gap-3 sm:gap-4 animate-reveal">
+                    {user && (
+                        <div className="flex items-center gap-3 px-3 sm:px-4 py-2 glass-morphism rounded-full border-cyan-500/10">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-black text-white">
+                                {user.username?.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="flex flex-col text-right">
+                                <span className="text-[8px] sm:text-[9px] font-black text-white leading-none uppercase">{user.username}</span>
+                                <span className="text-[7px] font-bold text-slate-500 leading-none uppercase">{user.role}</span>
+                            </div>
+                        </div>
+                    )}
+                    <button onClick={handleLogout} className="btn-premium border border-rose-500/30 hover:border-rose-500 text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 py-2 px-4 rounded-xl">
+                        <span className="material-symbols-outlined text-lg">logout</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider hidden xs:inline">Salir</span>
+                    </button>
+                </div>
+            </header>
 
             {/* Contenido Principal */}
             <div className="max-w-5xl w-full text-center z-10">
@@ -384,12 +402,12 @@ function HomeModules() {
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400">Plataforma Inteligente 2026</span>
                 </div>
 
-                <h2 className="text-5xl md:text-8xl font-black tracking-tight leading-[0.9] mb-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
+                <h2 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[0.9] mb-6 animate-reveal" style={{ animationDelay: '0.4s' }}>
                     GERENCIA DE <br />
                     <span className="gold-gradient-text">OPERACIONES</span>
                 </h2>
 
-                <p className="text-lg md:text-xl text-slate-400 font-medium max-w-2xl mx-auto mb-12 animate-reveal" style={{ animationDelay: '0.6s' }}>
+                <p className="text-base sm:text-lg md:text-xl text-slate-400 font-medium max-w-2xl mx-auto mb-10 animate-reveal" style={{ animationDelay: '0.6s' }}>
                     Selecciona el sistema al que deseas ingresar
                 </p>
 
@@ -399,18 +417,18 @@ function HomeModules() {
                         <button
                             key={module.id}
                             onClick={() => navigate(module.route)}
-                            className="group relative bg-slate-800/40 backdrop-blur-sm border border-slate-700 hover:border-slate-600 rounded-3xl p-8 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden"
+                            className="group relative bg-slate-800/40 backdrop-blur-sm border border-slate-700 hover:border-slate-600 rounded-3xl p-6 sm:p-8 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden"
                         >
                             <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${module.color} opacity-10 rounded-bl-full transition-opacity group-hover:opacity-20`}></div>
-                            <div className={`w-16 h-16 bg-gradient-to-br ${module.color} rounded-2xl flex items-center justify-center shadow-lg ${module.shadow} mb-6 group-hover:scale-110 transition-transform`}>
-                                <span className="material-symbols-outlined text-white text-3xl">{module.icon}</span>
+                            <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${module.color} rounded-2xl flex items-center justify-center shadow-lg ${module.shadow} mb-4 sm:mb-6 group-hover:scale-110 transition-transform`}>
+                                <span className="material-symbols-outlined text-white text-2xl sm:text-3xl">{module.icon}</span>
                             </div>
-                            <h3 className="text-lg font-black text-white tracking-tight mb-1">{module.title}</h3>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">{module.subtitle}</p>
-                            <p className="text-sm text-slate-400 mb-6 line-clamp-2">{module.description}</p>
-                            <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider">
+                            <h3 className="text-base sm:text-lg font-black text-white tracking-tight mb-1">{module.title}</h3>
+                            <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 sm:mb-4">{module.subtitle}</p>
+                            <p className="text-xs sm:text-sm text-slate-400 mb-4 sm:mb-6 line-clamp-2">{module.description}</p>
+                            <div className="flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-wider">
                                 <span className={`bg-gradient-to-r ${module.color} bg-clip-text text-transparent`}>Acceder</span>
-                                <span className="material-symbols-outlined text-lg group-hover:translate-x-2 transition-transform">arrow_forward</span>
+                                <span className="material-symbols-outlined text-base sm:text-lg group-hover:translate-x-2 transition-transform">arrow_forward</span>
                             </div>
                         </button>
                     ))}

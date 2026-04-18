@@ -25,18 +25,18 @@ export default function ControlPTAP() {
     return (
         <div className="animate-fade-in-up space-y-8 min-h-screen text-slate-100 p-4 md:p-8">
             {/* CABECERA PRINCIPAL */}
-            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl mb-10 shadow-premium-xl flex flex-col md:flex-row md:items-center justify-between gap-8">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-emerald-600 rounded-3xl flex items-center justify-center shadow-lg shadow-emerald-900/40">
-                        <span className="material-symbols-outlined text-white text-4xl">precision_manufacturing</span>
+            <div className="bg-slate-800/50 border border-slate-700 p-6 md:p-8 rounded-3xl mb-10 shadow-premium-xl flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div className="flex items-center gap-5 md:gap-6">
+                    <div className="w-12 h-12 md:w-16 md:h-16 bg-emerald-600 rounded-2xl md:rounded-3xl flex items-center justify-center shadow-lg shadow-emerald-900/40 flex-shrink-0">
+                        <span className="material-symbols-outlined text-white text-2xl md:text-4xl">precision_manufacturing</span>
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tight">Control PTAP Portachuelo</h2>
-                        <p className="text-sm font-bold text-emerald-400 uppercase tracking-widest mt-1 italic">Planta de Tratamiento de Agua Potable — EPS SEMAPACH</p>
+                        <h2 className="text-xl md:text-3xl font-black text-slate-100 uppercase tracking-tight">Control PTAP Portachuelo</h2>
+                        <p className="text-[10px] md:text-sm font-bold text-emerald-400 uppercase tracking-widest mt-1 italic">Planta de Tratamiento — EPS SEMAPACH</p>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex row md:flex-col gap-3">
                     <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
                         <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Estado: Operativo</span>
                     </div>
@@ -70,7 +70,7 @@ export default function ControlPTAP() {
 
                 {isDosis && (
                     <div className="animate-fade-in-up">
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <CalculadoraDosis />
                             <CronogramaSemanal />
                         </div>
