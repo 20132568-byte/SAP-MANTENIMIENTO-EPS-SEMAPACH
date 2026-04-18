@@ -151,58 +151,58 @@ export default function DashboardOperativo() {
                 <>
                     {/* KPIs Flota - Estilo Premium */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:border-emerald-500/30 transition-all duration-300 group">
-                            <div className="flex items-center justify-between mb-6">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-emerald-500/20 rounded-[2.5rem] p-12 shadow-2xl hover:shadow-emerald-500/10 hover:border-emerald-500/40 transition-all duration-500 group">
+                            <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <span className="text-xs font-black text-emerald-400 uppercase tracking-wider block mb-2">Disponibilidad Global</span>
-                                    <div className="text-5xl lg:text-6xl font-black text-white">{kpi.disponibilidad_global?.toFixed(2) ?? '—'}<span className="text-2xl text-slate-500 ml-1">%</span></div>
+                                    <span className="text-sm font-black text-emerald-400 uppercase tracking-[0.3em] block mb-4">Disponibilidad Global</span>
+                                    <div className="text-7xl lg:text-8xl font-black text-white tracking-tighter">{kpi.disponibilidad_global?.toFixed(1) ?? '—'}<span className="text-3xl text-slate-500 ml-2">%</span></div>
                                 </div>
-                                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                                    <span className="material-symbols-outlined text-emerald-400 text-4xl">check_circle</span>
+                                <div className="w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner border border-emerald-500/20">
+                                    <span className="material-symbols-outlined text-emerald-400 text-5xl">check_circle</span>
                                 </div>
                             </div>
-                            <div className="w-full bg-slate-700/30 h-3 rounded-full overflow-hidden shadow-inner">
-                                <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full transition-all duration-1000" style={{ width: `${kpi.disponibilidad_global ?? 0}%` }}></div>
+                            <div className="w-full bg-slate-900/50 h-4 rounded-full overflow-hidden shadow-inner border border-slate-800">
+                                <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(16,185,129,0.4)]" style={{ width: `${kpi.disponibilidad_global ?? 0}%` }}></div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-amber-500/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:border-amber-500/30 transition-all duration-300 group">
-                            <div className="flex items-center justify-between mb-6">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-amber-500/20 rounded-[2.5rem] p-12 shadow-2xl hover:shadow-amber-500/10 hover:border-amber-500/40 transition-all duration-500 group">
+                            <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <span className="text-xs font-black text-amber-400 uppercase tracking-wider block mb-2">MTTR Estimado</span>
-                                    <div className="text-5xl lg:text-6xl font-black text-white">{kpi.mttr_global?.toFixed(2) ?? '—'}<span className="text-2xl text-slate-500 ml-1">h</span></div>
+                                    <span className="text-sm font-black text-amber-400 uppercase tracking-[0.3em] block mb-4">MTTR Estimado</span>
+                                    <div className="text-7xl lg:text-8xl font-black text-white tracking-tighter">{kpi.mttr_global?.toFixed(1) ?? '—'}<span className="text-3xl text-slate-500 ml-2">h</span></div>
                                 </div>
-                                <div className="w-20 h-20 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                                    <span className="material-symbols-outlined text-amber-400 text-4xl">timer</span>
+                                <div className="w-24 h-24 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner border border-amber-500/20">
+                                    <span className="material-symbols-outlined text-amber-400 text-5xl">timer</span>
                                 </div>
                             </div>
-                            <div className="text-xs bg-amber-500/10 inline-block px-3 py-1 rounded-full text-amber-300/80 font-black uppercase tracking-widest">Meta: &lt;5h</div>
+                            <div className="text-xs bg-amber-500/10 border border-amber-500/20 inline-block px-5 py-2 rounded-xl text-amber-300 font-black uppercase tracking-[0.2em]">Meta: &lt;5.0h</div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-rose-500/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:border-rose-500/30 transition-all duration-300 group">
-                            <div className="flex items-center justify-between mb-6">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-rose-500/20 rounded-[2.5rem] p-12 shadow-2xl hover:shadow-rose-500/10 hover:border-rose-500/40 transition-all duration-500 group">
+                            <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <span className="text-xs font-black text-rose-400 uppercase tracking-wider block mb-2">Fallas Críticas</span>
-                                    <div className="text-5xl lg:text-6xl font-black text-white">{kpi.fallas_correctivas ?? '—'}</div>
+                                    <span className="text-sm font-black text-rose-400 uppercase tracking-[0.3em] block mb-4">Fallas Críticas</span>
+                                    <div className="text-7xl lg:text-8xl font-black text-white tracking-tighter">{kpi.fallas_correctivas ?? '—'}</div>
                                 </div>
-                                <div className="w-20 h-20 bg-gradient-to-br from-rose-500/20 to-rose-600/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                                    <span className="material-symbols-outlined text-rose-400 text-4xl">warning</span>
+                                <div className="w-24 h-24 bg-gradient-to-br from-rose-500/20 to-rose-600/20 rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner border border-rose-500/20">
+                                    <span className="material-symbols-outlined text-rose-400 text-5xl">warning</span>
                                 </div>
                             </div>
-                            <div className="text-xs bg-rose-500/10 inline-block px-3 py-1 rounded-full text-rose-300/80 font-black uppercase tracking-widest">Total: {kpi.total_fallas ?? '—'}</div>
+                            <div className="text-xs bg-rose-500/10 border border-rose-500/20 inline-block px-5 py-2 rounded-xl text-rose-300 font-black uppercase tracking-[0.2em]">Total Eventos: {kpi.total_fallas ?? '—'}</div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-sky-500/20 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:border-sky-500/30 transition-all duration-300 group">
-                            <div className="flex items-center justify-between mb-6">
+                        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-sky-500/20 rounded-[2.5rem] p-12 shadow-2xl hover:shadow-sky-500/10 hover:border-sky-500/40 transition-all duration-500 group">
+                            <div className="flex items-center justify-between mb-8">
                                 <div>
-                                    <span className="text-xs font-black text-sky-400 uppercase tracking-wider block mb-2">Preventivos Realizados</span>
-                                    <div className="text-5xl lg:text-6xl font-black text-white">{kpi.preventivos_ejecutados ?? '—'}</div>
+                                    <span className="text-sm font-black text-sky-400 uppercase tracking-[0.3em] block mb-4">Preventivos Realizados</span>
+                                    <div className="text-7xl lg:text-8xl font-black text-white tracking-tighter">{kpi.preventivos_ejecutados ?? '—'}</div>
                                 </div>
-                                <div className="w-20 h-20 bg-gradient-to-br from-sky-500/20 to-sky-600/20 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                                    <span className="material-symbols-outlined text-sky-400 text-4xl">engineering</span>
+                                <div className="w-24 h-24 bg-gradient-to-br from-sky-500/20 to-sky-600/20 rounded-[2rem] flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner border border-sky-500/20">
+                                    <span className="material-symbols-outlined text-sky-400 text-5xl">engineering</span>
                                 </div>
                             </div>
-                            <div className="text-xs bg-sky-500/10 inline-block px-3 py-1 rounded-full text-sky-300/80 font-black uppercase tracking-widest">Inversión: S/ {kpi.costo_preventivo?.toLocaleString() ?? '—'}</div>
+                            <div className="text-xs bg-sky-500/10 border border-sky-500/20 inline-block px-5 py-2 rounded-xl text-sky-300 font-black uppercase tracking-[0.2em]">Ejecución: S/ {kpi.costo_preventivo?.toLocaleString() ?? '—'}</div>
                         </div>
                     </div>
 
@@ -218,15 +218,15 @@ export default function DashboardOperativo() {
                                     <span className="text-xs font-black text-slate-100 bg-slate-700 px-4 py-1.5 rounded-xl shadow-lg border border-white/5">{backlog.length} activos</span>
                                 </div>
                                 <div className="p-10 flex flex-col items-center">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full mb-12">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full mb-16">
                                         {Object.entries(backlogByStatus).map(([status, count]) => (
-                                            <div key={status} className="bg-slate-900/50 p-5 rounded-2xl border border-slate-700/50 shadow-inner group hover:border-emerald-500/30 transition-all duration-300 text-center">
-                                                <div className={`text-4xl font-black mb-1 ${status === 'Vencido' ? 'text-rose-400' : status === 'Crítico' ? 'text-amber-400' : status === 'Próximo' ? 'text-sky-400' : 'text-emerald-400'}`}>{count as number}</div>
-                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">{status}</div>
+                                            <div key={status} className="bg-slate-900/40 p-10 rounded-[2rem] border border-slate-700/50 shadow-inner group hover:border-white/20 transition-all duration-500 text-center">
+                                                <div className={`text-6xl lg:text-7xl font-black mb-4 tracking-tighter ${status === 'Vencido' ? 'text-rose-500' : status === 'Crítico' ? 'text-amber-500' : status === 'Próximo' ? 'text-sky-500' : 'text-emerald-500'}`}>{count as number}</div>
+                                                <div className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] group-hover:text-white transition-colors">{status}</div>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="w-full h-[320px] relative">
+                                    <div className="w-full h-[600px] relative">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie 
@@ -235,23 +235,24 @@ export default function DashboardOperativo() {
                                                     nameKey="name" 
                                                     cx="50%" 
                                                     cy="50%" 
-                                                    innerRadius={80} 
-                                                    outerRadius={130}
-                                                    paddingAngle={5}
+                                                    innerRadius={150} 
+                                                    outerRadius={240}
+                                                    paddingAngle={6}
                                                     stroke="none"
                                                 >
                                                     {backlogChartData.map((entry, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} className="focus:outline-none" />)}
                                                 </Pie>
                                                 <Tooltip 
-                                                    contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 16, fontSize: 12, fontWeight: 'bold', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} 
+                                                    contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 24, fontSize: 14, fontWeight: '900', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.5)' }} 
                                                     itemStyle={{ color: '#fff' }}
                                                 />
                                             </PieChart>
                                         </ResponsiveContainer>
                                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                            <span className="text-4xl font-black text-white leading-none">{backlog.length}</span>
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Activos</span>
+                                            <span className="text-8xl font-black text-white leading-none tracking-tighter shadow-2xl">{backlog.length}</span>
+                                            <span className="text-sm font-black text-slate-500 uppercase tracking-[0.5em] mt-4">Activos Totales</span>
                                         </div>
+                                    </div>
                                     </div>
                                 </div>
                             </div>

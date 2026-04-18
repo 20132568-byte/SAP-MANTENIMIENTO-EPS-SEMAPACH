@@ -159,15 +159,15 @@ export default function GestionPreventivos() {
                     </div>
                 </div>
                 
-                <div className="lg:col-span-4 bg-slate-800/40 border border-slate-700/50 rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-6 p-10 hover:border-sky-500/30 transition-colors group">
-                    <div className="h-56 w-56 flex-shrink-0 relative">
+                <div className="lg:col-span-4 bg-slate-800/40 border border-slate-700/50 rounded-[3rem] shadow-2xl flex flex-col items-center gap-10 p-12 hover:border-sky-500/30 transition-all duration-500 group">
+                    <div className="h-96 w-96 flex-shrink-0 relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie 
                                     data={backlogStats} 
-                                    innerRadius={70} 
-                                    outerRadius={105} 
-                                    paddingAngle={6} 
+                                    innerRadius={120} 
+                                    outerRadius={180} 
+                                    paddingAngle={8} 
                                     dataKey="value"
                                     stroke="none"
                                 >
@@ -177,20 +177,20 @@ export default function GestionPreventivos() {
                                 </Pie>
                             </PieChart>
                         </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none group-hover:scale-110 transition-transform">
-                            <span className="text-5xl font-black text-white leading-none tracking-tighter">{backlog.length}</span>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-1">Activos</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                            <span className="text-7xl font-black text-white leading-none tracking-tighter">{backlog.length}</span>
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] mt-3">Activos</span>
                         </div>
                     </div>
                     <div className="w-full">
-                        <span className="text-[11px] font-black text-sky-400 uppercase tracking-[0.4em] mb-6 block text-center">Estado Global de Salud</span>
-                        <div className="grid grid-cols-2 gap-4">
+                        <span className="text-sm font-black text-sky-400 uppercase tracking-[0.5em] mb-10 block text-center">Estado Global de Salud</span>
+                        <div className="grid grid-cols-2 gap-6">
                             {backlogStats.map((s, i) => (
-                                <div key={i} className="flex items-center gap-3 bg-slate-900/40 p-3 rounded-xl border border-slate-800/50 group-hover:border-slate-700/50 transition-colors">
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }}></div>
+                                <div key={i} className="flex items-center gap-5 bg-slate-900/60 p-5 rounded-2xl border border-slate-700/50 group-hover:border-slate-500/30 transition-all duration-300">
+                                    <div className="w-4 h-4 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]" style={{ backgroundColor: s.color }}></div>
                                     <div className="flex flex-col">
-                                        <span className="text-lg font-black text-white leading-none">{s.value}</span>
-                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{s.name}</span>
+                                        <span className="text-2xl font-black text-white leading-none tracking-tighter">{s.value}</span>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{s.name}</span>
                                     </div>
                                 </div>
                             ))}
