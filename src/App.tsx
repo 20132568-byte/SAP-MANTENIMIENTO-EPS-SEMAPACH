@@ -405,24 +405,52 @@ function HomeModules() {
                     Selecciona el sistema al que deseas ingresar
                 </p>
 
-                {/* Grid de Módulos - 3 Columnas */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-reveal" style={{ animationDelay: '0.8s' }}>
+                {/* Grid de Módulos - 3 Columnas Pro Premium */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto animate-reveal" style={{ animationDelay: '0.8s' }}>
                     {modules.map((module) => (
                         <button
                             key={module.id}
                             onClick={() => navigate(module.route)}
-                            className="group relative bg-slate-800/40 backdrop-blur-sm border border-slate-700 hover:border-slate-600 rounded-3xl p-6 sm:p-8 text-left transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden"
+                            className="group relative bg-[#0f172a]/40 backdrop-blur-xl border border-slate-800/50 hover:border-cyan-500/30 rounded-[2.5rem] p-8 text-left transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
                         >
-                            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${module.color} opacity-10 rounded-bl-full transition-opacity group-hover:opacity-20`}></div>
-                            <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${module.color} rounded-2xl flex items-center justify-center shadow-lg ${module.shadow} mb-4 sm:mb-6 group-hover:scale-110 transition-transform`}>
-                                <span className="material-symbols-outlined text-white text-2xl sm:text-3xl">{module.icon}</span>
+                            {/* Decoración de Fondo Industrial */}
+                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/[0.02] rounded-full blur-3xl group-hover:bg-cyan-500/10 transition-colors duration-700"></div>
+                            <div className="absolute top-4 right-8 text-[40px] font-black text-white/[0.03] uppercase tracking-tighter select-none pointer-events-none group-hover:text-white/[0.05] transition-all">
+                                {module.id === 'mantenimiento' ? 'MNT' : module.id === 'ptap' ? 'PTAP' : 'PRES'}
                             </div>
-                            <h3 className="text-base sm:text-lg font-black text-white tracking-tight mb-1">{module.title}</h3>
-                            <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 sm:mb-4">{module.subtitle}</p>
-                            <p className="text-xs sm:text-sm text-slate-400 mb-4 sm:mb-6 line-clamp-2">{module.description}</p>
-                            <div className="flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-wider">
-                                <span className={`bg-gradient-to-r ${module.color} bg-clip-text text-transparent`}>Acceder</span>
-                                <span className="material-symbols-outlined text-base sm:text-lg group-hover:translate-x-2 transition-transform">arrow_forward</span>
+
+                            {/* Icono con Glow */}
+                            <div className={`relative w-16 h-16 bg-gradient-to-br ${module.color} rounded-2xl flex items-center justify-center shadow-2xl ${module.shadow} mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+                                <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <span className="material-symbols-outlined text-white text-3xl">{module.icon}</span>
+                            </div>
+
+                            {/* Etiquetas y Título */}
+                            <div className="space-y-4">
+                                <div>
+                                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-gradient-to-r ${module.color} text-white mb-3 shadow-lg shadow-black/20`}>
+                                        {module.subtitle.split(' ')[0]}
+                                    </div>
+                                    <h3 className="text-xl font-black text-white tracking-tight leading-tight group-hover:text-cyan-400 transition-colors">
+                                        {module.title}
+                                    </h3>
+                                </div>
+                                <p className="text-sm text-slate-500 leading-relaxed font-medium group-hover:text-slate-400 transition-colors duration-300">
+                                    {module.description}
+                                </p>
+                            </div>
+
+                            {/* Barra de Progreso / Acción Decorativa */}
+                            <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em]">
+                                    <span className={`bg-gradient-to-r ${module.color} bg-clip-text text-transparent`}>Explorar Módulo</span>
+                                    <span className="material-symbols-outlined text-base text-cyan-500 group-hover:translate-x-2 transition-transform duration-300">arrow_forward</span>
+                                </div>
+                                <div className="flex gap-1">
+                                    <div className="w-1 h-1 rounded-full bg-slate-700"></div>
+                                    <div className="w-1 h-1 rounded-full bg-slate-700"></div>
+                                    <div className="w-4 h-1 rounded-full bg-cyan-600"></div>
+                                </div>
                             </div>
                         </button>
                     ))}
