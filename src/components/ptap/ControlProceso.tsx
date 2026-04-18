@@ -228,7 +228,6 @@ export default function ControlProceso() {
                     </div>
 
                     <div className="p-4 md:p-8 space-y-8">
-                        {/* DOSIFICACIÓN Y APERTURA EN UNA SOLA FILA RESPONSIVA */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-slate-800/20 border border-white/5 p-4 rounded-2xl">
                                 <h5 className="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center gap-2 opacity-80">
@@ -252,7 +251,6 @@ export default function ControlProceso() {
                             </div>
                         </div>
 
-                        {/* AGUA CRUDA — GRIDS DE ALTA DENSIDAD */}
                         <div className="bg-slate-800/20 border border-white/5 p-4 rounded-2xl">
                             <h5 className="text-[8px] font-black text-sky-400 uppercase tracking-widest mb-3 flex items-center gap-2 opacity-80">
                                 <span className="w-1 h-3 bg-sky-400 rounded-full"></span>
@@ -270,7 +268,6 @@ export default function ControlProceso() {
                             </div>
                         </div>
 
-                        {/* PROCESO INTERMEDIO — DISEÑO COMPACTO */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-white/5 border border-white/5 p-4 rounded-2xl">
                                 <h5 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest pl-2 border-l-2 border-indigo-500 mb-3">Decantador</h5>
@@ -289,9 +286,7 @@ export default function ControlProceso() {
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                        {/* AGUA TRATADA — DISEÑO DE ALTA DENSIDAD */}
                         <div className="bg-slate-800/20 border border-white/5 p-4 rounded-2xl">
                             <h5 className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-3 flex items-center gap-2 opacity-80">
                                 <span className="w-1 h-3 bg-emerald-500 rounded-full"></span>
