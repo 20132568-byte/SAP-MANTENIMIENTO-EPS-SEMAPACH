@@ -69,7 +69,10 @@ export const api = {
     createPreventiveConfig: (data: any) => request<any>('/preventive/config', { method: 'POST', body: JSON.stringify(data) }),
     updatePreventiveConfig: (id: number, data: any) => request<any>(`/preventive/config/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     deletePreventiveConfig: (id: number) => request<any>(`/preventive/config/${id}`, { method: 'DELETE' }),
-    getPreventiveBacklog: () => request<any[]>('/preventive/backlog'),
+    getPreventiveBacklog: (params?: Record<string, string>) => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+        return request<any[]>(`/preventive/backlog${qs}`)
+    },
 
     // === Diagnóstico inicial ===
     getDiagnoses: (params?: Record<string, string>) => {
