@@ -6,9 +6,11 @@ import { dbGet, dbRun, dbAll } from '../database.js'
 
 export const authRouter = Router()
 
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET) {
-    throw new Error('FATAL: JWT_SECRET no definido en el entorno')
+// Clave Secreta para JWT (Fallback para desarrollo local)
+const JWT_SECRET = process.env.JWT_SECRET || 'semapach_dev_secret_2026_key'
+
+if (!process.env.JWT_SECRET) {
+    console.warn('⚠️ [AUTH] JWT_SECRET no definido. Usando clave de desarrollo por defecto.')
 }
 
 // Configuración de Email
