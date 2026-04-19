@@ -5,8 +5,8 @@ import XLSX from 'xlsx'
 
 export const iaRouter = Router()
 
-const QWEN_API_KEY = process.env.QWEN_API_KEY
-const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+const QWEN_API_KEY = process.env.QWEN_API_KEY || ''
 
 /** 
  * Función para cargar conocimiento local (Excel) 
@@ -50,7 +50,7 @@ iaRouter.post('/chat', async (req, res) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'qwen-turbo',
+                model: 'qwen3.5-plus',
                 messages: [
                     { 
                         role: 'system', 
