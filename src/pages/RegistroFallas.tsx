@@ -200,7 +200,11 @@ export default function RegistroFallas() {
                             <select value={form.asset_id} onChange={e => set('asset_id', e.target.value)} 
                                 className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3.5 px-5 shadow-sm text-slate-200">
                                 <option value="" className="bg-slate-800">Seleccionar Activo...</option>
-                                {assets.map((a: any) => <option key={a.id} value={a.id} className="bg-slate-800">{a.placa_principal || 'S/P'} — {a.codigo_patrimonial}</option>)}
+                                {assets.filter((as: any) => as.categoria === assetType).map((a: any) => (
+                                    <option key={a.id} value={a.id} className="bg-slate-800">
+                                        {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div className="md:col-span-2 space-y-2">

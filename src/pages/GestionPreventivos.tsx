@@ -225,7 +225,11 @@ export default function GestionPreventivos() {
                             <select value={form.asset_id} onChange={e => set('asset_id', e.target.value)} 
                                 className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm focus:ring-sky-500 text-slate-200">
                                 <option value="" className="bg-slate-950">Seleccionar Activo...</option>
-                                {assets.map((a: any) => <option key={a.id} value={a.id} className="bg-slate-950">{a.placa_principal || 'S/P'} — {a.codigo_patrimonial}</option>)}
+                                {assets.filter((as: any) => as.categoria === assetType).map((a: any) => (
+                                    <option key={a.id} value={a.id} className="bg-slate-950">
+                                        {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div className="space-y-3">
