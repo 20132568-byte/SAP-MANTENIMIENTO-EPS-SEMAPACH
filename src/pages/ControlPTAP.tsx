@@ -4,8 +4,8 @@ import ControlProceso from '../components/ptap/ControlProceso';
 import ConsumoCloro from '../components/ptap/ConsumoCloro';
 import CalculadoraDosis from '../components/ptap/CalculadoraDosis';
 import CronogramaSemanal from '../components/ptap/CronogramaSemanal';
-
 import DashboardPTAP from '../components/ptap/DashboardPTAP';
+import AsistenteIA from '../components/ptap/AsistenteIA';
 
 export default function ControlPTAP() {
     const location = useLocation();
@@ -16,6 +16,7 @@ export default function ControlPTAP() {
     const isCloro = location.pathname.includes('/cloro');
     const isDosis = location.pathname.includes('/dosis');
     const isCronograma = location.pathname.includes('/cronograma');
+    const isIA = location.pathname.includes('/ia');
 
     // Si estamos en la ruta base /control-ptap, redirigir a la primera pestaña
     if (location.pathname === '/control-ptap' || location.pathname === '/control-ptap/') {
@@ -80,6 +81,12 @@ export default function ControlPTAP() {
                 {isCronograma && (
                     <div className="animate-fade-in-up">
                         <CronogramaSemanal />
+                    </div>
+                )}
+
+                {isIA && (
+                    <div className="animate-fade-in-up">
+                        <AsistenteIA />
                     </div>
                 )}
             </div>

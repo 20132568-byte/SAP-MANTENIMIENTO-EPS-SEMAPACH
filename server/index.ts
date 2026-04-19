@@ -16,6 +16,7 @@ import { kpiRouter } from './routes/kpi.js'
 import { waterRouter } from './routes/water.js'
 import { stationsRouter } from './routes/stations.js'
 import { authRouter } from './routes/auth.js'
+import { iaRouter } from './routes/ia.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -39,6 +40,7 @@ async function main() {
     app.use('/api/kpi', kpiRouter)
     app.use('/api/water', waterRouter)
     app.use('/api/stations', stationsRouter)
+    app.use('/api/ia', iaRouter)
 
     app.get('/api/health', (_req, res) => {
         res.json({ status: 'ok', port: PORT })

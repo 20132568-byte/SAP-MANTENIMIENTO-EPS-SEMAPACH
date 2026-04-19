@@ -51,9 +51,9 @@ const ptapMenuItems = [
         section: 'Módulo Portachuelo', items: [
             { path: '/control-ptap/proceso', label: 'Control Fisicoquímico', icon: 'biotech', appliesTo: 'all' },
             { path: '/control-ptap/dashboard', label: 'Dashboard Diario', icon: 'analytics', appliesTo: 'all' },
-            { path: '/control-ptap/cloro', label: 'Consumo Cloro', icon: 'gas_meter', appliesTo: 'all' },
-            { path: '/control-ptap/dosis', label: 'Calculadora de Dosis', icon: 'calculate', appliesTo: 'all' },
+            {path: '/control-ptap/dosis', label: 'Calculadora de Dosis', icon: 'calculate', appliesTo: 'all' },
             { path: '/control-ptap/cronograma', label: 'Cronograma Semanal', icon: 'event_note', appliesTo: 'all' },
+            { path: '/control-ptap/ia', label: 'Asistente IA (RAG)', icon: 'psychology', appliesTo: 'all' },
         ]
     }
 ]
@@ -304,7 +304,7 @@ function MainLayout() {
                     <div className="flex items-center gap-2">
                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Status:</span>
                         <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.4)]"></div>
-                        <span className="text-[9px] font-black text-cyan-500/60 uppercase tracking-tighter">v1.6 Ultra Premium</span>
+                        <span className="text-[9px] font-black text-cyan-500/60 uppercase tracking-tighter">v1.9 Ultra Premium</span>
                     </div>
                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">EPS SEMAPACH — 2026</span>
                 </footer>
