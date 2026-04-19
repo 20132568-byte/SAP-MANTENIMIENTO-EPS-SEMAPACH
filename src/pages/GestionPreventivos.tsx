@@ -126,48 +126,56 @@ export default function GestionPreventivos() {
 
     return (
         <div className="animate-fade-in-up space-y-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-10 rounded-[2.5rem] mb-12 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-10">
-                <div className="flex items-center gap-8">
-                    <div className="w-20 h-20 bg-gradient-to-br from-sky-500 to-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-sky-900/50 transform hover:scale-110 transition-transform">
-                        <span className="material-symbols-outlined text-white text-4xl">event_repeat</span>
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-6 rounded-[2rem] mb-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-sky-900/50 group-hover:scale-110 transition-transform">
+                        <span className="material-symbols-outlined text-white text-3xl">event_repeat</span>
                     </div>
                     <div>
-                        <h2 className="text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter">Gestión de Preventivos</h2>
-                        <p className="text-xs lg:text-sm font-black text-sky-400 uppercase tracking-[0.3em] mt-2 flex items-center gap-3">
-                            <span className="w-2 h-2 bg-sky-400 rounded-full animate-pulse"></span>
-                            Ciclos Maestros & Mantenimiento Programado
+                        <h2 className="text-3xl lg:text-4xl font-black text-white uppercase tracking-tighter">Gestión de Preventivos</h2>
+                        <p className="text-[10px] font-black text-sky-400 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-sky-400 rounded-full animate-pulse"></span>
+                            Ciclos Maestros & Mantenimiento
                         </p>
                     </div>
                 </div>
                 
                 <button onClick={openNewForm}
-                    className="bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 text-white text-xs font-black uppercase tracking-[0.2em] px-12 py-6 rounded-2xl transition-all flex items-center justify-center gap-4 shadow-2xl shadow-sky-900/40 hover:-translate-y-1 active:scale-95 group">
-                    <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">add_task</span>
-                    Registrar Ejecución
+                    className="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 group">
+                    <span className="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">add_task</span>
+                    Registrar Mantenimiento
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                <div className="lg:col-span-8 flex items-center">
-                    <div className="bg-slate-900/50 p-2 rounded-3xl border border-slate-700/60 backdrop-blur-md flex gap-2">
+            <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                <div className="flex-1 bg-slate-900/30 p-4 rounded-[2rem] border border-slate-800/60 backdrop-blur-md flex flex-col gap-6">
+                    <div className="flex bg-slate-950/60 p-1.5 rounded-2xl border border-slate-800/50 self-start">
                         {(['backlog', 'registros', 'config'] as const).map(t => (
                             <button key={t} onClick={() => setTab(t)}
-                                className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all duration-300 ${tab === t ? 'bg-sky-600 text-white shadow-xl shadow-sky-900/40 -translate-y-[1px]' : 'text-slate-500 hover:text-sky-400 hover:bg-slate-800'}`}>
-                                {t === 'backlog' ? 'Panel de Control' : t === 'registros' ? 'Historial de Mtto' : 'Estrategia Operativa'}
+                                className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 ${tab === t ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/40' : 'text-slate-500 hover:text-sky-400 hover:bg-slate-800'}`}>
+                                {t === 'backlog' ? 'Panel de Control' : t === 'registros' ? 'Historial Mtto' : 'Estrategia Operativa'}
                             </button>
                         ))}
                     </div>
+
+                    <div className="flex-1 flex items-center justify-center text-center p-8">
+                        <div className="max-w-md">
+                            <span className="material-symbols-outlined text-5xl text-sky-500/30 mb-4">analytics</span>
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Visión de Continuidad</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed font-bold uppercase tracking-widest">Analizando {backlog.length} activos en tiempo real para optimizar la vida útil del equipamiento.</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <div className="lg:col-span-4 bg-slate-800/40 border border-slate-700/50 rounded-[3rem] shadow-2xl flex flex-col items-center gap-10 p-12 hover:border-sky-500/30 transition-all duration-500 group">
-                    <div className="h-96 w-96 flex-shrink-0 relative">
+                <div className="lg:w-[400px] bg-slate-900/40 border border-slate-800/60 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center gap-6 group">
+                    <div className="h-52 w-52 flex-shrink-0 relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie 
                                     data={backlogStats} 
-                                    innerRadius={120} 
-                                    outerRadius={180} 
-                                    paddingAngle={8} 
+                                    innerRadius={70} 
+                                    outerRadius={100} 
+                                    paddingAngle={6} 
                                     dataKey="value"
                                     stroke="none"
                                 >
@@ -177,20 +185,19 @@ export default function GestionPreventivos() {
                                 </Pie>
                             </PieChart>
                         </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none group-hover:scale-110 transition-transform duration-500">
-                            <span className="text-7xl font-black text-white leading-none tracking-tighter">{backlog.length}</span>
-                            <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] mt-3">Activos</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-4xl font-black text-white leading-none tracking-tighter">{backlog.length}</span>
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">Activos</span>
                         </div>
                     </div>
                     <div className="w-full">
-                        <span className="text-sm font-black text-sky-400 uppercase tracking-[0.5em] mb-10 block text-center">Estado Global de Salud</span>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-2 gap-3">
                             {backlogStats.map((s, i) => (
-                                <div key={i} className="flex items-center gap-5 bg-slate-900/60 p-5 rounded-2xl border border-slate-700/50 group-hover:border-slate-500/30 transition-all duration-300">
-                                    <div className="w-4 h-4 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]" style={{ backgroundColor: s.color }}></div>
-                                    <div className="flex flex-col">
-                                        <span className="text-2xl font-black text-white leading-none tracking-tighter">{s.value}</span>
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{s.name}</span>
+                                <div key={i} className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }}></div>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-lg font-black text-white tracking-tighter">{s.value}</span>
+                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{s.name}</span>
                                     </div>
                                 </div>
                             ))}
