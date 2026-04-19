@@ -253,45 +253,47 @@ export default function DashboardOperativo() {
                                             <span className="text-sm font-black text-slate-500 uppercase tracking-[0.5em] mt-4">Activos Totales</span>
                                         </div>
                                     </div>
-                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {/* Ranking */}
                         {assetKpis.length > 0 && (
-                            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
-                                <div className="px-5 py-4 border-b border-slate-700">
-                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest">Ranking por Disponibilidad</h3>
+                            <div className="bg-slate-800/50 border border-slate-700 rounded-3xl overflow-hidden shadow-premium-lg">
+                                <div className="px-8 py-6 border-b border-slate-700 bg-slate-900/40">
+                                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-amber-400 text-xl">workspace_premium</span>
+                                        Ranking de Disponibilidad
+                                    </h3>
                                 </div>
-                                <div className="overflow-x-auto max-h-80 overflow-y-auto no-scrollbar">
+                                <div className="overflow-x-auto max-h-[600px] overflow-y-auto no-scrollbar">
                                     <table className="w-full text-xs">
                                         <thead>
                                             <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                                                <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">#</th>
-                                                <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Activo</th>
-                                                <th className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase hidden sm:table-cell">Tipo</th>
-                                                <th className="text-center px-4 py-3 text-[10px] font-black text-slate-400 uppercase">Disponibilidad</th>
+                                                <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase">#</th>
+                                                <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Activo</th>
+                                                <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase hidden sm:table-cell">Tipo</th>
+                                                <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Estado</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {[...assetKpis].sort((a, b) => (a.disponibilidad ?? 100) - (b.disponibilidad ?? 100)).slice(0, 10).map((a, i) => {
+                                            {[...assetKpis].sort((a, b) => (a.disponibilidad ?? 100) - (b.disponibilidad ?? 100)).map((a, i) => {
                                                 const asset = assets.find(x => x.codigo_patrimonial === a.asset_codigo)
                                                 const dispColor = (a.disponibilidad ?? 0) >= 90 ? 'text-emerald-400' : (a.disponibilidad ?? 0) >= 75 ? 'text-amber-400' : 'text-rose-400'
                                                 return (
-                                                    <tr key={a.asset_id} className="border-b border-slate-700/30 hover:bg-slate-700/20">
-                                                        <td className="px-4 py-3 font-mono text-slate-500 font-bold">{i + 1}</td>
-                                                        <td className="px-4 py-3">
-                                                            <div className="text-white font-medium">{asset?.placa_principal || a.asset_codigo}</div>
-                                                            <div className="text-[10px] text-slate-500 font-mono">{a.asset_codigo}</div>
+                                                    <tr key={a.asset_id} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
+                                                        <td className="px-6 py-5 font-mono text-slate-500 font-bold">{i + 1}</td>
+                                                        <td className="px-6 py-5">
+                                                            <div className="text-white font-bold text-sm tracking-tight">{asset?.placa_principal || a.asset_codigo}</div>
+                                                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">{a.asset_codigo}</div>
                                                         </td>
-                                                        <td className="px-4 py-3 text-slate-300 hidden sm:table-cell">{a.asset_tipo}</td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <div className="w-16 bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                                        <td className="px-6 py-5 text-slate-300 font-medium hidden sm:table-cell">{a.asset_tipo}</td>
+                                                        <td className="px-6 py-5 text-center">
+                                                            <div className="flex flex-col items-center gap-1.5">
+                                                                <span className={`font-mono font-black text-sm ${dispColor}`}>{a.disponibilidad?.toFixed(1) ?? '—'}%</span>
+                                                                <div className="w-20 bg-slate-700 h-1.5 rounded-full overflow-hidden">
                                                                     <div className={`${dispColor.replace('text-', 'bg-')} h-full rounded-full`} style={{ width: `${a.disponibilidad ?? 0}%` }}></div>
                                                                 </div>
-                                                                <span className={`font-mono font-bold ${dispColor}`}>{a.disponibilidad?.toFixed(2) ?? '—'}%</span>
                                                             </div>
                                                         </td>
                                                     </tr>
