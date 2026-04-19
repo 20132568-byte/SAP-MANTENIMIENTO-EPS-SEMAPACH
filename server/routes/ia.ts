@@ -39,15 +39,18 @@ iaRouter.post('/chat', async (req, res) => {
 
     const context = getLocalContext()
     
+    const cleanKey = QWEN_API_KEY.trim();
+    
     try {
         const response = await fetch(QWEN_API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${QWEN_API_KEY}`,
+                'Authorization': `Bearer ${cleanKey}`,
+                'X-DashScope-Api-Key': cleanKey,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'qwen-plus',
+                model: 'qwen-turbo',
                 messages: [
                     { 
                         role: 'system', 
@@ -59,7 +62,7 @@ iaRouter.post('/chat', async (req, res) => {
                     },
                     { role: 'user', content: message }
                 ],
-                temperature: 0.3 // Baja temperatura para respuestas más precisas y técnicas
+                temperature: 0.3
             })
         })
 
