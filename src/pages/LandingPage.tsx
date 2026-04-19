@@ -4,10 +4,7 @@ import { useNavigate } from 'react-router-dom'
 const LandingPage: React.FC = () => {
     const navigate = useNavigate()
 
-    React.useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (token) navigate('/home')
-    }, [navigate])
+    // Eliminada la redirección automática para que el usuario siempre vea la Landing Page primero
 
     const features = [
         {

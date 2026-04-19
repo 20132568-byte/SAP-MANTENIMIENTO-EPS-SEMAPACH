@@ -304,7 +304,7 @@ function MainLayout() {
                     <div className="flex items-center gap-2">
                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Status:</span>
                         <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.4)]"></div>
-                        <span className="text-[9px] font-black text-cyan-500/60 uppercase tracking-tighter">v1.5 Premium Core</span>
+                        <span className="text-[9px] font-black text-cyan-500/60 uppercase tracking-tighter">v1.6 Ultra Premium</span>
                     </div>
                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">EPS SEMAPACH — 2026</span>
                 </footer>
