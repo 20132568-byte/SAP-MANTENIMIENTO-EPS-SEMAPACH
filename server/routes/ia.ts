@@ -58,6 +58,28 @@ iaRouter.post('/chat', async (req, res) => {
     const currentDate = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const currentTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 
+    let context = await getFullPtapContext()
+
+    // --- BÚSQUEDA DINÁMICA POR FECHA ---
+    // Si el usuario menciona una fecha, buscamos datos específicos de ese día
+    const dateMatch = message.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/)
+    if (dateMatch) {
+        try {
+            const day = dateMatch[1].padStart(2, '0')
+            const month = dateMatch[2].padStart(2, '0')
+            const year = dateMatch[3]
+            const isoDate = `${year}-${month}-${day}`
+            
+            const specificLogs = await dbAll('SELECT * FROM ptap_readings WHERE fecha = $1 ORDER BY hora ASC', isoDate)
+            if (specificLogs.length > 0) {
+                context += `\n--- REGISTROS ENCONTRADOS PARA EL DÍA ${isoDate} ---\n`
+                context += JSON.stringify(specificLogs) + "\n"
+            }
+        } catch (e) {
+             console.error("[IA ROUTE] Error en búsqueda dinámica:", e)
+        }
+    }
+
     try {
         const response = await fetch(IA_API_URL, {
             method: 'POST',
@@ -77,15 +99,13 @@ iaRouter.post('/chat', async (req, res) => {
                         Tu objetivo es proporcionar asistencia técnica precisa basada en los manuales de calidad e ISO del Drive D:/.
 
                         REGLAS CRÍTICAS:
-                        1. Estamos en el año 2026. Los datos de 2026 son registros PRESENTES o PASADOS válidos.
-                        2. Utiliza un tono ejecutivo, técnico y extremadamente formal.
-                        3. Prioriza los valores y parámetros del siguiente contexto: ${context}
-                        4. Si la información solicitada no está en el contexto, indica que "según los estándares generales de potabilización..." pero recomienda verificar el manual físico NC-11.
-                        5. Menciona siempre las fuentes: "CUADRO DE PARAMETROS.xlsx" cuando uses datos del contexto.` 
+                        1. Estamos en el año 2026. Si el usuario pregunta por una fecha pasada (como enero 2026) y los datos están en el contexto, REPÓRTALOS.
+                        2. Si los datos específicos de una fecha te han sido proporcionados en el contexto (bajo el título "REGISTROS ENCONTRADOS"), úsalos para responder.
+                        3. Utiliza un tono ejecutivo, técnico y extremadamente formal.` 
                     },
                     { role: 'user', content: message }
                 ],
-                temperature: 0.3
+                temperature: 0.2
             })
         })
 
