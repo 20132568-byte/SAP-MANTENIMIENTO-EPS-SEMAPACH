@@ -5,15 +5,10 @@ import XLSX from 'xlsx'
 
 export const iaRouter = Router()
 
-// Endpoint para el modelo DeepSeek (OpenAI compatible) - PROVEEDOR DE PAGO ACTUAL
-const IA_API_URL = 'https://api.deepseek.com/chat/completions';
-const IA_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-981077b763504a0aaecfe6ce07dc8882';
-const IA_MODEL = 'deepseek-chat';
-
-// Respaldo: Qwen (Alibaba Singapur)
-// const IA_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
-// const IA_API_KEY = process.env.QWEN_API_KEY || 'sk-f98cb9d1e7354d41ae811a83983c862b';
-// const IA_MODEL = 'qwen3.5-plus';
+// Proveedor: Qwen (Alibaba)
+const IA_API_URL = process.env.QWEN_API_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
+const IA_API_KEY = process.env.SEMAPACH_IA_KEY;
+const IA_MODEL = process.env.QWEN_MODEL || 'qwen-plus';
 
 /** 
  * Función para cargar conocimiento local (Excel) 
@@ -39,9 +34,9 @@ function getLocalContext() {
 iaRouter.post('/chat', async (req, res) => {
     const { message } = req.body
     
-    if (!QWEN_API_KEY) {
+    if (!IA_API_KEY) {
         console.error("[IA ROUTE] API Key no configurada")
-        return res.status(500).json({ error: 'Configuración de IA no encontrada' })
+        return res.status(500).json({ error: 'Configuración de IA (Qwen) no encontrada en .env' })
     }
 
     const context = getLocalContext()
@@ -58,11 +53,15 @@ iaRouter.post('/chat', async (req, res) => {
                 messages: [
                     { 
                         role: 'system', 
-                        content: `Eres el Asistente de Inteligencia Operativa de la PTAP Portachuelo. 
-                        Tu misión es ayudar a los operadores con dudas sobre parámetros técnicos e ISO.
-                        Contexto extraído del manual de parámetros: ${context}
-                        Responde de forma ejecutiva, formal y técnica. Si el usuario pregunta por algo que no está en el contexto, 
-                        puedes usar tu conocimiento general pero prioriza siempre los estándares de la PTAP Portachuelo.` 
+                        content: `Eres el Ingeniero Asistente de Inteligencia Operativa de la PTAP Portachuelo (Semapach). 
+                        Tu objetivo es proporcionar asistencia técnica precisa basada en los manuales de calidad e ISO del Drive D:/.
+
+                        REGLAS DE RESPUESTA:
+                        1. Utiliza un tono ejecutivo, técnico y extremadamente formal.
+                        2. Prioriza los valores y parámetros del siguiente contexto: ${context}
+                        3. Si la información solicitada no está en el contexto, indica que "según los estándares generales de potabilización..." pero recomienda verificar el manual físico NC-11.
+                        4. Menciona siempre las fuentes: "CUADRO DE PARAMETROS.xlsx" cuando uses datos del contexto.
+                        5. Responde con lenguaje claro para operadores de planta pero manteniendo el rigor de la norma ISO.` 
                     },
                     { role: 'user', content: message }
                 ],

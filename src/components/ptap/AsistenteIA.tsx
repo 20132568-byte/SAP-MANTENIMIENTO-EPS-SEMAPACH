@@ -177,7 +177,7 @@ export default function AsistenteIA() {
                     </button>
                 </div>
                 <p className="text-[9px] text-center text-slate-600 mt-4 font-black uppercase tracking-widest">
-                    AI powered by SAP MANTENIMIENTO — RAG ENGINE V1.0
+                    AI Core: Qwen (Alibaba Cloud) — RAG ENGINE V2.1 PTAP Portachuelo
                 </p>
             </div>
         </div>
