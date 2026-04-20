@@ -5,6 +5,7 @@ import XLSX from 'xlsx'
 
 export const iaRouter = Router()
 
+// Endpoint para el modelo Qwen (Alibaba) - Región Singapur (ap-southeast-1)
 const QWEN_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
 const QWEN_API_KEY = process.env.QWEN_API_KEY || ''
 
