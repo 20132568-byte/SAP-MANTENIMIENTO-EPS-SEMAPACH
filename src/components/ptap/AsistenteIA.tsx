@@ -105,10 +105,10 @@ export default function AsistenteIA() {
             </div>
 
             {/* Area de Mensajes */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-6 no-scrollbar">
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-reveal`}>
-                        <div className={`max-w-[80%] space-y-3 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[92%] sm:max-w-[80%] space-y-3 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                             <div className={`p-5 rounded-[1.8rem] text-sm leading-relaxed ${
                                 msg.role === 'user' 
                                 ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-sm' 

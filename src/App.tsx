@@ -44,6 +44,11 @@ const menuItems = [
             { path: '/estaciones', label: 'Maestro Estaciones', icon: 'location_on', appliesTo: 'stations' },
         ]
     },
+    {
+        section: 'Administración', items: [
+            { path: '/user-management', label: 'Gestión de Personal', icon: 'manage_accounts', appliesTo: 'all', roles: ['gerencia'] },
+        ]
+    }
 ]
 
 const ptapMenuItems = [
