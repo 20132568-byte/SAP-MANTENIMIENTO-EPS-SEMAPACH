@@ -238,45 +238,37 @@ function MainLayout() {
 
             {/* CONTENIDO PRINCIPAL */}
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-                <header className="h-16 flex items-center justify-between px-4 sm:px-6 bg-[#05080f]/50 backdrop-blur-md border-b border-slate-900/30 z-30 flex-shrink-0">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        {/* Botón Menú Móvil / Volver */}
+                <header className="h-16 flex items-center justify-between px-4 sm:px-8 bg-[#05080f]/80 backdrop-blur-xl border-b border-slate-900/50 sticky top-0 z-40">
+                    <div className="flex items-center gap-4">
                         <button onClick={() => setSidebarActive(!sidebarActive)}
-                            className="lg:hidden flex items-center justify-center w-10 h-10 bg-slate-800/80 rounded-xl border border-slate-700 active:scale-95 transition-all">
+                            className="lg:hidden flex items-center justify-center w-10 h-10 bg-slate-800/50 rounded-xl border border-slate-700 active:scale-95 transition-all">
                             <span className="material-symbols-outlined text-cyan-400">{sidebarActive ? 'close' : 'menu'}</span>
                         </button>
 
                         <button onClick={() => navigate('/home')}
-                            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-cyan-500/30 rounded-xl transition-all group"
-                            title="Volver al selector de módulos">
-                            <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-cyan-400 transition-colors">home</span>
-                            <span className="text-[8px] sm:text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-wider">Volver</span>
+                            className="flex items-center gap-2.5 px-4 py-2 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
+                            <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-cyan-400">home</span>
+                            <span className="hidden xs:block text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest">Inicio</span>
                         </button>
 
-                        <div className="xs:hidden w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center rounded-lg shadow-lg shadow-cyan-900/40">
-                            <span className="material-symbols-outlined text-white text-base">water_drop</span>
-                        </div>
-                        <div className="hidden xs:block">
-                            <h2 className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] leading-none mb-1">Módulo Actual</h2>
-                            <p className="text-xs sm:text-sm font-black text-white uppercase tracking-tight truncate max-w-[120px] sm:max-w-none">{currentLabel}</p>
+                        <div className="h-6 w-px bg-slate-800 mx-1 hidden sm:block"></div>
+                        
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest leading-none mb-1">Módulo</span>
+                            <p className="text-xs font-black text-white uppercase tracking-tight truncate max-w-[150px]">{currentLabel}</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-6">
-                        {/* Filtro de Activos - Visible en todos los dispositivos si aplica */}
-                        <div className="flex">
-                            {isMaintenanceModule && (
-                                <AssetTypeFilter />
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 glass-morphism rounded-full border-cyan-500/10 active:scale-95 cursor-pointer">
-                            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gold-gradient rounded-full flex items-center justify-center text-[8px] sm:text-[10px] font-black text-white">
+                    <div className="flex items-center gap-4 sm:gap-8">
+                        {isMaintenanceModule && <div className="flex"><AssetTypeFilter /></div>}
+                        
+                        <div className="flex items-center gap-3 glass-morphism px-4 py-1.5 rounded-full border-cyan-500/10">
+                            <div className="w-6 h-6 bg-gold-gradient rounded-full flex items-center justify-center text-[10px] font-black text-white">
                                 {user?.username?.substring(0, 2).toUpperCase()}
                             </div>
-                            <div className="flex flex-col text-right">
-                                <span className="text-[8px] sm:text-[9px] font-black text-white leading-none uppercase tracking-tight truncate max-w-[60px] sm:max-w-none">{user?.username}</span>
-                                <span className="text-[7px] sm:text-[8px] font-bold text-slate-500 leading-none uppercase tracking-widest mt-0.5">{user?.role}</span>
+                            <div className="hidden xs:flex flex-col text-right">
+                                <span className="text-[9px] font-black text-white leading-none uppercase">{user?.username}</span>
+                                <span className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">{user?.role}</span>
                             </div>
                         </div>
                     </div>
@@ -307,19 +299,6 @@ function MainLayout() {
                     </div>
                 </div>
 
-                {/* BOTTOM NAVIGATION PARA MÓVILES */}
-                <nav className="lg:hidden h-16 bg-[#05080f]/90 backdrop-blur-xl border-t border-slate-900/50 flex items-center justify-around px-2 z-50">
-                    {operatorTabs.map(tab => {
-                        const isActive = location.pathname.startsWith(tab.path);
-                        return (
-                            <NavLink key={tab.path} to={tab.path}
-                                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
-                                <span className={`material-symbols-outlined text-[22px] ${isActive ? 'fill-1' : ''}`}>{tab.icon}</span>
-                                <span className="text-[8px] font-black uppercase tracking-widest">{tab.label}</span>
-                            </NavLink>
-                        );
-                    })}
-                </nav>
 
                 {/* Overlay para cerrar sidebar en móvil */}
                 {sidebarActive && (
