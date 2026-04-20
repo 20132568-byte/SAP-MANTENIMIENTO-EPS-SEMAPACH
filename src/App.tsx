@@ -178,7 +178,7 @@ function MainLayout() {
             <aside
                 onMouseEnter={() => { clearTimeout(hoverTimeout.current); setIsHovered(true) }}
                 onMouseLeave={() => { hoverTimeout.current = setTimeout(() => setIsHovered(false), 150) }}
-                className={`hidden lg:flex flex-col flex-shrink-0 inset-y-0 left-0 z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r border-slate-900/50 bg-[#05080f]/80 backdrop-blur-xl ${isExpanded ? 'w-72' : 'w-20'}`}>
+                className={`flex flex-col flex-shrink-0 fixed lg:relative inset-y-0 left-0 z-[60] lg:z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r border-slate-900/50 bg-[#05080f]/95 lg:bg-[#05080f]/80 backdrop-blur-xl ${isExpanded ? 'w-72 translate-x-0' : 'w-20 -translate-x-full lg:translate-x-0'}`}>
 
                 <div className="h-20 flex items-center px-5 gap-3 border-b border-slate-900/30 flex-shrink-0">
                     <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center rounded-xl flex-shrink-0 shadow-lg shadow-cyan-900/20">
@@ -224,12 +224,17 @@ function MainLayout() {
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                 <header className="h-16 flex items-center justify-between px-4 sm:px-6 bg-[#05080f]/50 backdrop-blur-md border-b border-slate-900/30 z-30 flex-shrink-0">
                     <div className="flex items-center gap-3 sm:gap-4">
-                        {/* Botón Volver al Home */}
+                        {/* Botón Menú Móvil / Volver */}
+                        <button onClick={() => setSidebarActive(!sidebarActive)}
+                            className="lg:hidden flex items-center justify-center w-10 h-10 bg-slate-800/80 rounded-xl border border-slate-700 active:scale-95 transition-all">
+                            <span className="material-symbols-outlined text-cyan-400">{sidebarActive ? 'close' : 'menu'}</span>
+                        </button>
+
                         <button onClick={() => navigate('/home')}
                             className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-cyan-500/30 rounded-xl transition-all group"
                             title="Volver al selector de módulos">
                             <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-cyan-400 transition-colors">home</span>
-                            <span className="text-[8px] sm:text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-wider hidden xs:inline">Volver</span>
+                            <span className="text-[8px] sm:text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-wider">Volver</span>
                         </button>
 
                         <div className="xs:hidden w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center rounded-lg shadow-lg shadow-cyan-900/40">
@@ -242,8 +247,8 @@ function MainLayout() {
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-6">
-                        {/* Mostrar filtro solo en módulo de Mantenimiento y en pantallas no móviles */}
-                        <div className="hidden md:block">
+                        {/* Filtro de Activos - Visible en todos los dispositivos si aplica */}
+                        <div className="flex">
                             {isMaintenanceModule && (
                                 <AssetTypeFilter />
                             )}
@@ -298,9 +303,12 @@ function MainLayout() {
                             </NavLink>
                         );
                     })}
-                </nav>
+                {/* Overlay para cerrar sidebar en móvil */}
+                {sidebarActive && (
+                    <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[55]" onClick={() => setSidebarActive(false)}></div>
+                )}
 
-                <footer className="hidden lg:flex h-10 items-center justify-between px-8 bg-[#05080f] border-t border-slate-900 flex-shrink-0">
+                <footer className="flex h-10 items-center justify-between px-4 sm:px-8 bg-[#05080f] border-t border-slate-900 flex-shrink-0">
                     <div className="flex items-center gap-2">
                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Status:</span>
                         <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.4)]"></div>

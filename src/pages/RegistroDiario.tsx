@@ -717,75 +717,8 @@ export default function RegistroDiario() {
                 </div>
             )}
 
-            {/* VISTA MÓVIL (TARJETAS) — exclusivamente para pantallas pequeñas */}
-            <div className="md:hidden space-y-4">
-                {loading ? (
-                    <div className="p-12 text-center text-xs font-black text-slate-500 uppercase tracking-widest bg-slate-800/20 rounded-3xl border border-slate-700">Cargando jornadas...</div>
-                ) : filtered.length === 0 ? (
-                    <div className="p-12 text-center bg-slate-800/20 rounded-3xl border border-slate-700">
-                        <span className="material-symbols-outlined text-5xl text-slate-700 mb-4">history_toggle_off</span>
-                        <p className="text-[10px] font-black text-slate-500 uppercase">Sin registros para hoy</p>
-                    </div>
-                ) : filtered.map((r: any) => {
-                    const asset = assets.find((a: any) => a.id === r.asset_id);
-                    const isPendiente = !r.jornada_completa;
-                    return (
-                        <div key={r.id} className={`p-6 rounded-3xl border transition-all ${isPendiente ? 'bg-amber-500/5 border-amber-500/20' : 'bg-slate-800/40 border-slate-700'}`}>
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${isPendiente ? 'bg-amber-500 shadow-lg shadow-amber-900/20' : 'bg-slate-700'}`}>
-                                        <span className="material-symbols-outlined text-xl">{asset?.categoria === 'station' ? 'precision_manufacturing' : 'local_shipping'}</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-black text-slate-100 uppercase tracking-tight">{asset?.placa_principal || asset?.codigo_patrimonial || 'S/P'}</p>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{r.operador_nombre || 'Sin Operador'}</p>
-                                    </div>
-                                </div>
-                                {isPendiente ? (
-                                    <span className="px-3 py-1 bg-amber-500/20 text-amber-500 text-[8px] font-black uppercase rounded-lg border border-amber-500/20 animate-pulse">En Curso</span>
-                                ) : (
-                                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase rounded-lg border border-emerald-500/20">Cerrado</span>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 mb-6 pt-4 border-t border-slate-700/50">
-                                <div>
-                                    <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Jornada</p>
-                                    <p className="text-xs font-black text-slate-200">
-                                        {isPendiente ? `Desde ${r.hora_inicio_jornada || '---'}` : `${r.horas_reales?.toFixed(2)}h (${r.hora_inicio_jornada} - ${r.hora_fin_jornada})`}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Carga / Parada</p>
-                                    <p className="text-xs font-black text-slate-200">
-                                        {r.horas_parada > 0 ? `${r.horas_parada.toFixed(2)}h Down` : '+0.00h'}
-                                    </p>
-                                </div>
-                                <div className="col-span-2">
-                                    <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Recorrido ({selectedAsset?.forma_control || 'Km/H'})</p>
-                                    <p className="text-xs font-black text-sky-400">
-                                        {r.km_recorridos != null ? `+${Number(r.km_recorridos).toFixed(2)}` : 'Pendiente...'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 pt-2">
-                                {isPendiente ? (
-                                    <button onClick={() => openCierreJornada(r)} className="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl transition-all shadow-lg shadow-amber-900/40">Cerrar Jornada</button>
-                                ) : (
-                                    <button onClick={() => openEdit(r)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl transition-all">Ver Detalles</button>
-                                )}
-                                <button onClick={() => handleDelete(r.id)} className="w-12 h-11 border border-rose-500/20 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-500/10 transition-all">
-                                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* TABLA DE REGISTROS — desktop */}
-            <div className="hidden md:block table-premium-container !p-0">
+            {/* LISTADO DE REGISTROS (RESPONSIVO) */}
+            <div className="table-premium-container !p-0 overflow-x-auto no-scrollbar">
                 <table className="table-premium">
                     <thead>
                         <tr>

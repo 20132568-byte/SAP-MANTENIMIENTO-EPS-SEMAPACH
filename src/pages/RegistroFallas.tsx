@@ -319,8 +319,8 @@ export default function RegistroFallas() {
                 </div>
             )}
 
-            {/* TABLA — desktop */}
-            <div className="hidden md:block table-premium-container !p-0">
+            {/* TABLA — Listado de Incidencias (Ahora unificada y responsiva) */}
+            <div className="table-premium-container !p-0 overflow-x-auto no-scrollbar">
                 <table className="table-premium">
                     <thead>
                         <tr>
@@ -406,74 +406,6 @@ export default function RegistroFallas() {
                 </table>
             </div>
 
-            {/* CARDS — movil */}
-            <div className="md:hidden space-y-3">
-                {loading ? (
-                    <div className="py-16 text-center text-xs font-black text-slate-500 uppercase tracking-widest">Cargando fallas...</div>
-                ) : filtered.length === 0 ? (
-                    <div className="py-16 flex flex-col items-center">
-                        <span className="material-symbols-outlined text-5xl text-slate-800 mb-4">history_toggle_off</span>
-                        <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Sin incidencias reportadas</p>
-                    </div>
-                ) : filtered.map((f: any) => {
-                    const asset = assets.find((a: any) => a.id === f.asset_id)
-                    return (
-                        <div key={f.id} className="bg-slate-800/50 rounded-3xl border border-slate-700 shadow-sm p-5 flex flex-col gap-4">
-                            {/* Cabecera */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-rose-500 text-[24px]">precision_manufacturing</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-base font-black text-slate-200 uppercase tracking-tight">{asset?.placa_principal || 'S/P'}</p>
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{f.fecha_falla} · {f.hora_inicio || '--:--'}</p>
-                                    </div>
-                                </div>
-                                <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${severidadColor[f.severidad] || 'text-slate-500 bg-slate-800 border-slate-700'}`}>
-                                    {f.severidad || 'Indet.'}
-                                </span>
-                            </div>
-
-                            {/* Info clave en grid */}
-                            <div className="grid grid-cols-3 gap-2 bg-slate-900/50 rounded-2xl p-3">
-                                <div className="flex flex-col items-center">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Duracion</span>
-                                    <span className="text-sm font-black text-rose-400 font-mono">{f.duracion_horas?.toFixed(2) || '0.00'}h</span>
-                                </div>
-                                <div className="flex flex-col items-center border-x border-slate-700">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Sistema</span>
-                                    <span className="text-[10px] font-black text-slate-200 text-center leading-tight">{f.sistema_afectado || '--'}</span>
-                                </div>
-                                <div className="flex flex-col items-center">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Costo</span>
-                                    <span className="text-sm font-black text-slate-200 font-mono">
-                                        {f.costo_reparacion != null ? `S/${Number(f.costo_reparacion).toFixed(2)}` : 'S/0.00'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Descripcion */}
-                            {f.descripcion && (
-                                <p className="text-xs text-slate-400 italic bg-slate-900/30 rounded-xl p-3 border border-slate-700/50">"{f.descripcion}"</p>
-                            )}
-
-                            {/* Acciones */}
-                            <div className="flex gap-2">
-                                <button onClick={() => openEdit(f)}
-                                    className="flex-1 bg-slate-800 text-rose-400 text-[11px] font-black uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 border border-slate-700">
-                                    <span className="material-symbols-outlined text-[20px]">edit</span>
-                                    Editar
-                                </button>
-                                <button onClick={() => handleDelete(f.id)}
-                                    className="w-14 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center active:scale-95 transition-all border border-rose-500/20">
-                                    <span className="material-symbols-outlined text-[20px]">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
 
             {toast && (
                 <div className="fixed bottom-20 lg:bottom-12 right-4 lg:right-12 z-[100] bg-slate-900/90 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-fade-in-up border-l-4 border-rose-500">
