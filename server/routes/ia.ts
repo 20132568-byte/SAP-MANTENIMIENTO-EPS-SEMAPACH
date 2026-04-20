@@ -6,7 +6,7 @@ import XLSX from 'xlsx'
 export const iaRouter = Router()
 
 // Endpoint para el modelo DeepSeek (OpenAI compatible) - PROVEEDOR DE PAGO ACTUAL
-const IA_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const IA_API_URL = 'https://api.deepseek.com/chat/completions';
 const IA_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-981077b763504a0aaecfe6ce07dc8882';
 const IA_MODEL = 'deepseek-chat';
 
