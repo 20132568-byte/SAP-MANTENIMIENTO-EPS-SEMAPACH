@@ -20,6 +20,7 @@ import PlanMantenimiento2026 from './pages/PlanMantenimiento2026'
 import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import UserManagement from './pages/UserManagement'
+import MiPerfil from './pages/MiPerfil'
 import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 
@@ -47,6 +48,11 @@ const menuItems = [
     {
         section: 'Administración', items: [
             { path: '/user-management', label: 'Gestión de Personal', icon: 'manage_accounts', appliesTo: 'all', roles: ['gerencia'] },
+        ]
+    },
+    {
+        section: 'Mi Cuenta', items: [
+            { path: '/mi-perfil', label: 'Configuración Perfil', icon: 'person_settings', appliesTo: 'all' },
         ]
     }
 ]
@@ -238,35 +244,33 @@ function MainLayout() {
 
             {/* CONTENIDO PRINCIPAL */}
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-                <header className="h-16 flex items-center justify-between px-4 sm:px-8 bg-[#05080f]/80 backdrop-blur-xl border-b border-slate-900/50 sticky top-0 z-40">
-                    <div className="flex items-center gap-4">
+                <header className="h-16 flex items-center justify-between px-3 sm:px-8 bg-[#05080f]/80 backdrop-blur-xl border-b border-slate-900/50 sticky top-0 z-40">
+                    <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
                         <button onClick={() => setSidebarActive(!sidebarActive)}
-                            className="lg:hidden flex items-center justify-center w-10 h-10 bg-slate-800/50 rounded-xl border border-slate-700 active:scale-95 transition-all">
+                            className="lg:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 bg-slate-800/50 rounded-xl border border-slate-700 active:scale-95 transition-all">
                             <span className="material-symbols-outlined text-cyan-400">{sidebarActive ? 'close' : 'menu'}</span>
                         </button>
 
                         <button onClick={() => navigate('/home')}
-                            className="flex items-center gap-2.5 px-4 py-2 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
+                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-auto sm:px-4 sm:py-2 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
                             <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-cyan-400">home</span>
-                            <span className="hidden xs:block text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest">Inicio</span>
+                            <span className="hidden sm:block text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest ml-2">Inicio</span>
                         </button>
 
-                        <div className="h-6 w-px bg-slate-800 mx-1 hidden sm:block"></div>
-                        
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest leading-none mb-1">Módulo</span>
-                            <p className="text-xs font-black text-white uppercase tracking-tight truncate max-w-[150px]">{currentLabel}</p>
+                        <div className="hidden xs:flex flex-col min-w-0">
+                            <span className="text-[8px] font-black text-cyan-500 uppercase tracking-widest leading-none mb-1 opacity-60">Módulo</span>
+                            <p className="text-[11px] font-black text-white uppercase tracking-tight truncate max-w-[100px] sm:max-w-[200px]">{currentLabel}</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 sm:gap-8">
-                        {isMaintenanceModule && <div className="flex"><AssetTypeFilter /></div>}
+                    <div className="flex items-center gap-2 sm:gap-8">
+                        {isMaintenanceModule && <div className="flex-shrink-0 scale-90 sm:scale-100"><AssetTypeFilter /></div>}
                         
-                        <div className="flex items-center gap-3 glass-morphism px-4 py-1.5 rounded-full border-cyan-500/10">
-                            <div className="w-6 h-6 bg-gold-gradient rounded-full flex items-center justify-center text-[10px] font-black text-white">
+                        <div className="flex items-center gap-2 sm:gap-3 glass-morphism px-3 sm:px-4 py-1.5 rounded-full border-cyan-500/10">
+                            <div className="w-6 h-6 bg-gold-gradient rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-black text-white">
                                 {user?.username?.substring(0, 2).toUpperCase()}
                             </div>
-                            <div className="hidden xs:flex flex-col text-right">
+                            <div className="hidden sm:flex flex-col text-right">
                                 <span className="text-[9px] font-black text-white leading-none uppercase">{user?.username}</span>
                                 <span className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">{user?.role}</span>
                             </div>
@@ -292,6 +296,7 @@ function MainLayout() {
                             <Route path="/mantenimiento" element={<MantenimientoIntegrado />} />
                             <Route path="/plan-2026" element={<PlanMantenimiento2026 />} />
                             <Route path="/user-management" element={<ProtectedRoute reqRole="gerencia"><UserManagement /></ProtectedRoute>} />
+                            <Route path="/mi-perfil" element={<MiPerfil />} />
                             <Route path="/catalogos" element={<Catalogos />} />
                             <Route path="/reportes" element={<Reportes />} />
                             <Route path="*" element={<Navigate to="/dashboard" replace />} />
