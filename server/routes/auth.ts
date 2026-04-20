@@ -146,3 +146,34 @@ authRouter.post('/approve/:id', authenticateToken, async (req: any, res) => {
         res.status(500).json({ message: err.message })
     }
 })
+
+// POST /change-password (cualquier usuario logueado)
+authRouter.post('/change-password', authenticateToken, async (req: any, res) => {
+    const { currentPassword, newPassword } = req.body
+    try {
+        const user = await dbGet('SELECT * FROM users WHERE id = ?', req.user.id)
+        if (!user) return res.status(404).json({ message: 'Usuario no encontrado' })
+
+        const validPassword = await bcrypt.compare(currentPassword, user.password_hash)
+        if (!validPassword) return res.status(401).json({ message: 'Contraseña actual incorrecta' })
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        await dbRun('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', hashedPassword, req.user.id)
+        res.json({ message: 'Contraseña actualizada correctamente.' })
+    } catch (err: any) {
+        res.status(500).json({ message: err.message })
+    }
+})
+
+// POST /reset-password/:id (solo admin)
+authRouter.post('/reset-password/:id', authenticateToken, async (req: any, res) => {
+    if (req.user.role !== 'gerencia' && req.user.username !== 'DanielAdmin') return res.status(403).json({ message: 'No autorizado' })
+    const { newPassword } = req.body
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        await dbRun('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', hashedPassword, req.params.id)
+        res.json({ message: 'Contraseña reseteada exitosamente.' })
+    } catch (err: any) {
+        res.status(500).json({ message: err.message })
+    }
+})

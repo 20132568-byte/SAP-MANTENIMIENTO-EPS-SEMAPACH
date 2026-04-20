@@ -32,6 +32,31 @@ const UserManagement: React.FC = () => {
         fetchUsers()
     }, [])
 
+    const handleResetPassword = async (userId: number) => {
+        if (!window.confirm('¿Estás seguro de resetear la contraseña de este usuario a "Semapach2026!"?')) return
+        setActionLoading(userId)
+        try {
+            const res = await fetch(`/api/auth/reset-password/${userId}`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                },
+                body: JSON.stringify({ newPassword: 'Semapach2026!' })
+            })
+            if (res.ok) {
+                alert('🔑 Contraseña reseteada con éxito a: Semapach2026!')
+            } else {
+                const err = await res.json()
+                alert(`Error: ${err.message}`)
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setActionLoading(null)
+        }
+    }
+
     const handleAction = async (userId: number, status: 'approved' | 'rejected') => {
         setActionLoading(userId)
         try {
@@ -117,37 +142,49 @@ const UserManagement: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-5 text-right">
-                                        {user.status === 'pending' ? (
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button 
-                                                    onClick={() => handleAction(user.id, 'approved')}
-                                                    disabled={actionLoading === user.id}
-                                                    className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50"
-                                                    title="Aprobar Usuario"
-                                                >
-                                                    <span className="material-symbols-outlined text-sm">check_circle</span>
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleAction(user.id, 'rejected')}
-                                                    disabled={actionLoading === user.id}
-                                                    className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
-                                                    title="Rechazar Usuario"
-                                                >
-                                                    <span className="material-symbols-outlined text-sm">cancel</span>
-                                                </button>
-                                            </div>
-                                        ) : (
+                                        <div className="flex items-center justify-end gap-2">
+                                            {/* Botón de Reset de Contraseña */}
                                             <button 
-                                                onClick={() => handleAction(user.id, user.status === 'approved' ? 'rejected' : 'approved')}
+                                                onClick={() => handleResetPassword(user.id)}
                                                 disabled={actionLoading === user.id}
-                                                className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${
-                                                    user.status === 'approved' ? 'border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white' :
-                                                    'border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-white'
-                                                }`}
+                                                className="p-2 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all disabled:opacity-50"
+                                                title="Resetear Contraseña"
                                             >
-                                                {user.status === 'approved' ? 'Inhabilitar' : 'Habilitar'}
+                                                <span className="material-symbols-outlined text-sm">key</span>
                                             </button>
-                                        )}
+
+                                            {user.status === 'pending' ? (
+                                                <div className="flex items-center gap-2">
+                                                    <button 
+                                                        onClick={() => handleAction(user.id, 'approved')}
+                                                        disabled={actionLoading === user.id}
+                                                        className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50"
+                                                        title="Aprobar Usuario"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">check_circle</span>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleAction(user.id, 'rejected')}
+                                                        disabled={actionLoading === user.id}
+                                                        className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                                                        title="Rechazar Usuario"
+                                                    >
+                                                        <span className="material-symbols-outlined text-sm">cancel</span>
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => handleAction(user.id, user.status === 'approved' ? 'rejected' : 'approved')}
+                                                    disabled={actionLoading === user.id}
+                                                    className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${
+                                                        user.status === 'approved' ? 'border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white' :
+                                                        'border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-white'
+                                                    }`}
+                                                >
+                                                    {user.status === 'approved' ? 'Inhabilitar' : 'Habilitar'}
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
