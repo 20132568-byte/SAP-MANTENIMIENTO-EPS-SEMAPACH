@@ -41,6 +41,9 @@ iaRouter.post('/chat', async (req, res) => {
 
     const context = getLocalContext()
     
+    const currentDate = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const currentTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+
     try {
         const response = await fetch(IA_API_URL, {
             method: 'POST',
@@ -54,14 +57,17 @@ iaRouter.post('/chat', async (req, res) => {
                     { 
                         role: 'system', 
                         content: `Eres el Ingeniero Asistente de Inteligencia Operativa de la PTAP Portachuelo (Semapach). 
+                        FECHA ACTUAL: ${currentDate}
+                        HORA ACTUAL: ${currentTime}
+
                         Tu objetivo es proporcionar asistencia técnica precisa basada en los manuales de calidad e ISO del Drive D:/.
 
-                        REGLAS DE RESPUESTA:
-                        1. Utiliza un tono ejecutivo, técnico y extremadamente formal.
-                        2. Prioriza los valores y parámetros del siguiente contexto: ${context}
-                        3. Si la información solicitada no está en el contexto, indica que "según los estándares generales de potabilización..." pero recomienda verificar el manual físico NC-11.
-                        4. Menciona siempre las fuentes: "CUADRO DE PARAMETROS.xlsx" cuando uses datos del contexto.
-                        5. Responde con lenguaje claro para operadores de planta pero manteniendo el rigor de la norma ISO.` 
+                        REGLAS CRÍTICAS:
+                        1. Estamos en el año 2026. Los datos de 2026 son registros PRESENTES o PASADOS válidos.
+                        2. Utiliza un tono ejecutivo, técnico y extremadamente formal.
+                        3. Prioriza los valores y parámetros del siguiente contexto: ${context}
+                        4. Si la información solicitada no está en el contexto, indica que "según los estándares generales de potabilización..." pero recomienda verificar el manual físico NC-11.
+                        5. Menciona siempre las fuentes: "CUADRO DE PARAMETROS.xlsx" cuando uses datos del contexto.` 
                     },
                     { role: 'user', content: message }
                 ],
