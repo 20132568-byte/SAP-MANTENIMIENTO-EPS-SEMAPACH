@@ -5,10 +5,10 @@ import XLSX from 'xlsx'
 
 export const iaRouter = Router()
 
-// Proveedor: Qwen (Alibaba)
+// Proveedor: Model Studio (Alibaba Cloud International - Singapore)
 const IA_API_URL = process.env.QWEN_API_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 const IA_API_KEY = process.env.SEMAPACH_IA_KEY;
-const IA_MODEL = process.env.QWEN_MODEL || 'qwen-plus';
+const IA_MODEL = process.env.QWEN_MODEL || 'qwen-plus'; // O 'qwen-coder-plus' para tareas de programación
 
 /** 
  * Función para cargar conocimiento local (Excel + DB) 
