@@ -53,8 +53,6 @@ iaRouter.post('/chat', async (req, res) => {
         return res.status(500).json({ error: 'Configuración de IA (Qwen) no encontrada en .env' })
     }
 
-    const context = await getFullPtapContext()
-    
     const currentDate = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const currentTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 
