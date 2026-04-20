@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import fs from 'fs'
-import path from 'path'
+import { dbAll } from '../database.js'
 import XLSX from 'xlsx'
 
 export const iaRouter = Router()
@@ -11,24 +11,38 @@ const IA_API_KEY = process.env.SEMAPACH_IA_KEY;
 const IA_MODEL = process.env.QWEN_MODEL || 'qwen-plus';
 
 /** 
- * Función para cargar conocimiento local (Excel) 
- * En una implementación RAG completa aquí se usarían embeddings y búsqueda vectorial,
- * pero para esta iteración cargamos la data técnica clave del Excel de la unidad D.
+ * Función para cargar conocimiento local (Excel + DB) 
  */
-function getLocalContext() {
+async function getFullPtapContext() {
+    let contextStr = ""
+    
+    // 1. Cargar el Manual Técnico (Excel)
     try {
         const filePath = 'D:\\ISO CALIDAD PORTACHUELO\\NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx'
         if (fs.existsSync(filePath)) {
             const workbook = XLSX.readFile(filePath)
             const sheet = workbook.Sheets[workbook.SheetNames[0]]
             const data = XLSX.utils.sheet_to_json(sheet)
-            // Tomamos una muestra significativa de los parámetros técnicos para el contexto
-            return JSON.stringify(data.slice(0, 30)) 
+            // Ya no limitamos a 30, incluimos l Manual Completo para precisión ISO
+            contextStr += "--- MANUAL TÉCNICO Y PARÁMETROS ISO ---\n"
+            contextStr += JSON.stringify(data) + "\n\n"
         }
     } catch (e) {
-        console.error("[IA ROUTE] Error leyendo contexto local:", e)
+        console.error("[IA ROUTE] Error leyendo Excel:", e)
+        contextStr += "Error al cargar Manual ISO.\n"
     }
-    return "No se pudo cargar el contexto técnico de drive D:/."
+
+    // 2. Cargar Historial Operativo Reciente (Base de Datos)
+    try {
+        const logs = await dbAll('SELECT * FROM ptap_readings ORDER BY fecha DESC, hora DESC LIMIT 50')
+        contextStr += "--- ÚLTIMOS 50 REGISTROS OPERATIVOS (PTAP PORTACHUELO) ---\n"
+        contextStr += JSON.stringify(logs) + "\n"
+    } catch (e) {
+        console.error("[IA ROUTE] Error leyendo DB:", e)
+        contextStr += "Error al cargar historial operativo de la base de datos.\n"
+    }
+
+    return contextStr
 }
 
 iaRouter.post('/chat', async (req, res) => {
@@ -39,7 +53,7 @@ iaRouter.post('/chat', async (req, res) => {
         return res.status(500).json({ error: 'Configuración de IA (Qwen) no encontrada en .env' })
     }
 
-    const context = getLocalContext()
+    const context = await getFullPtapContext()
     
     const currentDate = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const currentTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
