@@ -5,10 +5,15 @@ import XLSX from 'xlsx'
 
 export const iaRouter = Router()
 
-// Endpoint para el modelo DeepSeek (OpenAI compatible)
+// Endpoint para el modelo DeepSeek (OpenAI compatible) - PROVEEDOR DE PAGO ACTUAL
 const IA_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 const IA_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-981077b763504a0aaecfe6ce07dc8882';
 const IA_MODEL = 'deepseek-chat';
+
+// Respaldo: Qwen (Alibaba Singapur)
+// const IA_API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
+// const IA_API_KEY = process.env.QWEN_API_KEY || 'sk-f98cb9d1e7354d41ae811a83983c862b';
+// const IA_MODEL = 'qwen3.5-plus';
 
 /** 
  * Función para cargar conocimiento local (Excel) 
