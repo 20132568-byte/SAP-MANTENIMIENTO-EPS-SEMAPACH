@@ -141,9 +141,15 @@ function MainLayout() {
         location.pathname.includes('/mantenimiento')
     )
 
-    let currentMenu = menuItems;
-    if (isPTAPModule) currentMenu = ptapMenuItems;
-    else if (isWaterModule) currentMenu = waterMenuItems;
+    let currentMenu = [...menuItems];
+    if (isPTAPModule) currentMenu = [...ptapMenuItems];
+    else if (isWaterModule) currentMenu = [...waterMenuItems];
+
+    // Inyectar sección de administración universal para gerencia
+    if (user?.role === 'gerencia' && !currentMenu.some(s => s.section === 'Administración')) {
+        const adminSection = menuItems.find(s => s.section === 'Administración');
+        if (adminSection) currentMenu.push(adminSection);
+    }
 
     const visibleItems = currentMenu.map(section => ({
         ...section,
