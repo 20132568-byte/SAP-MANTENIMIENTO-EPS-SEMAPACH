@@ -319,6 +319,8 @@ function MainLayout() {
                             </NavLink>
                         );
                     })}
+                </nav>
+
                 {/* Overlay para cerrar sidebar en móvil */}
                 {sidebarActive && (
                     <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[55]" onClick={() => setSidebarActive(false)}></div>
