@@ -141,14 +141,19 @@ function MainLayout() {
         location.pathname.includes('/mantenimiento')
     )
 
+    const isAdminUser = user?.username === 'DanielAdmin' || user?.role === 'gerencia';
+
     let currentMenu = [...menuItems];
     if (isPTAPModule) currentMenu = [...ptapMenuItems];
     else if (isWaterModule) currentMenu = [...waterMenuItems];
 
-    // Inyectar sección de administración universal para gerencia
-    if (user?.role === 'gerencia' && !currentMenu.some(s => s.section === 'Administración')) {
+    // Inyectar sección de administración universal para gerencia o DanielAdmin
+    if (isAdminUser && !currentMenu.some(s => s.section === 'Administración')) {
         const adminSection = menuItems.find(s => s.section === 'Administración');
-        if (adminSection) currentMenu.push(adminSection);
+        if (adminSection) currentMenu.push({
+            ...adminSection,
+            items: adminSection.items.map(i => ({ ...i, roles: undefined })) // Eliminar restricción de rol para DanielAdmin
+        });
     }
 
     const visibleItems = currentMenu.map(section => ({
