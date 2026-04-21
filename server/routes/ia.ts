@@ -4,9 +4,17 @@ import path from 'path'
 import { dbAll } from '../database.js'
 import XLSX from 'xlsx'
 
+import { fileURLToPath } from 'url'
+
 export const iaRouter = Router()
 
-const BASE_ISO_PATH = 'D:\\ISO CALIDAD PORTACHUELO'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Path prioritario para producción (Railway)
+const BUNDLED_DATA_PATH = path.join(__dirname, '..', 'data')
+// Path de desarrollo local
+const LOCAL_ISO_BASE = 'D:\\ISO CALIDAD PORTACHUELO'
 
 // Proveedor: Model Studio (Alibaba Cloud International - Singapore)
 const IA_API_URL = process.env.QWEN_API_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
@@ -21,13 +29,21 @@ async function getFullPtapContext() {
     
     // 1. Cargar el Manual Técnico (Excel)
     try {
-        const filePath = path.join(BASE_ISO_PATH, 'NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx')
+        let filePath = path.join(BUNDLED_DATA_PATH, 'CUADRO_DE_PARAMETROS.xlsx')
+        
+        // Si no existe el bundle, intentar local (fallback dev)
+        if (!fs.existsSync(filePath)) {
+            filePath = path.join(LOCAL_ISO_BASE, 'NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx')
+        }
+
         if (fs.existsSync(filePath)) {
             const workbook = XLSX.readFile(filePath)
             const sheet = workbook.Sheets[workbook.SheetNames[0]]
             const data = XLSX.utils.sheet_to_json(sheet)
             contextStr += "--- MANUAL TÉCNICO Y PARÁMETROS ISO ---\n"
             contextStr += JSON.stringify(data) + "\n\n"
+        } else {
+            console.warn("[IA ROUTE] No se encontró el Excel de parámetros en:", filePath)
         }
     } catch (e) {
         console.error("[IA ROUTE] Error leyendo Excel:", e)
@@ -52,18 +68,22 @@ iaRouter.get('/download', (req, res) => {
     const { file } = req.query
     if (!file) return res.status(400).json({ error: 'Archivo no especificado' })
 
-    // Por ahora mapeamos archivos conocidos a sus rutas reales en D:
+    // Mapeo de archivos seguros para descarga
     let filePath = ''
-    if (file === 'CUADRO DE PARAMETROS.xlsx') {
-        filePath = path.join(BASE_ISO_PATH, 'NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx')
-    } else {
-        // Búsqueda genérica en el drive D (solo por seguridad limitamos extensiones)
-        // Esto se puede expandir si hay más archivos citados
-        return res.status(404).json({ error: 'Archivo no configurado para descarga directa' })
+    const fileNameMap: Record<string, string> = {
+        'CUADRO DE PARAMETROS.xlsx': 'CUADRO_DE_PARAMETROS.xlsx'
+    }
+
+    const internalName = fileNameMap[file as string] || file as string
+    filePath = path.join(BUNDLED_DATA_PATH, internalName)
+
+    // Fallback development local
+    if (!fs.existsSync(filePath) && file === 'CUADRO DE PARAMETROS.xlsx') {
+        filePath = path.join(LOCAL_ISO_BASE, 'NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx')
     }
 
     if (fs.existsSync(filePath)) {
-        res.download(filePath)
+        res.download(filePath, file as string) // Descargar con el nombre original bonito
     } else {
         res.status(404).json({ error: 'Archivo no encontrado en el servidor' })
     }
