@@ -82,6 +82,34 @@ export default function AsistenteIA() {
         }
     }
 
+    const handleDownload = (fileName: string) => {
+        window.open(`/api/ia/download?file=${encodeURIComponent(fileName)}`, '_blank')
+    }
+
+    const renderMessageContent = (content: string) => {
+        const evidenceMatch = content.match(/\[EVIDENCIA\]([\s\S]*)/i)
+        if (evidenceMatch) {
+            const text = content.replace(/\[EVIDENCIA\][\s\S]*/i, '').trim()
+            const evidence = evidenceMatch[1].trim()
+            
+            return (
+                <div className="space-y-4">
+                    <div className="whitespace-pre-wrap">{text}</div>
+                    <div className="bg-slate-900/90 rounded-2xl p-4 border border-cyan-500/30 overflow-x-auto shadow-inner">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-cyan-400 text-sm">verified</span>
+                            <span className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Evidencia técnica extraída</span>
+                        </div>
+                        <div className="text-[11px] font-mono text-slate-300 leading-relaxed font-bold">
+                            {evidence}
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+        return <div className="whitespace-pre-wrap">{content}</div>
+    }
+
     return (
         <div className="flex flex-col h-[calc(100vh-280px)] bg-[#0f172a]/40 backdrop-blur-2xl border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-fade-in">
             {/* Header del Chat */}
@@ -94,13 +122,13 @@ export default function AsistenteIA() {
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-4 border-[#0f172a] rounded-full animate-pulse"></div>
                     </div>
                     <div>
-                        <h3 className="text-sm font-black text-white uppercase tracking-widest">RAG Engine Portachuelo</h3>
-                        <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest mt-0.5">Nucleo de Inteligencia ISO</p>
+                        <h3 className="text-sm font-black text-white uppercase tracking-widest text-cyan-400">RAG Engine Portachuelo</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Nucleo de Inteligencia ISO</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-slate-900/60 rounded-xl border border-white/5">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Conectado a Drive D:\</span>
+                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest border-none">Conectado a Drive D:\</span>
                 </div>
             </div>
 
@@ -108,22 +136,26 @@ export default function AsistenteIA() {
             <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-6 no-scrollbar">
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-reveal`}>
-                        <div className={`max-w-[92%] sm:max-w-[80%] space-y-3 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[92%] sm:max-w-[85%] space-y-3 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                             <div className={`p-5 rounded-[1.8rem] text-sm leading-relaxed ${
                                 msg.role === 'user' 
                                 ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-sm' 
                                 : 'bg-slate-800/80 text-slate-200 border border-slate-700/50 rounded-tl-sm'
                             }`}>
-                                {msg.content}
+                                {renderMessageContent(msg.content)}
                             </div>
                             
                             {msg.sources && (
                                 <div className="flex flex-wrap gap-2 pt-1">
                                     {msg.sources.map((s, i) => (
-                                        <div key={i} className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-bold text-slate-400">
-                                            <span className="material-symbols-outlined text-xs">description</span>
+                                        <button 
+                                            key={i} 
+                                            onClick={() => handleDownload(s)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-[9px] font-bold text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all active:scale-95 group"
+                                        >
+                                            <span className="material-symbols-outlined text-xs group-hover:animate-bounce">download</span>
                                             {s}
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                             )}
@@ -148,12 +180,12 @@ export default function AsistenteIA() {
 
             {/* Input y Sugerencias */}
             <div className="p-6 border-t border-white/5 bg-white/[0.01]">
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex overflow-x-auto gap-2 mb-4 pb-2 no-scrollbar scroll-smooth">
                     {suggestedQuestions.map((q, i) => (
                         <button 
                             key={i} 
                             onClick={() => handleSend(q)}
-                            className="text-[10px] font-bold text-slate-400 bg-slate-900/40 border border-white/5 px-4 py-2 rounded-xl hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/30 transition-all active:scale-95 text-left"
+                            className="text-[10px] font-bold text-slate-400 bg-slate-900/40 border border-white/5 px-4 py-2 rounded-xl hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/30 transition-all active:scale-95 text-left whitespace-nowrap flex-shrink-0"
                         >
                             {q}
                         </button>
@@ -183,3 +215,4 @@ export default function AsistenteIA() {
         </div>
     )
 }
+

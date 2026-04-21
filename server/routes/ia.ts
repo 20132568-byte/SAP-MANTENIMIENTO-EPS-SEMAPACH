@@ -1,14 +1,17 @@
 import { Router } from 'express'
 import fs from 'fs'
+import path from 'path'
 import { dbAll } from '../database.js'
 import XLSX from 'xlsx'
 
 export const iaRouter = Router()
 
+const BASE_ISO_PATH = 'D:\\ISO CALIDAD PORTACHUELO'
+
 // Proveedor: Model Studio (Alibaba Cloud International - Singapore)
 const IA_API_URL = process.env.QWEN_API_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
 const IA_API_KEY = process.env.SEMAPACH_IA_KEY;
-const IA_MODEL = process.env.QWEN_MODEL || 'qwen-plus'; // O 'qwen-coder-plus' para tareas de programación
+const IA_MODEL = process.env.QWEN_MODEL || 'qwen-plus';
 
 /** 
  * Función para cargar conocimiento local (Excel + DB) 
@@ -18,12 +21,11 @@ async function getFullPtapContext() {
     
     // 1. Cargar el Manual Técnico (Excel)
     try {
-        const filePath = 'D:\\ISO CALIDAD PORTACHUELO\\NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx'
+        const filePath = path.join(BASE_ISO_PATH, 'NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx')
         if (fs.existsSync(filePath)) {
             const workbook = XLSX.readFile(filePath)
             const sheet = workbook.Sheets[workbook.SheetNames[0]]
             const data = XLSX.utils.sheet_to_json(sheet)
-            // Ya no limitamos a 30, incluimos l Manual Completo para precisión ISO
             contextStr += "--- MANUAL TÉCNICO Y PARÁMETROS ISO ---\n"
             contextStr += JSON.stringify(data) + "\n\n"
         }
@@ -45,6 +47,28 @@ async function getFullPtapContext() {
     return contextStr
 }
 
+// ENDPOINT PARA DESCARGAR DOCUMENTOS CITADOS
+iaRouter.get('/download', (req, res) => {
+    const { file } = req.query
+    if (!file) return res.status(400).json({ error: 'Archivo no especificado' })
+
+    // Por ahora mapeamos archivos conocidos a sus rutas reales en D:
+    let filePath = ''
+    if (file === 'CUADRO DE PARAMETROS.xlsx') {
+        filePath = path.join(BASE_ISO_PATH, 'NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx')
+    } else {
+        // Búsqueda genérica en el drive D (solo por seguridad limitamos extensiones)
+        // Esto se puede expandir si hay más archivos citados
+        return res.status(404).json({ error: 'Archivo no configurado para descarga directa' })
+    }
+
+    if (fs.existsSync(filePath)) {
+        res.download(filePath)
+    } else {
+        res.status(404).json({ error: 'Archivo no encontrado en el servidor' })
+    }
+})
+
 iaRouter.post('/chat', async (req, res) => {
     const { message } = req.body
     
@@ -56,10 +80,17 @@ iaRouter.post('/chat', async (req, res) => {
     const currentDate = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const currentTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 
-    let context = await getFullPtapContext()
+    let context = ""
+    try {
+        console.log("[IA ROUTE] Cargando contexto completo...")
+        context = await getFullPtapContext()
+        console.log("[IA ROUTE] Contexto cargado (Longitud):", context.length)
+    } catch (e: any) {
+        console.error("[IA ROUTE] Error crítico cargando contexto:", e.message)
+        return res.status(500).json({ error: 'Error al preparar el conocimiento técnico: ' + e.message })
+    }
 
     // --- BÚSQUEDA DINÁMICA POR FECHA ---
-    // Si el usuario menciona una fecha, buscamos datos específicos de ese día
     const dateMatch = message.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/)
     if (dateMatch) {
         try {
@@ -68,6 +99,7 @@ iaRouter.post('/chat', async (req, res) => {
             const year = dateMatch[3]
             const isoDate = `${year}-${month}-${day}`
             
+            console.log("[IA ROUTE] Búsqueda por fecha detectada:", isoDate)
             const specificLogs = await dbAll('SELECT * FROM ptap_readings WHERE fecha = $1 ORDER BY hora ASC', isoDate)
             if (specificLogs.length > 0) {
                 context += `\n--- REGISTROS ENCONTRADOS PARA EL DÍA ${isoDate} ---\n`
@@ -79,6 +111,7 @@ iaRouter.post('/chat', async (req, res) => {
     }
 
     try {
+        console.log("[IA ROUTE] Contactando API Qwen...")
         const response = await fetch(IA_API_URL, {
             method: 'POST',
             headers: {
@@ -94,33 +127,40 @@ iaRouter.post('/chat', async (req, res) => {
                         FECHA ACTUAL: ${currentDate}
                         HORA ACTUAL: ${currentTime}
 
-                        Tu objetivo es proporcionar asistencia técnica precisa basada en los manuales de calidad e ISO del Drive D:/.
+                        Tu objetivo es proporcionar asistencia técnica precisa basada en los manuales de calidad e ISO proporcionados.
+
+                        CONOCIMIENTO TÉCNICO Y OPERATIVO:
+                        ${context}
+
+                        INSTRUCCIÓN DE EVIDENCIA: 
+                        Si citas datos numéricos específicos, incluye un bloque [EVIDENCIA] al final.
 
                         REGLAS CRÍTICAS:
-                        1. Estamos en el año 2026. Si el usuario pregunta por una fecha pasada (como enero 2026) y los datos están en el contexto, REPÓRTALOS.
-                        2. Si los datos específicos de una fecha te han sido proporcionados en el contexto (bajo el título "REGISTROS ENCONTRADOS"), úsalos para responder.
-                        3. Utiliza un tono ejecutivo, técnico y extremadamente formal.` 
+                        1. Utiliza un tono ejecutivo y formal.` 
                     },
                     { role: 'user', content: message }
                 ],
-                temperature: 0.2
+                temperature: 0.1
             })
         })
 
         if (!response.ok) {
             const errorBody = await response.text()
-            throw new Error(`Error de API Qwen: ${response.status} - ${errorBody}`)
+            console.error("[IA ROUTE] Error de API Qwen:", response.status, errorBody)
+            throw new Error(`Error de API: ${response.status}`)
         }
 
         const data = await response.json()
+        console.log("[IA ROUTE] Respuesta exitosa de Qwen")
         const answer = data.choices[0].message.content
         
         res.json({ 
             answer,
-            sources: ["CUADRO DE PARAMETROS.xlsx", "Drive D:/ISO CALIDAD PORTACHUELO"]
+            sources: ["CUADRO DE PARAMETROS.xlsx"]
         })
     } catch (e: any) {
-        console.error("[IA ROUTE] Error en chat IA:", e.message)
-        res.status(500).json({ error: 'Error procesando la solicitud de IA: ' + e.message })
+        console.error("[IA ROUTE] Error final en chat:", e.message)
+        res.status(500).json({ error: 'Error procesando solicitud: ' + e.message })
     }
 })
+
