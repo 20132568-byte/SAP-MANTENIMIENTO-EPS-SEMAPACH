@@ -83,7 +83,7 @@ export default function AsistenteIA() {
     }
 
     const handleDownload = (fileName: string) => {
-        window.open(`/api/ia/download?file=${encodeURIComponent(fileName)}`, '_blank')
+        window.location.href = `/api/ia/download?file=${encodeURIComponent(fileName)}`
     }
 
     const renderMessageContent = (content: string) => {

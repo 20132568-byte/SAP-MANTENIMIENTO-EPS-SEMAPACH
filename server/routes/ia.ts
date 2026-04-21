@@ -68,24 +68,22 @@ iaRouter.get('/download', (req, res) => {
     const { file } = req.query
     if (!file) return res.status(400).json({ error: 'Archivo no especificado' })
 
-    // Mapeo de archivos seguros para descarga
-    let filePath = ''
     const fileNameMap: Record<string, string> = {
         'CUADRO DE PARAMETROS.xlsx': 'CUADRO_DE_PARAMETROS.xlsx'
     }
 
     const internalName = fileNameMap[file as string] || file as string
-    filePath = path.join(BUNDLED_DATA_PATH, internalName)
+    const filePath = path.resolve(BUNDLED_DATA_PATH, internalName)
 
-    // Fallback development local
-    if (!fs.existsSync(filePath) && file === 'CUADRO DE PARAMETROS.xlsx') {
-        filePath = path.join(LOCAL_ISO_BASE, 'NC-11 Operaciones y Calidad\\Evidencias de Tratamiento de No conformidad\\OPAPTAR\\CARPETA\\CUADRO DE PARAMETROS.xlsx')
-    }
+    console.log('[IA DOWNLOAD] Intentando descargar:', filePath)
 
     if (fs.existsSync(filePath)) {
-        res.download(filePath, file as string) // Descargar con el nombre original bonito
+        res.setHeader('Content-Disposition', `attachment; filename="${file}"`)
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        res.sendFile(filePath)
     } else {
-        res.status(404).json({ error: 'Archivo no encontrado en el servidor' })
+        console.error('[IA DOWNLOAD] Archivo no encontrado:', filePath)
+        res.status(404).json({ error: 'Archivo no encontrado comercialmente' })
     }
 })
 
