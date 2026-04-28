@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
 import { useAssetType } from '../contexts/AssetTypeContext'
+import * as XLSX from 'xlsx'
+
 
 function calcHorasParada(inicio: string, fin: string): number | null {
     if (!inicio || !fin) return null
@@ -265,6 +267,55 @@ export default function RegistroDiario() {
         } catch (e: any) { notify(e.message) }
     }
 
+    const handleExportExcel = async () => {
+        try {
+            const allRecords = await api.getDailyRecords({ categoria: assetType })
+            
+            if (allRecords.length === 0) {
+                notify('No hay datos para exportar')
+                return
+            }
+
+            const dataToExport = allRecords.map((r: any) => {
+                const asset = assets.find((a: any) => a.id === r.asset_id)
+                return {
+                    'Fecha': r.fecha,
+                    'Placa': asset?.placa_principal || '—',
+                    'Código Patrimonial': r.asset_codigo || '—',
+                    'Tipo Unidad': r.asset_tipo || '—',
+                    'Operador': r.operador_nombre || '—',
+                    'Estado del Día': r.estado_dia,
+                    'Horas Programadas': r.horas_programadas || 0,
+                    'Horas Reales': r.horas_reales || 0,
+                    'Horas Parada': r.horas_parada || 0,
+                    'Hora Inicio Jornada': r.hora_inicio_jornada || '—',
+                    'Hora Fin Jornada': r.hora_fin_jornada || '—',
+                    'Lectura Inicial': r.km_inicial ?? r.horometro_inicial ?? '—',
+                    'Lectura Final': r.km_final ?? r.horometro_final ?? '—',
+                    'Recorrido/Uso Neto': r.km_recorridos ?? (r.horometro_final && r.horometro_inicial ? (r.horometro_final - r.horometro_inicial) : '—'),
+                    'Observaciones': r.observaciones || '—'
+                }
+            })
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+            const workbook = XLSX.utils.book_new()
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Registro Diario")
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `Registro_Diario_${assetType}_${new Date().toISOString().split('T')[0]}.xlsx`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+            notify('Reporte Excel generado con éxito')
+        } catch (e: any) {
+            notify(`Error al exportar: ${e.message}`)
+        }
+    }
+
     const selectedAsset = formMode === 'cierre'
         ? assets.find((a: any) => a.id === editingRecord?.asset_id)
         : assets.find((a: any) => a.id === Number(form.asset_id))
@@ -293,6 +344,11 @@ export default function RegistroDiario() {
                 </div>
 
                 <div className="flex flex-wrap gap-4">
+                    <button onClick={handleExportExcel}
+                        className="bg-slate-800/50 hover:bg-slate-700 text-emerald-400 text-[11px] font-black uppercase tracking-widest px-8 py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-sm border border-slate-700 hover:-translate-y-1">
+                        <span className="material-symbols-outlined text-[20px]">download</span>
+                        Exportar Excel
+                    </button>
                     <button onClick={() => setShowQuickMode(true)}
                         className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-black uppercase tracking-widest px-8 py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-sm border border-emerald-500/20 hover:-translate-y-1">
                         <span className="material-symbols-outlined text-[20px]">speed</span>
