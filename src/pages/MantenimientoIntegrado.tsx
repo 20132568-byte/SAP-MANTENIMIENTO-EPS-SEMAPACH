@@ -147,11 +147,6 @@ export default function MantenimientoIntegrado() {
                     </h1>
                     <p className="text-[11px] md:text-xs text-slate-400 mt-1 uppercase tracking-widest font-bold">Registro unificado para flota y estaciones hídricas</p>
                 </div>
-                <button onClick={() => setShowForm(true)} disabled={!selectedId}
-                    className="btn-premium btn-premium-cyan text-[10px] md:text-xs uppercase flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-                    <span className="material-symbols-outlined text-base">add_task</span> 
-                    <span className="hidden sm:inline">Nuevo Registro</span>
-                </button>
             </div>
 
             {/* Filtros de Búsqueda */}
