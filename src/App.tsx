@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import { AssetTypeProvider, useAssetType, type AssetTypeFilter } from './contexts/AssetTypeContext'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import DashboardOperativo from './pages/DashboardOperativo'
 import DashboardGerencial from './pages/DashboardGerencial'
 import MaestroActivos from './pages/MaestroActivos'
@@ -85,6 +86,18 @@ const operatorTabs = [
     { path: '/dashboard', label: 'Flota', icon: 'directions_car' },
     { path: '/fallas', label: 'Fallas', icon: 'report_problem' },
 ]
+
+function ThemeToggle() {
+    const { theme, toggleTheme } = useTheme();
+    return (
+        <button onClick={toggleTheme} title="Cambiar Tema"
+            className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
+            <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-amber-400 transition-colors">
+                {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
+        </button>
+    );
+}
 
 function AssetTypeFilter() {
     const { assetType, setAssetType } = useAssetType()
@@ -264,6 +277,7 @@ function MainLayout() {
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-8">
+                        <ThemeToggle />
                         {isMaintenanceModule && <div className="flex-shrink-0 scale-90 sm:scale-100"><AssetTypeFilter /></div>}
                         
                         <div className="flex items-center gap-2 sm:gap-3 glass-morphism px-3 sm:px-4 py-1.5 rounded-full border-cyan-500/10">
@@ -395,6 +409,7 @@ function HomeModules() {
                             <span className="text-[9px] font-black text-white uppercase truncate">{user.username}</span>
                         </div>
                     )}
+                    <ThemeToggle />
                     <button onClick={handleLogout} className="w-9 h-9 border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 flex items-center justify-center rounded-xl transition-all">
                         <span className="material-symbols-outlined text-lg">logout</span>
                     </button>
@@ -486,31 +501,33 @@ function HomeModules() {
 
 export default function App() {
     return (
-        <BrowserRouter>
-            <AssetTypeProvider>
-                <Routes>
-                    {/* Redirección raíz a Landing Page descriptiva */}
-                    <Route path="/" element={<LandingPage />} />
+        <ThemeProvider>
+            <BrowserRouter>
+                <AssetTypeProvider>
+                    <Routes>
+                        {/* Redirección raíz a Landing Page descriptiva */}
+                        <Route path="/" element={<LandingPage />} />
 
-                    {/* Rutas Públicas */}
-                    <Route path="/login" element={<AuthPage />} />
-                    <Route path="/register" element={<AuthPage />} />
+                        {/* Rutas Públicas */}
+                        <Route path="/login" element={<AuthPage />} />
+                        <Route path="/register" element={<AuthPage />} />
 
-                    {/* Home con módulos (protegido) */}
-                    <Route path="/home" element={
-                        <ProtectedRoute>
-                            <HomeModules />
-                        </ProtectedRoute>
-                    } />
+                        {/* Home con módulos (protegido) */}
+                        <Route path="/home" element={
+                            <ProtectedRoute>
+                                <HomeModules />
+                            </ProtectedRoute>
+                        } />
 
-                    {/* Rutas Protegidas (Dashboard y módulos) */}
-                    <Route path="/*" element={
-                        <ProtectedRoute>
-                            <MainLayout />
-                        </ProtectedRoute>
-                    } />
-                </Routes>
-            </AssetTypeProvider>
-        </BrowserRouter>
+                        {/* Rutas Protegidas (Dashboard y módulos) */}
+                        <Route path="/*" element={
+                            <ProtectedRoute>
+                                <MainLayout />
+                            </ProtectedRoute>
+                        } />
+                    </Routes>
+                </AssetTypeProvider>
+            </BrowserRouter>
+        </ThemeProvider>
     )
 }

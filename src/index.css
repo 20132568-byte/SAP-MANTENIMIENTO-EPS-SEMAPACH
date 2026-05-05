@@ -26,6 +26,26 @@ body {
   -webkit-font-smoothing: antialiased;
   color-scheme: dark;
   overflow-x: hidden;
+  transition: filter 0.3s ease, background-color 0.3s ease;
+}
+
+/* ===== Light Theme Magic (Inversion + Hue Rotation) ===== */
+html.light-theme body {
+  filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(0.9);
+  background-color: #f8fafc; /* Color de fondo base claro real */
+}
+
+/* Revertimos el filtro en imágenes, gráficos y logos para que no se vean extraños */
+html.light-theme img,
+html.light-theme canvas,
+html.light-theme video,
+html.light-theme [data-revert-theme="true"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Modificar color-scheme para los scrollbars y modales nativos */
+html.light-theme {
+  color-scheme: light;
 }
 
 h1, h2, h3, h4, .font-display {
