@@ -154,57 +154,60 @@ export default function MantenimientoIntegrado() {
                 </button>
             </div>
 
-            {/* Filtros de Búsqueda (Glassmorphism) */}
-            <div className="glass-morphism rounded-[2rem] p-5 sm:p-6 mb-8 space-y-4 shadow-xl">
-                <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-cyan-400">filter_list</span>
-                    <h3 className="text-xs font-black text-white uppercase tracking-widest">Filtros de Búsqueda</h3>
+            {/* Filtros de Búsqueda */}
+            <div className="bg-slate-800/20 border border-slate-700/30 rounded-xl p-4 mb-8 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="material-symbols-outlined text-cyan-400 text-sm">filter_list</span>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Filtros de Búsqueda</h3>
                 </div>
                 
                 {/* Selector de activo */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {assetType !== 'stations' && (
                         <div className="relative group">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-hover:text-cyan-400 transition-colors">directions_car</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-hover:text-cyan-400 transition-colors text-sm">directions_car</span>
                             <select value={selectedType === 'vehicle' ? (selectedId ?? '') : ''} onChange={e => { setSelectedType('vehicle'); setSelectedId(e.target.value ? Number(e.target.value) : null) }}
-                                className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl pl-12 pr-4 py-3 text-sm text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all appearance-none outline-none">
+                                className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-9 pr-8 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all appearance-none outline-none">
                                 <option value="">Seleccionar vehículo...</option>
                                 {vehicles.map(v => <option key={v.id} value={v.id}>{v.codigo_patrimonial} — {v.placa_principal || v.tipo_unidad}</option>)}
                             </select>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 pointer-events-none text-sm">expand_more</span>
                         </div>
                     )}
                     {assetType !== 'fleet' && (
                         <div className="relative group">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-hover:text-purple-400 transition-colors">location_on</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-hover:text-purple-400 transition-colors text-sm">location_on</span>
                             <select value={selectedType === 'station' ? (selectedId ?? '') : ''} onChange={e => { setSelectedType('station'); setSelectedId(e.target.value ? Number(e.target.value) : null) }}
-                                className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl pl-12 pr-4 py-3 text-sm text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all appearance-none outline-none">
+                                className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-9 pr-8 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-all appearance-none outline-none">
                                 <option value="">Seleccionar estación...</option>
                                 {stations.map(s => <option key={s.id} value={s.id}>{s.codigo} — {s.nombre} ({s.tipo})</option>)}
                             </select>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 pointer-events-none text-sm">expand_more</span>
                         </div>
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-800/50 pt-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-slate-800/50 pt-3">
                     <div className="relative group">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-sm">calendar_today</span>
                         <input type="date" value={filterDesde} onChange={e => setFilterDesde(e.target.value)}
-                            className="w-full bg-slate-900/30 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2.5 text-xs font-mono text-slate-300 focus:ring-1 focus:ring-cyan-500 outline-none transition-all" />
+                            className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 focus:ring-1 focus:ring-cyan-500 outline-none transition-all" />
                     </div>
                     <div className="relative group">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-sm">calendar_today</span>
                         <input type="date" value={filterHasta} onChange={e => setFilterHasta(e.target.value)}
-                            className="w-full bg-slate-900/30 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2.5 text-xs font-mono text-slate-300 focus:ring-1 focus:ring-cyan-500 outline-none transition-all" />
+                            className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 focus:ring-1 focus:ring-cyan-500 outline-none transition-all" />
                     </div>
                     <div className="relative group">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-sm">category</span>
                         <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)}
-                            className="w-full bg-slate-900/30 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2.5 text-xs text-slate-300 focus:ring-1 focus:ring-cyan-500 outline-none appearance-none transition-all">
+                            className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-9 pr-8 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 focus:ring-1 focus:ring-cyan-500 outline-none appearance-none transition-all">
                             <option value="">Todos los tipos</option>
                             <option value="preventivo">Preventivo</option>
                             <option value="correctivo">Correctivo</option>
                             <option value="emergencia">Emergencia</option>
                         </select>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 pointer-events-none text-sm">expand_more</span>
                     </div>
                 </div>
             </div>
