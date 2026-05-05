@@ -91,8 +91,8 @@ function ThemeToggle() {
     const { theme, toggleTheme } = useTheme();
     return (
         <button onClick={toggleTheme} title="Cambiar Tema"
-            className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
-            <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-amber-400 transition-colors">
+            className="flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
+            <span className="material-symbols-outlined text-base sm:text-lg text-slate-400 group-hover:text-amber-400 transition-colors">
                 {theme === 'dark' ? 'light_mode' : 'dark_mode'}
             </span>
         </button>
@@ -106,12 +106,12 @@ function AssetTypeFilter() {
         { key: 'stations', label: 'Estaciones', icon: 'location_on' },
     ]
     return (
-        <div className="flex bg-slate-900/80 p-1 rounded-xl border border-slate-800 shrink-0 shadow-lg gap-1">
+        <div className="flex bg-slate-900/80 p-0.5 sm:p-1 rounded-xl border border-slate-800 shrink-0 shadow-lg gap-0.5 sm:gap-1">
             {types.map(t => (
                 <button key={t.key} onClick={() => setAssetType(t.key)} title={t.label}
-                    className={`flex items-center justify-center px-4 h-8 rounded-lg transition-all text-[9.5px] font-black uppercase tracking-widest min-w-[100px] ${assetType === t.key ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                    <span className="material-symbols-outlined text-[15px] mr-2">{t.icon}</span>
-                    {t.label}
+                    className={`flex items-center justify-center px-2 sm:px-4 h-7 sm:h-8 rounded-lg transition-all text-[8px] sm:text-[9.5px] font-black uppercase tracking-tighter sm:tracking-widest min-w-[65px] sm:min-w-[100px] ${assetType === t.key ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <span className="material-symbols-outlined text-[13px] sm:text-[15px] mr-1 sm:mr-2">{t.icon}</span>
+                    <span className="hidden xs:inline">{t.label}</span>
                 </button>
             ))}
         </div>
@@ -257,31 +257,32 @@ function MainLayout() {
 
             {/* CONTENIDO PRINCIPAL */}
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-                <header className="h-16 flex items-center justify-between px-3 sm:px-8 bg-[#05080f]/80 backdrop-blur-xl border-b border-slate-900/50 sticky top-0 z-40">
-                    <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+                <header className="h-14 sm:h-16 flex items-center justify-between px-2 sm:px-8 bg-[#05080f]/80 backdrop-blur-xl border-b border-slate-900/50 sticky top-0 z-40">
+                    <div className="flex items-center gap-1.5 sm:gap-4 overflow-hidden shrink-0">
                         <button onClick={() => setSidebarActive(!sidebarActive)}
-                            className="lg:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 bg-slate-800/50 rounded-xl border border-slate-700 active:scale-95 transition-all">
-                            <span className="material-symbols-outlined text-cyan-400">{sidebarActive ? 'close' : 'menu'}</span>
+                            className="lg:hidden flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-slate-800/50 rounded-xl border border-slate-700 active:scale-95 transition-all">
+                            <span className="material-symbols-outlined text-sm sm:text-base text-cyan-400">{sidebarActive ? 'close' : 'menu'}</span>
                         </button>
 
                         <button onClick={() => navigate('/home')}
-                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-auto sm:px-4 sm:py-2 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
-                            <span className="material-symbols-outlined text-lg text-slate-400 group-hover:text-cyan-400">home</span>
+                            className="hidden xs:flex flex-shrink-0 items-center justify-center w-8 h-8 sm:w-auto sm:px-4 sm:py-2 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
+                            <span className="material-symbols-outlined text-sm sm:text-lg text-slate-400 group-hover:text-cyan-400">home</span>
                             <span className="hidden sm:block text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest ml-2">Inicio</span>
                         </button>
+                        
+                        <ThemeToggle />
 
-                        <div className="hidden xs:flex flex-col min-w-0">
+                        <div className="hidden md:flex flex-col min-w-0 ml-2">
                             <span className="text-[8px] font-black text-cyan-500 uppercase tracking-widest leading-none mb-1 opacity-60">Módulo</span>
-                            <p className="text-[11px] font-black text-white uppercase tracking-tight truncate max-w-[100px] sm:max-w-[200px]">{currentLabel}</p>
+                            <p className="text-[11px] font-black text-white uppercase tracking-tight truncate max-w-[200px]">{currentLabel}</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-8">
-                        <ThemeToggle />
-                        {isMaintenanceModule && <div className="flex-shrink-0 scale-90 sm:scale-100"><AssetTypeFilter /></div>}
+                    <div className="flex items-center gap-1.5 sm:gap-8 justify-end min-w-0">
+                        {isMaintenanceModule && <div className="flex-shrink-0 scale-95 sm:scale-100"><AssetTypeFilter /></div>}
                         
-                        <div className="flex items-center gap-2 sm:gap-3 glass-morphism px-3 sm:px-4 py-1.5 rounded-full border-cyan-500/10">
-                            <div className="w-6 h-6 bg-gold-gradient rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-black text-white">
+                        <div className="hidden xs:flex items-center gap-2 sm:gap-3 glass-morphism px-2 sm:px-4 py-1 sm:py-1.5 rounded-full border-cyan-500/10 shrink-0">
+                            <div className="w-6 h-6 sm:w-6 sm:h-6 bg-gold-gradient rounded-full flex-shrink-0 flex items-center justify-center text-[9px] sm:text-[10px] font-black text-white">
                                 {user?.username?.substring(0, 2).toUpperCase()}
                             </div>
                             <div className="hidden sm:flex flex-col text-right">
