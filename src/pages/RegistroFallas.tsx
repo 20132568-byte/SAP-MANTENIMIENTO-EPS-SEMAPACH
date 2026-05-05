@@ -177,143 +177,150 @@ export default function RegistroFallas() {
             </div>
 
             {showForm && (
-                <div className="bg-slate-800/50 border border-slate-700 rounded-4xl p-premium space-y-10 animate-fade-in shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-10">
-                        <span className="material-symbols-outlined text-9xl text-slate-500/10 select-none opacity-50">warning</span>
-                    </div>
-
-                    <div className="relative">
-                        <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
-                            <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
-                            {editingId ? 'Actualizar Reporte de Falla' : 'Nuevo Registro de Incidencia Técnica'}
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8 relative">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha Evento</label>
-                            <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3.5 px-5 shadow-sm text-slate-200" />
-                        </div>
-                        <div className="md:col-span-2 space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Unidad Afectada</label>
-                            <select value={form.asset_id} onChange={e => set('asset_id', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3.5 px-5 shadow-sm text-slate-200">
-                                <option value="" className="bg-slate-800">Seleccionar Activo...</option>
-                                {assets.filter((as: any) => as.categoria === assetType).map((a: any) => (
-                                    <option key={a.id} value={a.id} className="bg-slate-800">
-                                        {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="md:col-span-2 space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Responsable del Turno</label>
-                            <select value={form.operador_id} onChange={e => set('operador_id', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3.5 px-5 shadow-sm text-slate-200">
-                                <option value="" className="bg-slate-800">Asignar Operador...</option>
-                                {operators.map((o: any) => <option key={o.id} value={o.id} className="bg-slate-800">{o.nombre}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="p-responsive bg-rose-900/20 rounded-4xl grid grid-cols-1 md:grid-cols-3 gap-10 border border-rose-500/20">
-                        <div className="space-y-4">
-                            <h4 className="text-[9px] font-black text-rose-400 uppercase tracking-widest ml-1">Cronometría de Reparación</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-[8px] font-black text-rose-500 uppercase">Inicio</label>
-                                    <input type="time" value={form.hora_inicio} onChange={e => set('hora_inicio', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-xl py-3 px-4 shadow-sm text-slate-200" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[8px] font-black text-rose-500 uppercase">Fin</label>
-                                    <input type="time" value={form.hora_fin} onChange={e => set('hora_fin', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-xl py-3 px-4 shadow-sm text-slate-200" />
-                                </div>
-                            </div>
-                            <div className="pt-2">
-                                <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest block mb-1">MTTR Estimado</span>
-                                <span className="text-3xl font-black text-slate-100 font-mono tracking-tighter">
-                                    {duracionCalc != null ? `${duracionCalc.toFixed(2)}h` : '0.00h'}
-                                </span>
-                            </div>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => { setShowForm(false); setEditingId(null); }}>
+                    <div className="bg-slate-900 rounded-[2rem] border border-slate-700 w-full max-w-5xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl animate-reveal relative" onClick={e => e.stopPropagation()}>
+                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                            <span className="material-symbols-outlined text-8xl text-slate-500 select-none">warning</span>
                         </div>
 
-                        <div className="md:col-span-2 space-y-6">
-                            <h4 className="text-[9px] font-black text-rose-400 uppercase tracking-widest ml-1">Categorización del Incidente</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Clasificación</label>
-                                    <select value={form.clasificacion_falla} onChange={e => set('clasificacion_falla', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3.5 px-5 shadow-sm text-slate-200">
-                                        <option value="" className="bg-slate-800">Seleccionar...</option>
-                                        {(catalogos.clasificaciones || []).map((c: string) => <option key={c} className="bg-slate-800">{c}</option>)}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Sistema Crítico</label>
-                                    <select value={form.sistema_afectado} onChange={e => set('sistema_afectado', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3.5 px-5 shadow-sm text-slate-200">
-                                        <option value="" className="bg-slate-800">Seleccionar...</option>
-                                        {(catalogos.sistemas || []).map((s: string) => <option key={s} className="bg-slate-800">{s}</option>)}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Impacto (Severidad)</label>
-                                    <select value={form.severidad} onChange={e => set('severidad', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3.5 px-5 shadow-sm text-slate-200">
-                                        <option value="" className="bg-slate-800">Seleccionar...</option>
-                                        {(catalogos.severidades || []).map((s: string) => <option key={s} className="bg-slate-800">{s}</option>)}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Presupuesto Ejecutado (S/)</label>
-                                    <input type="number" value={form.costo_reparacion} onChange={e => set('costo_reparacion', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3.5 px-5 shadow-sm text-rose-400 font-mono" step="0.01" placeholder="0.00" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hallazgos y Síntomas</label>
-                            <textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-3xl py-5 px-6 shadow-sm min-h-[120px] resize-none focus:ring-rose-500/20 text-slate-200" placeholder="Describa el fallo, ruidos extraños, fugas, etc..."></textarea>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Solución Técnica Aplicada</label>
-                            <textarea value={form.accion_correctiva} onChange={e => set('accion_correctiva', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-3xl py-5 px-6 shadow-sm min-h-[120px] resize-none focus:ring-rose-500/20 text-slate-200" placeholder="Detalle el procedimiento de reparación realizado..."></textarea>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-8 border-t border-slate-700">
-                        <div className="flex gap-10">
-                            <label className="flex items-center gap-4 cursor-pointer group">
-                                <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${form.inmovilizo_unidad ? 'bg-rose-600 border-rose-600 shadow-lg shadow-rose-900/40' : 'bg-slate-800 border-slate-700 group-hover:border-rose-500 shadow-sm'}`}>
-                                    {form.inmovilizo_unidad && <span className="material-symbols-outlined text-white text-[18px] font-black">check</span>}
-                                    <input type="checkbox" className="hidden" checked={form.inmovilizo_unidad} onChange={e => set('inmovilizo_unidad', e.target.checked)} />
-                                </div>
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-rose-400 transition-colors">Inmovilizó Unidad</span>
-                            </label>
-                            <label className="flex items-center gap-4 cursor-pointer group">
-                                <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${form.es_correctiva_no_programada ? 'bg-sky-600 border-sky-600 shadow-lg shadow-sky-900/40' : 'bg-slate-800 border-slate-700 group-hover:border-sky-500 shadow-sm'}`}>
-                                    {form.es_correctiva_no_programada && <span className="material-symbols-outlined text-white text-[18px] font-black">check</span>}
-                                    <input type="checkbox" className="hidden" checked={form.es_correctiva_no_programada} onChange={e => set('es_correctiva_no_programada', e.target.checked)} />
-                                </div>
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-sky-400 transition-colors">Correctiva No Prog.</span>
-                            </label>
-                        </div>
-                        <div className="flex gap-6">
-                            <button onClick={() => { setShowForm(false); setEditingId(null) }} 
-                                className="text-[11px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-200 px-8 py-4 rounded-2xl transition-all">Descartar</button>
-                            <button onClick={handleSave} 
-                                className="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-widest px-12 py-4 rounded-2xl transition-all shadow-xl shadow-rose-900/40 hover:shadow-rose-300 flex items-center gap-3 active:scale-95">
-                                <span className="material-symbols-outlined text-[20px] font-black">{editingId ? 'update' : 'publish'}</span>
-                                {editingId ? 'Actualizar Reporte' : 'Registrar Falla'}
+                        <div className="flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-800/20">
+                            <h3 className="text-xl font-black text-slate-100 uppercase tracking-widest flex items-center gap-4">
+                                <span className="w-2.5 h-2.5 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)]"></span>
+                                {editingId ? 'Actualizar Reporte de Falla' : 'Nuevo Registro de Incidencia Técnica'}
+                            </h3>
+                            <button onClick={() => { setShowForm(false); setEditingId(null); }} className="w-10 h-10 bg-slate-800/50 hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors border border-slate-700/50 hover:border-slate-600">
+                                <span className="material-symbols-outlined text-lg">close</span>
                             </button>
+                        </div>
+
+                        <div className="p-8 space-y-8 relative">
+                            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha Evento</label>
+                                    <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors uppercase" />
+                                </div>
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Unidad Afectada</label>
+                                    <select value={form.asset_id} onChange={e => set('asset_id', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
+                                        <option value="">Seleccionar Activo...</option>
+                                        {assets.filter((as: any) => as.categoria === assetType).map((a: any) => (
+                                            <option key={a.id} value={a.id}>
+                                                {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Responsable del Turno</label>
+                                    <select value={form.operador_id} onChange={e => set('operador_id', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
+                                        <option value="">Asignar Operador...</option>
+                                        {operators.map((o: any) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="p-8 bg-slate-800/30 rounded-3xl grid grid-cols-1 md:grid-cols-3 gap-10 border border-rose-500/10">
+                                <div className="space-y-4">
+                                    <h4 className="text-[9px] font-black text-rose-400 uppercase tracking-widest ml-1">Cronometría de Reparación</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[8px] font-black text-slate-400 uppercase">Inicio</label>
+                                            <input type="time" value={form.hora_inicio} onChange={e => set('hora_inicio', e.target.value)} 
+                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors" />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[8px] font-black text-slate-400 uppercase">Fin</label>
+                                            <input type="time" value={form.hora_fin} onChange={e => set('hora_fin', e.target.value)} 
+                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors" />
+                                        </div>
+                                    </div>
+                                    <div className="pt-2">
+                                        <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest block mb-1">MTTR Estimado</span>
+                                        <span className="text-3xl font-black text-white font-mono tracking-tighter">
+                                            {duracionCalc != null ? `${duracionCalc.toFixed(2)}h` : '0.00h'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2 space-y-6">
+                                    <h4 className="text-[9px] font-black text-rose-400 uppercase tracking-widest ml-1">Categorización del Incidente</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Clasificación</label>
+                                            <select value={form.clasificacion_falla} onChange={e => set('clasificacion_falla', e.target.value)} 
+                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
+                                                <option value="">Seleccionar...</option>
+                                                {(catalogos.clasificaciones || []).map((c: string) => <option key={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Sistema Crítico</label>
+                                            <select value={form.sistema_afectado} onChange={e => set('sistema_afectado', e.target.value)} 
+                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
+                                                <option value="">Seleccionar...</option>
+                                                {(catalogos.sistemas || []).map((s: string) => <option key={s}>{s}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Impacto (Severidad)</label>
+                                            <select value={form.severidad} onChange={e => set('severidad', e.target.value)} 
+                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
+                                                <option value="">Seleccionar...</option>
+                                                {(catalogos.severidades || []).map((s: string) => <option key={s}>{s}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Presupuesto Ejecutado (S/)</label>
+                                            <input type="number" value={form.costo_reparacion} onChange={e => set('costo_reparacion', e.target.value)} 
+                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-rose-400 font-mono outline-none focus:border-rose-500/50 transition-colors" step="0.01" placeholder="0.00" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hallazgos y Síntomas</label>
+                                    <textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-2xl py-4 px-5 shadow-sm min-h-[120px] resize-none focus:border-rose-500/50 text-slate-200 outline-none transition-colors" placeholder="Describa el fallo, ruidos extraños, fugas, etc..."></textarea>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Solución Técnica Aplicada</label>
+                                    <textarea value={form.accion_correctiva} onChange={e => set('accion_correctiva', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-2xl py-4 px-5 shadow-sm min-h-[120px] resize-none focus:border-rose-500/50 text-slate-200 outline-none transition-colors" placeholder="Detalle el procedimiento de reparación realizado..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 border-t border-slate-800/50 bg-slate-900/50">
+                            <div className="flex gap-10">
+                                <label className="flex items-center gap-4 cursor-pointer group">
+                                    <div className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all duration-300 ${form.inmovilizo_unidad ? 'bg-rose-600 border-rose-600 shadow-lg shadow-rose-900/40' : 'bg-slate-800 border-slate-700 group-hover:border-rose-500 shadow-sm'}`}>
+                                        {form.inmovilizo_unidad && <span className="material-symbols-outlined text-white text-[18px] font-black">check</span>}
+                                        <input type="checkbox" className="hidden" checked={form.inmovilizo_unidad} onChange={e => set('inmovilizo_unidad', e.target.checked)} />
+                                    </div>
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-rose-400 transition-colors">Inmovilizó Unidad</span>
+                                </label>
+                                <label className="flex items-center gap-4 cursor-pointer group">
+                                    <div className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all duration-300 ${form.es_correctiva_no_programada ? 'bg-sky-600 border-sky-600 shadow-lg shadow-sky-900/40' : 'bg-slate-800 border-slate-700 group-hover:border-sky-500 shadow-sm'}`}>
+                                        {form.es_correctiva_no_programada && <span className="material-symbols-outlined text-white text-[18px] font-black">check</span>}
+                                        <input type="checkbox" className="hidden" checked={form.es_correctiva_no_programada} onChange={e => set('es_correctiva_no_programada', e.target.checked)} />
+                                    </div>
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-sky-400 transition-colors">Correctiva No Prog.</span>
+                                </label>
+                            </div>
+                            <div className="flex gap-4">
+                                <button onClick={() => { setShowForm(false); setEditingId(null) }} 
+                                    className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-white px-6 py-3 transition-colors">Cancelar</button>
+                                <button onClick={handleSave} 
+                                    className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-rose-900/20 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[18px] font-black">{editingId ? 'update' : 'publish'}</span>
+                                    {editingId ? 'Actualizar Reporte' : 'Registrar Falla'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

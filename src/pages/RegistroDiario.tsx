@@ -395,380 +395,416 @@ export default function RegistroDiario() {
             </div>
 
             {showQuickMode && (
-                <div className="bg-emerald-900/20 border border-emerald-500/20 rounded-3xl p-responsive space-y-6 animate-fade-in shadow-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white">
-                            <span className="material-symbols-outlined text-[20px]">bolt</span>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => { setShowQuickMode(false); setQuickAssetId(''); setQuickKm('') }}>
+                    <div className="bg-slate-900 rounded-[2rem] border border-slate-700 w-full max-w-2xl overflow-hidden shadow-2xl animate-reveal relative" onClick={e => e.stopPropagation()}>
+                        <div className="absolute top-0 right-0 p-8 opacity-5">
+                            <span className="material-symbols-outlined text-8xl text-emerald-500 select-none">bolt</span>
                         </div>
-                        <div>
-                            <h3 className="text-sm font-black text-emerald-100 uppercase tracking-widest">Asistente de Lectura Express</h3>
-                            <p className="text-[10px] font-bold text-emerald-400 uppercase mt-0.5">Reporte rápido de odómetro — Asume jornada normal</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                            <label className="label-sky text-emerald-400">Activo Seleccionado</label>
-                            <select value={quickAssetId} onChange={e => setQuickAssetId(e.target.value)}
-                                className="w-full text-xs font-black py-3 px-4 bg-slate-800 border-none rounded-2xl focus:ring-emerald-500/20 shadow-sm text-slate-200">
-                                <option value="" className="bg-slate-800">--- Seleccionar ---</option>
-                                {assets.filter(a => a.categoria === assetType).map(a => (
-                                    <option key={a.id} value={a.id} className="bg-slate-800">
-                                        {a.categoria === 'stations' ? `[EST] ${a.codigo_patrimonial}` : `[FLO] ${a.placa_principal}`} | {a.tipo_unidad}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="label-sky text-emerald-400">
-                                Lectura Actual ({quickAssetId ? (assets.find(a => a.id === Number(quickAssetId))?.forma_control === 'Horómetro' ? 'Horas' : 'Km') : '...'})
-                            </label>
-                            <input type="number" value={quickKm} onChange={e => setQuickKm(e.target.value)}
-                                className="w-full text-xs font-black py-4 px-4 bg-slate-800 border-none rounded-2xl focus:ring-emerald-500/20 shadow-sm text-slate-200" placeholder="0.0" />
-                        </div>
-                        <div className="flex flex-col justify-end">
-                            <div className="p-4 bg-white/5 rounded-2xl border border-emerald-500/10">
-                                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest block mb-1">Kilometraje en Base</span>
-                                <span className="text-sm font-black text-emerald-100">
-                                    {quickAssetId ? `${assets.find(a => a.id === Number(quickAssetId))?.km_actual || 0} km` : '---'}
-                                </span>
+                        <div className="flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-800/20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                                    <span className="material-symbols-outlined text-[20px]">bolt</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-widest">Asistente de Lectura Express</h3>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Reporte rápido de odómetro</p>
+                                </div>
                             </div>
+                            <button onClick={() => { setShowQuickMode(false); setQuickAssetId(''); setQuickKm('') }} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined">close</span></button>
                         </div>
-                    </div>
-                    <div className="flex justify-end gap-4 pt-2">
-                        <button onClick={() => { setShowQuickMode(false); setQuickAssetId(''); setQuickKm('') }}
-                            className="text-[10px] font-black text-emerald-400 uppercase tracking-widest hover:bg-emerald-500/10 px-6 py-3 rounded-2xl transition-all">Cancelar</button>
-                        <button onClick={handleQuickSave}
-                            className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-8 py-3 rounded-2xl transition-all shadow-lg shadow-emerald-900/40">Validar y Guardar</button>
+                        
+                        <div className="p-6 space-y-6 relative z-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Activo Seleccionado</label>
+                                    <select value={quickAssetId} onChange={e => setQuickAssetId(e.target.value)}
+                                        className="w-full text-xs font-black py-3 px-4 bg-slate-800/50 border border-slate-700 rounded-xl focus:border-emerald-500/50 outline-none text-slate-200 appearance-none">
+                                        <option value="">--- Seleccionar ---</option>
+                                        {assets.filter(a => a.categoria === assetType).map(a => (
+                                            <option key={a.id} value={a.id}>
+                                                {a.categoria === 'stations' ? `[EST] ${a.codigo_patrimonial}` : `[FLO] ${a.placa_principal}`} | {a.tipo_unidad}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest ml-1">
+                                        Lectura Actual ({quickAssetId ? (assets.find(a => a.id === Number(quickAssetId))?.forma_control === 'Horómetro' ? 'Horas' : 'Km') : '...'})
+                                    </label>
+                                    <input type="number" value={quickKm} onChange={e => setQuickKm(e.target.value)}
+                                        className="w-full text-base font-black py-2.5 px-4 bg-slate-800/80 border border-emerald-500/30 rounded-xl focus:border-emerald-500 outline-none text-white placeholder-slate-600" placeholder="0.0" />
+                                </div>
+                            </div>
+                            
+                            {quickAssetId && (
+                                <div className="p-4 bg-slate-800/30 rounded-xl border border-slate-700/50 flex justify-between items-center">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kilometraje/Horómetro en Base</span>
+                                    <span className="text-sm font-black text-white">
+                                        {assets.find(a => a.id === Number(quickAssetId))?.km_actual || 0}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="flex justify-end gap-3 p-6 border-t border-slate-800/50 bg-slate-900/50">
+                            <button onClick={() => { setShowQuickMode(false); setQuickAssetId(''); setQuickKm('') }}
+                                className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-white px-6 py-3 transition-colors">Cancelar</button>
+                            <button onClick={handleQuickSave}
+                                className="bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-black uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-emerald-900/20">Validar y Guardar</button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* FORMULARIO INICIO DE JORNADA */}
             {showForm && formMode === 'inicio' && (
-                <div className="bg-sky-900/20 border border-sky-500/20 rounded-3xl p-responsive space-y-8 animate-fade-in shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8">
-                        <span className="material-symbols-outlined text-8xl text-sky-500/10 select-none">play_circle</span>
-                    </div>
-                    <div className="relative">
-                        <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
-                            <span className="w-2 h-2 bg-sky-500 rounded-full animate-pulse"></span>
-                            Iniciar Jornada
-                        </h3>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Datos de salida — el chofer completa al comenzar su turno</p>
-                    </div>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => setShowForm(false)}>
+                    <div className="bg-slate-900 rounded-[2rem] border border-slate-700 w-full max-w-3xl overflow-hidden shadow-2xl animate-reveal relative" onClick={e => e.stopPropagation()}>
+                        <div className="absolute top-0 right-0 p-8 opacity-5">
+                            <span className="material-symbols-outlined text-8xl text-sky-500 select-none">play_circle</span>
+                        </div>
+                        <div className="flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-800/20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-sky-500/10 rounded-xl flex items-center justify-center text-sky-400 border border-sky-500/20">
+                                    <span className="material-symbols-outlined text-[20px]">play_circle</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-widest">Iniciar Jornada</h3>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Datos de salida — el chofer completa al comenzar</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined">close</span></button>
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-6 relative">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha</label>
-                            <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-slate-200" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hora Inicio</label>
-                            <input type="time" value={form.hora_inicio_jornada} onChange={e => set('hora_inicio_jornada', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-sky-400" />
-                        </div>
-                        <div className="space-y-2 md:col-span-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Unidad (Placa)</label>
-                            <select value={form.asset_id} onChange={e => handleAssetChange(e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-slate-200">
-                                <option value="" className="bg-slate-800">Seleccionar Activo...</option>
-                                {assets.filter((a: any) => a.categoria === assetType).map((a: any) => (
-                                    <option key={a.id} value={a.id} className="bg-slate-800">
-                                        {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Operador</label>
-                            <select value={form.operador_id} onChange={e => set('operador_id', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-slate-200">
-                                <option value="" className="bg-slate-800">Por Asignar...</option>
-                                {operators.map((o: any) => <option key={o.id} value={o.id} className="bg-slate-800">{o.nombre}</option>)}
-                            </select>
-                        </div>
-                    </div>
+                        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar relative z-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha</label>
+                                    <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hora Inicio</label>
+                                    <input type="time" value={form.hora_inicio_jornada} onChange={e => set('hora_inicio_jornada', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-sky-400 outline-none focus:border-sky-500/50" />
+                                </div>
+                                <div className="space-y-2 lg:col-span-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unidad (Placa)</label>
+                                    <select value={form.asset_id} onChange={e => handleAssetChange(e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50 appearance-none">
+                                        <option value="" className="bg-slate-800">Seleccionar Activo...</option>
+                                        {assets.filter((a: any) => a.categoria === assetType).map((a: any) => (
+                                            <option key={a.id} value={a.id} className="bg-slate-800">
+                                                {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                            <label className="label-sky text-sky-400">
-                                Lectura Inicial ({selectedAsset?.forma_control || 'Control'})
-                            </label>
-                            <input type="number"
-                                value={selectedAsset?.forma_control === 'Horómetro' ? form.horometro_inicial : form.km_inicial}
-                                onChange={e => set(selectedAsset?.forma_control === 'Horómetro' ? 'horometro_inicial' : 'km_inicial', e.target.value)}
-                                className="w-full text-lg font-black bg-slate-800 border-none rounded-2xl py-4 px-6 shadow-sm text-slate-100" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hrs Programadas</label>
-                            <select value={form.horas_programadas} onChange={e => set('horas_programadas', Number(e.target.value))}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200">
-                                <option value="8" className="bg-slate-800">8 Hrs (1 Turno)</option>
-                                <option value="12" className="bg-slate-800">12 Hrs (Mixto)</option>
-                                <option value="16" className="bg-slate-800">16 Hrs (2 Turnos)</option>
-                                <option value="24" className="bg-slate-800">24 Hrs (Guardia)</option>
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Estado</label>
-                            <select value={form.estado_dia} onChange={e => set('estado_dia', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200">
-                                <option className="bg-slate-800">Operativo</option>
-                                <option className="bg-slate-800">En reparación</option>
-                                <option className="bg-slate-800">Fuera de servicio</option>
-                                <option className="bg-slate-800">Sin uso</option>
-                            </select>
-                        </div>
-                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Operador</label>
+                                    <select value={form.operador_id} onChange={e => set('operador_id', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50 appearance-none">
+                                        <option value="" className="bg-slate-800">Por Asignar...</option>
+                                        {operators.map((o: any) => <option key={o.id} value={o.id} className="bg-slate-800">{o.nombre}</option>)}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hrs Prog.</label>
+                                    <select value={form.horas_programadas} onChange={e => set('horas_programadas', Number(e.target.value))}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50 appearance-none">
+                                        <option value="8" className="bg-slate-800">8 Hrs</option>
+                                        <option value="12" className="bg-slate-800">12 Hrs</option>
+                                        <option value="16" className="bg-slate-800">16 Hrs</option>
+                                        <option value="24" className="bg-slate-800">24 Hrs</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado</label>
+                                    <select value={form.estado_dia} onChange={e => set('estado_dia', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50 appearance-none">
+                                        <option className="bg-slate-800">Operativo</option>
+                                        <option className="bg-slate-800">En reparación</option>
+                                        <option className="bg-slate-800">Fuera de servicio</option>
+                                        <option className="bg-slate-800">Sin uso</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 gap-6 pt-2">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">
+                                        Lectura Inicial ({selectedAsset?.forma_control || 'Control'})
+                                    </label>
+                                    <input type="number"
+                                        value={selectedAsset?.forma_control === 'Horómetro' ? form.horometro_inicial : form.km_inicial}
+                                        onChange={e => set(selectedAsset?.forma_control === 'Horómetro' ? 'horometro_inicial' : 'km_inicial', e.target.value)}
+                                        className="w-full text-lg font-black bg-slate-800/80 border border-sky-500/30 rounded-xl py-4 px-6 shadow-sm text-white outline-none focus:border-sky-500" />
+                                </div>
+                            </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Observaciones de Salida</label>
-                        <textarea value={form.observaciones} onChange={e => set('observaciones', e.target.value)}
-                            className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-4 px-5 shadow-sm min-h-[70px] resize-none focus:ring-sky-500/20 text-slate-200" placeholder="Opcional — novedades al comenzar turno..."></textarea>
-                    </div>
-
-                    <div className="flex justify-end gap-5 pt-4">
-                        <button onClick={() => setShowForm(false)}
-                            className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-200 px-6 py-3 rounded-2xl transition-all">Cancelar</button>
-                        <button onClick={handleSaveInicio}
-                            className="bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-black uppercase tracking-widest px-10 py-4 rounded-2xl transition-all shadow-xl shadow-sky-900/40 flex items-center gap-3">
-                            <span className="material-symbols-outlined text-[20px]">play_circle</span>
-                            Registrar Inicio
-                        </button>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Observaciones de Salida</label>
+                                <textarea value={form.observaciones} onChange={e => set('observaciones', e.target.value)}
+                                    className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm min-h-[70px] resize-none outline-none focus:border-sky-500/50 text-slate-200" placeholder="Opcional — novedades al comenzar turno..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-end gap-3 p-6 border-t border-slate-800/50 bg-slate-900/50">
+                            <button onClick={() => setShowForm(false)}
+                                className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-white px-6 py-3 transition-colors">Cancelar</button>
+                            <button onClick={handleSaveInicio}
+                                className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-black uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/20 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[18px]">play_circle</span>
+                                Registrar Inicio
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* FORMULARIO CIERRE DE JORNADA */}
             {showForm && formMode === 'cierre' && editingRecord && (
-                <div className="bg-amber-900/20 border border-amber-500/20 rounded-3xl p-responsive space-y-8 animate-fade-in shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8">
-                        <span className="material-symbols-outlined text-8xl text-amber-500/10 select-none">stop_circle</span>
-                    </div>
-                    <div className="relative">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
-                                    <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-                                    Cerrar Jornada
-                                </h3>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Datos de retorno — el chofer completa al finalizar su turno</p>
-                            </div>
-                            <div className="bg-slate-800 rounded-2xl px-5 py-3 border border-amber-500/20 shadow-sm">
-                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unidad</p>
-                                <p className="text-sm font-black text-slate-200 uppercase">{assets.find(a => a.id === editingRecord.asset_id)?.placa_principal || editingRecord.asset_codigo}</p>
-                                <p className="text-[9px] font-bold text-sky-400 uppercase mt-0.5">Inicio: {editingRecord.hora_inicio_jornada || '---'}</p>
-                            </div>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }}>
+                    <div className="bg-slate-900 rounded-[2rem] border border-slate-700 w-full max-w-3xl overflow-hidden shadow-2xl animate-reveal relative" onClick={e => e.stopPropagation()}>
+                        <div className="absolute top-0 right-0 p-8 opacity-5">
+                            <span className="material-symbols-outlined text-8xl text-amber-500 select-none">stop_circle</span>
                         </div>
-                    </div>
+                        <div className="flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-800/20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-400 border border-amber-500/20">
+                                    <span className="material-symbols-outlined text-[20px]">stop_circle</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-widest">Cerrar Jornada</h3>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Datos de retorno — el chofer completa al finalizar</p>
+                                </div>
+                            </div>
+                            <button onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined">close</span></button>
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-amber-400 uppercase tracking-widest ml-1">Hora Fin de Jornada</label>
-                            <input type="time" value={form.hora_fin_jornada} onChange={e => set('hora_fin_jornada', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-amber-400" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="label-sky text-amber-400">
-                                Lectura Final ({selectedAsset?.forma_control || 'Control'})
-                            </label>
-                            <input type="number"
-                                value={selectedAsset?.forma_control === 'Horómetro' ? form.horometro_final : form.km_final}
-                                onChange={e => set(selectedAsset?.forma_control === 'Horómetro' ? 'horometro_final' : 'km_final', e.target.value)}
-                                className="w-full text-lg font-black bg-slate-800 border-none rounded-2xl py-4 px-6 shadow-sm text-slate-100" />
-                        </div>
-                        <div className="flex flex-col justify-end">
-                            <div className="p-3.5 bg-slate-800 rounded-2xl text-center border border-amber-500/20">
-                                <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest block mb-0.5">Horas de Jornada</span>
-                                <span className="text-sm font-black text-slate-200">
-                                    {calcHorasJornada(editingRecord.hora_inicio_jornada, form.hora_fin_jornada)
-                                        ? `${calcHorasJornada(editingRecord.hora_inicio_jornada, form.hora_fin_jornada)} h`
-                                        : '---'}
-                                </span>
+                        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar relative z-10">
+                            <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50 flex justify-between items-center">
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unidad</p>
+                                    <p className="text-sm font-black text-white uppercase">{assets.find(a => a.id === editingRecord.asset_id)?.placa_principal || editingRecord.asset_codigo}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[9px] font-bold text-sky-400 uppercase">Inicio</p>
+                                    <p className="text-sm font-black text-white">{editingRecord.hora_inicio_jornada || '---'}</p>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Incidencias (Opcional)
-                        </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Parada Desde</label>
-                                <input type="time" value={form.hora_inicio_parada} onChange={e => set('hora_inicio_parada', e.target.value)}
-                                    className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200" />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Parada Hasta</label>
-                                <input type="time" value={form.hora_fin_parada} onChange={e => set('hora_fin_parada', e.target.value)}
-                                    className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200" />
-                            </div>
-                            <div className="col-span-2 flex flex-col justify-end">
-                                {calcHorasParada(form.hora_inicio_parada, form.hora_fin_parada) && (
-                                    <div className="p-3 bg-rose-500/10 rounded-2xl text-center border border-rose-500/20">
-                                        <span className="text-sm font-black text-rose-400">{calcHorasParada(form.hora_inicio_parada, form.hora_fin_parada)}h de parada</span>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-amber-400 uppercase tracking-widest ml-1">Hora Fin de Jornada</label>
+                                    <input type="time" value={form.hora_fin_jornada} onChange={e => set('hora_fin_jornada', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/80 border border-amber-500/30 rounded-xl py-3 px-4 shadow-sm text-amber-400 outline-none focus:border-amber-500" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-amber-400 uppercase tracking-widest ml-1">
+                                        Lectura Final ({selectedAsset?.forma_control || 'Control'})
+                                    </label>
+                                    <input type="number"
+                                        value={selectedAsset?.forma_control === 'Horómetro' ? form.horometro_final : form.km_final}
+                                        onChange={e => set(selectedAsset?.forma_control === 'Horómetro' ? 'horometro_final' : 'km_final', e.target.value)}
+                                        className="w-full text-lg font-black bg-slate-800/80 border border-amber-500/30 rounded-xl py-3 px-4 shadow-sm text-white outline-none focus:border-amber-500" />
+                                </div>
+                                <div className="flex flex-col justify-end">
+                                    <div className="p-3.5 bg-slate-800/50 rounded-xl text-center border border-slate-700 h-full flex flex-col justify-center">
+                                        <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest block mb-0.5">Horas de Jornada</span>
+                                        <span className="text-base font-black text-white">
+                                            {calcHorasJornada(editingRecord.hora_inicio_jornada, form.hora_fin_jornada)
+                                                ? `${calcHorasJornada(editingRecord.hora_inicio_jornada, form.hora_fin_jornada)} h`
+                                                : '---'}
+                                        </span>
                                     </div>
-                                )}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-2">
+                                <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-2 border-t border-slate-800 pt-4">
+                                    <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Incidencias (Opcional)
+                                </h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Parada Desde</label>
+                                        <input type="time" value={form.hora_inicio_parada} onChange={e => set('hora_inicio_parada', e.target.value)}
+                                            className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 outline-none focus:border-rose-500/50" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Parada Hasta</label>
+                                        <input type="time" value={form.hora_fin_parada} onChange={e => set('hora_fin_parada', e.target.value)}
+                                            className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 outline-none focus:border-rose-500/50" />
+                                    </div>
+                                    <div className="col-span-2 flex flex-col justify-end">
+                                        {calcHorasParada(form.hora_inicio_parada, form.hora_fin_parada) && (
+                                            <div className="p-3 bg-rose-500/10 rounded-xl text-center border border-rose-500/20 h-full flex items-center justify-center">
+                                                <span className="text-sm font-black text-rose-400">{calcHorasParada(form.hora_inicio_parada, form.hora_fin_parada)}h de parada</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Novedades del Turno</label>
+                                <textarea value={form.observaciones} onChange={e => set('observaciones', e.target.value)}
+                                    className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-4 px-5 shadow-sm min-h-[70px] resize-none outline-none focus:border-amber-500/50 text-slate-200" placeholder="Incidencias, novedades o comentarios del chofer..."></textarea>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Novedades del Turno</label>
-                        <textarea value={form.observaciones} onChange={e => set('observaciones', e.target.value)}
-                            className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-4 px-5 shadow-sm min-h-[70px] resize-none focus:ring-amber-500/20 text-slate-200" placeholder="Incidencias, novedades o comentarios del chofer..."></textarea>
-                    </div>
-
-                    <div className="flex justify-end gap-5 pt-4">
-                        <button onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }}
-                            className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-200 px-6 py-3 rounded-2xl transition-all">Cancelar</button>
-                        <button onClick={handleSaveCierre}
-                            className="bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest px-10 py-4 rounded-2xl transition-all shadow-xl shadow-amber-900/40 flex items-center gap-3">
-                            <span className="material-symbols-outlined text-[20px]">stop_circle</span>
-                            Cerrar Jornada
-                        </button>
+                        <div className="flex justify-end gap-3 p-6 border-t border-slate-800/50 bg-slate-900/50">
+                            <button onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }}
+                                className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-white px-6 py-3 transition-colors">Cancelar</button>
+                            <button onClick={handleSaveCierre}
+                                className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-black uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-amber-900/20 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[18px]">stop_circle</span>
+                                Cerrar Jornada
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* FORMULARIO EDICIÓN COMPLETA */}
             {showForm && formMode === 'completo' && (
-                <div className="bg-slate-800/50 border border-slate-700 rounded-3xl p-responsive space-y-8 animate-fade-in shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8">
-                        <span className="material-symbols-outlined text-8xl text-slate-500/10 select-none">edit_document</span>
-                    </div>
-                    <div className="relative">
-                        <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
-                            <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
-                            Editar Registro Completo
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-6 relative">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha</label>
-                            <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-slate-200" />
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }}>
+                    <div className="bg-slate-900 rounded-[2rem] border border-slate-700 w-full max-w-4xl overflow-hidden shadow-2xl animate-reveal relative" onClick={e => e.stopPropagation()}>
+                        <div className="absolute top-0 right-0 p-8 opacity-5">
+                            <span className="material-symbols-outlined text-8xl text-sky-500 select-none">edit_document</span>
                         </div>
-                        <div className="space-y-2 md:col-span-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Unidad (Placa)</label>
-                            <select value={form.asset_id} onChange={e => handleAssetChange(e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-slate-200">
-                                <option value="" className="bg-slate-800">Seleccionar Activo...</option>
-                                {assets.map((a: any) => <option key={a.id} value={a.id} className="bg-slate-800">{a.placa_principal || 'S/P'} — {a.codigo_patrimonial}</option>)}
-                            </select>
-                        </div>
-                        <div className="space-y-2 md:col-span-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Operador a Cargo</label>
-                            <select value={form.operador_id} onChange={e => set('operador_id', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-slate-200">
-                                <option value="" className="bg-slate-800">Por Asignar...</option>
-                                {operators.map((o: any) => <option key={o.id} value={o.id} className="bg-slate-800">{o.nombre}</option>)}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="p-responsive bg-sky-900/20 rounded-3xl grid grid-cols-1 md:grid-cols-4 gap-8 border border-sky-500/20">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">Hora Inicio</label>
-                            <input type="time" value={form.hora_inicio_jornada} onChange={e => set('hora_inicio_jornada', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">Hora Fin</label>
-                            <input type="time" value={form.hora_fin_jornada} onChange={e => set('hora_fin_jornada', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">Hrs Programadas</label>
-                            <select value={form.horas_programadas} onChange={e => set('horas_programadas', Number(e.target.value))}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200">
-                                <option value="8" className="bg-slate-800">8 Hrs (1 Turno)</option>
-                                <option value="12" className="bg-slate-800">12 Hrs (Mixto)</option>
-                                <option value="16" className="bg-slate-800">16 Hrs (2 Turnos)</option>
-                                <option value="24" className="bg-slate-800">24 Hrs (Guardia)</option>
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">Estado</label>
-                            <select value={form.estado_dia} onChange={e => set('estado_dia', e.target.value)}
-                                className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200">
-                                <option className="bg-slate-800">Operativo</option>
-                                <option className="bg-slate-800">En reparación</option>
-                                <option className="bg-slate-800">Fuera de servicio</option>
-                                <option className="bg-slate-800">Sin uso</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="space-y-4 col-span-1">
-                            <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Reporte de Inactividad
-                            </h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Parada Desde</label>
-                                    <input type="time" value={form.hora_inicio_parada} onChange={e => set('hora_inicio_parada', e.target.value)}
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200" />
+                        <div className="flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-800/20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-sky-500/10 rounded-xl flex items-center justify-center text-sky-400 border border-sky-500/20">
+                                    <span className="material-symbols-outlined text-[20px]">edit_document</span>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Parada Hasta</label>
-                                    <input type="time" value={form.hora_fin_parada} onChange={e => set('hora_fin_parada', e.target.value)}
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 text-slate-200" />
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-widest">Editar Registro Completo</h3>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Modificación administrativa</p>
                                 </div>
                             </div>
+                            <button onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined">close</span></button>
                         </div>
 
-                        <div className="lg:col-span-2 space-y-4">
-                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-slate-600 rounded-full"></span> Control de Metraje ({selectedAsset?.forma_control || 'Km'})
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar relative z-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Lectura Entrada</label>
-                                    <input type="number"
-                                        value={selectedAsset?.forma_control === 'Horómetro' ? form.horometro_inicial : form.km_inicial}
-                                        onChange={e => set(selectedAsset?.forma_control === 'Horómetro' ? 'horometro_inicial' : 'km_inicial', e.target.value)}
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-slate-200" />
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha</label>
+                                    <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50" />
+                                </div>
+                                <div className="space-y-2 lg:col-span-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unidad (Placa)</label>
+                                    <select value={form.asset_id} onChange={e => handleAssetChange(e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50 appearance-none">
+                                        <option value="" className="bg-slate-800">Seleccionar Activo...</option>
+                                        {assets.map((a: any) => <option key={a.id} value={a.id} className="bg-slate-800">{a.placa_principal || 'S/P'} — {a.codigo_patrimonial}</option>)}
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Lectura Salida</label>
-                                    <input type="number"
-                                        value={selectedAsset?.forma_control === 'Horómetro' ? form.horometro_final : form.km_final}
-                                        onChange={e => set(selectedAsset?.forma_control === 'Horómetro' ? 'horometro_final' : 'km_final', e.target.value)}
-                                        className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-3 px-4 shadow-sm text-sky-400" />
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Operador a Cargo</label>
+                                    <select value={form.operador_id} onChange={e => set('operador_id', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50 appearance-none">
+                                        <option value="" className="bg-slate-800">Por Asignar...</option>
+                                        {operators.map((o: any) => <option key={o.id} value={o.id} className="bg-slate-800">{o.nombre}</option>)}
+                                    </select>
                                 </div>
-                                <div className="flex flex-col justify-end">
-                                    <div className="p-3.5 bg-sky-500/10 rounded-2xl text-center border border-sky-500/20">
-                                        <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest block mb-0.5">Recorrido Neto</span>
-                                        <span className="text-sm font-black text-slate-200">
-                                            {selectedAsset?.forma_control === 'Horómetro'
-                                                ? (form.horometro_final && form.horometro_inicial ? `${(form.horometro_final - form.horometro_inicial).toFixed(2)} h` : '---')
-                                                : (form.km_inicial !== '' && form.km_final !== '' ? `${(Number(form.km_final) - Number(form.km_inicial)).toFixed(2)} km` : '---')}
-                                        </span>
+                            </div>
+
+                            <div className="p-4 bg-slate-800/30 rounded-2xl grid grid-cols-1 md:grid-cols-4 gap-6 border border-slate-700/50">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">Hora Inicio</label>
+                                    <input type="time" value={form.hora_inicio_jornada} onChange={e => set('hora_inicio_jornada', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 outline-none focus:border-sky-500/50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">Hora Fin</label>
+                                    <input type="time" value={form.hora_fin_jornada} onChange={e => set('hora_fin_jornada', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 outline-none focus:border-sky-500/50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">Hrs Prog.</label>
+                                    <select value={form.horas_programadas} onChange={e => set('horas_programadas', Number(e.target.value))}
+                                        className="w-full text-xs font-black bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 outline-none focus:border-sky-500/50 appearance-none">
+                                        <option value="8" className="bg-slate-800">8 Hrs</option>
+                                        <option value="12" className="bg-slate-800">12 Hrs</option>
+                                        <option value="16" className="bg-slate-800">16 Hrs</option>
+                                        <option value="24" className="bg-slate-800">24 Hrs</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-sky-400 uppercase tracking-widest ml-1">Estado</label>
+                                    <select value={form.estado_dia} onChange={e => set('estado_dia', e.target.value)}
+                                        className="w-full text-xs font-black bg-slate-800 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 outline-none focus:border-sky-500/50 appearance-none">
+                                        <option className="bg-slate-800">Operativo</option>
+                                        <option className="bg-slate-800">En reparación</option>
+                                        <option className="bg-slate-800">Fuera de servicio</option>
+                                        <option className="bg-slate-800">Sin uso</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="space-y-4 col-span-1 border-r border-slate-800/50 pr-6">
+                                    <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-slate-800/50 pb-2">
+                                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Reporte Parada
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Parada Desde</label>
+                                            <input type="time" value={form.hora_inicio_parada} onChange={e => set('hora_inicio_parada', e.target.value)}
+                                                className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 outline-none focus:border-rose-500/50" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Parada Hasta</label>
+                                            <input type="time" value={form.hora_fin_parada} onChange={e => set('hora_fin_parada', e.target.value)}
+                                                className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 text-slate-200 outline-none focus:border-rose-500/50" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="lg:col-span-2 space-y-4 pl-0 lg:pl-2">
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 border-b border-slate-800/50 pb-2">
+                                        <span className="w-1.5 h-1.5 bg-slate-600 rounded-full"></span> Control ({selectedAsset?.forma_control || 'Km'})
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Lectura Entrada</label>
+                                            <input type="number"
+                                                value={selectedAsset?.forma_control === 'Horómetro' ? form.horometro_inicial : form.km_inicial}
+                                                onChange={e => set(selectedAsset?.forma_control === 'Horómetro' ? 'horometro_inicial' : 'km_inicial', e.target.value)}
+                                                className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-sky-500/50" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black text-slate-500 uppercase ml-1">Lectura Salida</label>
+                                            <input type="number"
+                                                value={selectedAsset?.forma_control === 'Horómetro' ? form.horometro_final : form.km_final}
+                                                onChange={e => set(selectedAsset?.forma_control === 'Horómetro' ? 'horometro_final' : 'km_final', e.target.value)}
+                                                className="w-full text-xs font-black bg-slate-800/50 border border-sky-500/30 rounded-xl py-3 px-4 shadow-sm text-sky-400 outline-none focus:border-sky-500" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="space-y-2 pt-2">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Notas de Turno / Incidencias</label>
+                                <textarea value={form.observaciones} onChange={e => set('observaciones', e.target.value)}
+                                    className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-4 px-5 shadow-sm min-h-[80px] resize-none outline-none focus:border-sky-500/50 text-slate-200" placeholder="Escriba aquí cualquier novedad..."></textarea>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Notas de Turno / Incidencias</label>
-                        <textarea value={form.observaciones} onChange={e => set('observaciones', e.target.value)}
-                            className="w-full text-xs font-black bg-slate-800 border-none rounded-2xl py-4 px-5 shadow-sm min-h-[100px] resize-none focus:ring-sky-500/20 text-slate-200" placeholder="Escriba aquí cualquier novedad..."></textarea>
-                    </div>
-
-                    <div className="flex justify-end gap-5 pt-4">
-                        <button onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }}
-                            className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-200 px-6 py-3 rounded-2xl transition-all">Cancelar</button>
-                        <button onClick={handleSaveCompleto}
-                            className="bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-black uppercase tracking-widest px-10 py-4 rounded-2xl transition-all shadow-xl shadow-sky-900/40 flex items-center gap-3">
-                            <span className="material-symbols-outlined text-[20px]">sync</span>
-                            Actualizar Registro
-                        </button>
+                        <div className="flex justify-end gap-3 p-6 border-t border-slate-800/50 bg-slate-900/50">
+                            <button onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }}
+                                className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-white px-6 py-3 transition-colors">Cancelar</button>
+                            <button onClick={handleSaveCompleto}
+                                className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-black uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/20 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[18px]">sync</span>
+                                Actualizar Registro
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

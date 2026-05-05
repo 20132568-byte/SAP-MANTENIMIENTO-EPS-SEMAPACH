@@ -207,89 +207,96 @@ export default function GestionPreventivos() {
             </div>
 
             {showForm && (
-                <div className="bg-slate-800/50 border border-slate-700 rounded-4xl p-premium space-y-10 animate-fade-in shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-10">
-                        <span className="material-symbols-outlined text-9xl text-slate-500/10 select-none opacity-50">event_repeat</span>
-                    </div>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => { setShowForm(false); setEditingId(null); }}>
+                    <div className="bg-slate-900 rounded-[2rem] border border-slate-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl animate-reveal relative" onClick={e => e.stopPropagation()}>
+                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                            <span className="material-symbols-outlined text-8xl text-slate-500 select-none">event_repeat</span>
+                        </div>
 
-                <div className="relative">
-                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-4">
-                        <span className="w-2.5 h-2.5 bg-sky-500 rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]"></span>
-                        {editingId ? 'Editar Mantenimiento Realizado' : 'Declaración de Mantenimiento Realizado'}
-                    </h3>
-                </div>
+                        <div className="flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-800/20">
+                            <h3 className="text-xl font-black text-slate-100 uppercase tracking-widest flex items-center gap-4">
+                                <span className="w-2.5 h-2.5 bg-sky-500 rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]"></span>
+                                {editingId ? 'Editar Mantenimiento Realizado' : 'Declaración de Mantenimiento Realizado'}
+                            </h3>
+                            <button onClick={() => { setShowForm(false); setEditingId(null); }} className="w-10 h-10 bg-slate-800/50 hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors border border-slate-700/50 hover:border-slate-600">
+                                <span className="material-symbols-outlined text-lg">close</span>
+                            </button>
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Unidad</label>
-                            <select value={form.asset_id} onChange={e => set('asset_id', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm focus:ring-sky-500 text-slate-200">
-                                <option value="" className="bg-slate-950">Seleccionar Activo...</option>
-                                {assets.filter((as: any) => as.categoria === assetType).map((a: any) => (
-                                    <option key={a.id} value={a.id} className="bg-slate-950">
-                                        {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tipo de Servicio</label>
-                            <select value={form.tipo_preventivo} onChange={e => set('tipo_preventivo', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm focus:ring-sky-500 text-slate-200">
-                                <option className="bg-slate-950">Cambio de aceite y filtros</option>
-                                <option className="bg-slate-950">Revisión general</option>
-                                <option className="bg-slate-950">Afinamiento</option>
-                                <option className="bg-slate-950">Cambio de frenos</option>
-                                <option className="bg-slate-950">Engrase general</option>
-                                <option className="bg-slate-950">Otro</option>
-                            </select>
-                        </div>
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha de Ejecución</label>
-                            <input type="date" value={form.fecha_mantenimiento} onChange={e => set('fecha_mantenimiento', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm focus:ring-sky-500 text-slate-200" />
-                        </div>
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Metraje al Cierre</label>
-                            <input type="number" value={form.lectura_al_momento} onChange={e => set('lectura_al_momento', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm text-sky-400 font-mono focus:ring-sky-500" />
-                        </div>
-                    </div>
+                        <div className="p-8 space-y-8 relative">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unidad</label>
+                                    <select value={form.asset_id} onChange={e => set('asset_id', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors appearance-none">
+                                        <option value="">Seleccionar Activo...</option>
+                                        {assets.filter((as: any) => as.categoria === assetType).map((a: any) => (
+                                            <option key={a.id} value={a.id}>
+                                                {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Servicio</label>
+                                    <select value={form.tipo_preventivo} onChange={e => set('tipo_preventivo', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors appearance-none">
+                                        <option>Cambio de aceite y filtros</option>
+                                        <option>Revisión general</option>
+                                        <option>Afinamiento</option>
+                                        <option>Cambio de frenos</option>
+                                        <option>Engrase general</option>
+                                        <option>Otro</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha de Ejecución</label>
+                                    <input type="date" value={form.fecha_mantenimiento} onChange={e => set('fecha_mantenimiento', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors uppercase" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Metraje al Cierre</label>
+                                    <input type="number" value={form.lectura_al_momento} onChange={e => set('lectura_al_momento', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-sky-400 font-mono outline-none transition-colors" />
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Intervalo de Re-entrada</label>
-                            <input type="number" value={form.intervalo} onChange={e => set('intervalo', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm focus:ring-sky-500 text-slate-200" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Intervalo de Re-entrada</label>
+                                    <input type="number" value={form.intervalo} onChange={e => set('intervalo', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lógica de Control</label>
+                                    <select value={form.unidad_control} onChange={e => set('unidad_control', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors appearance-none">
+                                        <option value="km">Kilometraje (Km)</option>
+                                        <option value="horometro">Horómetro (Hrs)</option>
+                                        <option value="fecha">Temporal (Días)</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Inversión (S/)</label>
+                                    <input type="number" value={form.costo} onChange={e => set('costo', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-sky-400 font-mono outline-none transition-colors" step="0.01" placeholder="0.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Observaciones</label>
+                                    <input type="text" value={form.observaciones} onChange={e => set('observaciones', e.target.value)} 
+                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors" placeholder="Detalles del servicio..." />
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lógica de Control</label>
-                            <select value={form.unidad_control} onChange={e => set('unidad_control', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm focus:ring-sky-500 text-slate-200">
-                                <option value="km" className="bg-slate-950">Kilometraje (Km)</option>
-                                <option value="horometro" className="bg-slate-950">Horómetro (Hrs)</option>
-                                <option value="fecha" className="bg-slate-950">Temporal (Días)</option>
-                            </select>
-                        </div>
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Inversión (S/)</label>
-                            <input type="number" value={form.costo} onChange={e => set('costo', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm text-sky-400 font-mono focus:ring-sky-500" step="0.01" placeholder="0.00" />
-                        </div>
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Observaciones Técnicas</label>
-                            <input type="text" value={form.observaciones} onChange={e => set('observaciones', e.target.value)} 
-                                className="w-full text-xs font-black bg-slate-900 border-none rounded-2xl py-3.5 px-5 shadow-sm focus:ring-sky-500 text-slate-200" placeholder="Detalles del servicio..." />
-                        </div>
-                    </div>
 
-                    <div className="flex justify-end gap-6 pt-4 border-t border-slate-700">
-                        <button onClick={() => setShowForm(false)} 
-                            className="text-[11px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-200 px-8 py-4 rounded-2xl transition-all">Cancelar</button>
-                        <button onClick={handleSave} 
-                            className="bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-black uppercase tracking-widest px-12 py-4 rounded-2xl transition-all shadow-xl shadow-sky-900/40 hover:shadow-sky-300 flex items-center gap-3 active:scale-95">
-                            <span className="material-symbols-outlined text-[20px]">save_as</span> Confirmar Registro
-                        </button>
+                        <div className="flex justify-end gap-3 p-6 border-t border-slate-800/50 bg-slate-900/50">
+                            <button onClick={() => { setShowForm(false); setEditingId(null); }} 
+                                className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-white px-6 py-3 transition-colors">Cancelar</button>
+                            <button onClick={handleSave} 
+                                className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-black uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/20 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[18px]">save_as</span> Confirmar Registro
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
