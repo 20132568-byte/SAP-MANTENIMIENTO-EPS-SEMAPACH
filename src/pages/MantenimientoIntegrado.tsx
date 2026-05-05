@@ -309,6 +309,7 @@ export default function MantenimientoIntegrado() {
                     <h3 className="text-lg font-black text-white uppercase tracking-widest mb-2">Modo de Consulta Activo</h3>
                     <p className="text-sm font-medium text-slate-400 max-w-md text-center">Selecciona un vehículo o estación en los filtros superiores para desplegar su historial completo de mantenimiento, costos y horas invertidas.</p>
                 </div>
+            )}
 
             {/* Formulario */}
             {showForm && currentItem && (
