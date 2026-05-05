@@ -200,7 +200,9 @@ function MainLayout() {
     const currentLabel = [...menuItems, ...ptapMenuItems, ...waterMenuItems].flatMap(s => s.items).find(i => i.path === location.pathname)?.label || 'Panel de Gestión'
 
     const handleLogout = () => {
-        localStorage.clear()
+        const currentTheme = localStorage.getItem('app-theme');
+        localStorage.clear();
+        if (currentTheme) localStorage.setItem('app-theme', currentTheme);
         window.location.href = '/'
     }
 
@@ -378,7 +380,9 @@ function HomeModules() {
     ]
 
     const handleLogout = () => {
-        localStorage.clear()
+        const currentTheme = localStorage.getItem('app-theme');
+        localStorage.clear();
+        if (currentTheme) localStorage.setItem('app-theme', currentTheme);
         navigate('/login')
     }
 
