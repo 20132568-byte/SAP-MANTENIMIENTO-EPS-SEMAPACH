@@ -301,6 +301,7 @@ export default function MantenimientoIntegrado() {
                         </div>
                     </div>
                 </>
+            ) : (
                 <div className="flex flex-col items-center justify-center py-24 text-slate-500 bg-slate-900/20 rounded-[2rem] border border-slate-800/50 border-dashed backdrop-blur-sm">
                     <div className="w-20 h-20 bg-slate-800/50 rounded-3xl flex items-center justify-center mb-6 shadow-inner border border-slate-700/50">
                         <span className="material-symbols-outlined text-5xl text-slate-400 animate-pulse">troubleshoot</span>
