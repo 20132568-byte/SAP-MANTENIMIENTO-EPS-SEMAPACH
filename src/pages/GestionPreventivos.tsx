@@ -16,6 +16,8 @@ export default function GestionPreventivos() {
     const [showForm, setShowForm] = useState(false)
     const [editingId, setEditingId] = useState<number | null>(null)
     const [toast, setToast] = useState<string | null>(null)
+    const [searchAsset, setSearchAsset] = useState('')
+    const [isOpenAsset, setIsOpenAsset] = useState(false)
     const [form, setForm] = useState<any>({
         asset_id: '', tipo_preventivo: 'Cambio de aceite y filtros',
         fecha_mantenimiento: new Date().toISOString().split('T')[0],
@@ -225,17 +227,67 @@ export default function GestionPreventivos() {
 
                         <div className="p-8 space-y-8 relative">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="space-y-2">
+                                <div className="space-y-2 relative">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unidad</label>
-                                    <select value={form.asset_id} onChange={e => set('asset_id', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors appearance-none">
-                                        <option value="">Seleccionar Activo...</option>
-                                        {assets.filter((as: any) => as.categoria === assetType).map((a: any) => (
-                                            <option key={a.id} value={a.id}>
-                                                {a.placa_principal || 'S/P'} — {a.codigo_patrimonial} ({a.tipo_unidad})
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-center bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 shadow-sm group transition-all focus-within:ring-1 focus-within:ring-sky-500/50 focus-within:border-sky-500/50 cursor-pointer"
+                                        onClick={() => setIsOpenAsset(!isOpenAsset)}>
+                                        <div className="flex-1">
+                                            <div className="text-xs font-black text-slate-200 uppercase truncate">
+                                                {form.asset_id 
+                                                    ? `${assets.find((a: any) => a.id === Number(form.asset_id))?.placa_principal || 'S/P'} — ${assets.find((a: any) => a.id === Number(form.asset_id))?.codigo_patrimonial}`
+                                                    : 'Seleccionar Activo...'}
+                                            </div>
+                                        </div>
+                                        <span className={`material-symbols-outlined text-slate-500 transition-transform duration-300 ${isOpenAsset ? 'rotate-180' : ''}`}>expand_more</span>
+                                    </div>
+
+                                    {isOpenAsset && (
+                                        <>
+                                            <div className="fixed inset-0 z-[110]" onClick={() => setIsOpenAsset(false)}></div>
+                                            <div className="absolute top-full left-0 w-full mt-2 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl z-[120] overflow-hidden animate-reveal">
+                                                <div className="p-3 border-b border-slate-800/50 bg-slate-800/20">
+                                                    <div className="flex items-center bg-slate-950/50 rounded-xl px-3 py-2 border border-slate-700/50">
+                                                        <span className="material-symbols-outlined text-slate-500 text-sm mr-2">search</span>
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Buscar por placa o código..." 
+                                                            value={searchAsset}
+                                                            onChange={e => setSearchAsset(e.target.value)}
+                                                            onClick={e => e.stopPropagation()}
+                                                            className="bg-transparent border-none text-[11px] font-bold text-slate-200 placeholder:text-slate-600 focus:ring-0 p-0 w-full uppercase"
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+                                                    {assets.filter((as: any) => as.categoria === assetType).filter((a: any) => 
+                                                        a.placa_principal?.toLowerCase().includes(searchAsset.toLowerCase()) || 
+                                                        a.codigo_patrimonial?.toLowerCase().includes(searchAsset.toLowerCase())
+                                                    ).length > 0 ? (
+                                                        assets.filter((as: any) => as.categoria === assetType).filter((a: any) => 
+                                                            a.placa_principal?.toLowerCase().includes(searchAsset.toLowerCase()) || 
+                                                            a.codigo_patrimonial?.toLowerCase().includes(searchAsset.toLowerCase())
+                                                        ).map((a: any) => (
+                                                            <div key={a.id} 
+                                                                className={`px-4 py-3 hover:bg-sky-500/10 cursor-pointer transition-colors border-b border-slate-800/30 flex items-center justify-between group ${Number(form.asset_id) === a.id ? 'bg-sky-500/5' : ''}`}
+                                                                onClick={() => { set('asset_id', String(a.id)); setIsOpenAsset(false); setSearchAsset('') }}>
+                                                                <div>
+                                                                    <div className="text-[11px] font-black text-slate-100 uppercase tracking-tight">{a.placa_principal || 'SIN PLACA'}</div>
+                                                                    <div className="text-[9px] font-bold text-slate-500 uppercase">{a.codigo_patrimonial} — {a.tipo_unidad}</div>
+                                                                </div>
+                                                                {Number(form.asset_id) === a.id && <span className="material-symbols-outlined text-sky-500 text-sm">check_circle</span>}
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="p-8 text-center text-slate-500">
+                                                            <span className="material-symbols-outlined block mb-2 opacity-20">search_off</span>
+                                                            <span className="text-[10px] font-bold uppercase">No se hallaron coincidencias</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Servicio</label>

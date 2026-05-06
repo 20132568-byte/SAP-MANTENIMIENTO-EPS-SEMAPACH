@@ -25,6 +25,10 @@ export default function MantenimientoIntegrado() {
         tipo: 'preventivo', descripcion: '', horas_trabajadas: '', costo: '', tecnico: '', observaciones: '',
         asset_id: '', operador_id: '', hora_inicio: '', hora_fin: '', sistema_afectado: '', severidad: '', causa_probable: '', accion_correctiva: ''
     })
+    const [searchVehicle, setSearchVehicle] = useState('')
+    const [searchStation, setSearchStation] = useState('')
+    const [isOpenVehicle, setIsOpenVehicle] = useState(false)
+    const [isOpenStation, setIsOpenStation] = useState(false)
     const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -157,27 +161,136 @@ export default function MantenimientoIntegrado() {
                 </div>
                 
                 {/* Selector de activo */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {assetType !== 'stations' && (
-                        <div className="relative group">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-hover:text-cyan-400 transition-colors text-sm">directions_car</span>
-                            <select value={selectedType === 'vehicle' ? (selectedId ?? '') : ''} onChange={e => { setSelectedType('vehicle'); setSelectedId(e.target.value ? Number(e.target.value) : null) }}
-                                className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-9 pr-8 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all appearance-none outline-none">
-                                <option value="">Seleccionar vehículo...</option>
-                                {vehicles.map(v => <option key={v.id} value={v.id}>{v.codigo_patrimonial} — {v.placa_principal || v.tipo_unidad}</option>)}
-                            </select>
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 pointer-events-none text-sm">expand_more</span>
+                        <div className="relative">
+                            <div className="flex items-center bg-slate-900/40 border border-slate-700/50 rounded-xl px-3 py-2.5 group transition-all focus-within:ring-1 focus-within:ring-cyan-500/50 focus-within:border-cyan-500/50 cursor-pointer"
+                                onClick={() => setIsOpenVehicle(!isOpenVehicle)}>
+                                <span className="material-symbols-outlined text-slate-400 group-hover:text-cyan-400 transition-colors text-sm mr-3">directions_car</span>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Vehículo</div>
+                                    <div className="text-xs font-bold text-slate-200 uppercase truncate">
+                                        {selectedType === 'vehicle' && selectedId 
+                                            ? `${vehicles.find(v => v.id === selectedId)?.codigo_patrimonial} — ${vehicles.find(v => v.id === selectedId)?.placa_principal || 'S/P'}`
+                                            : 'Seleccionar Vehículo...'}
+                                    </div>
+                                </div>
+                                <span className={`material-symbols-outlined text-slate-500 transition-transform duration-300 ${isOpenVehicle ? 'rotate-180' : ''}`}>expand_more</span>
+                            </div>
+
+                            {isOpenVehicle && (
+                                <>
+                                    <div className="fixed inset-0 z-[110]" onClick={() => setIsOpenVehicle(false)}></div>
+                                    <div className="absolute top-full left-0 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl z-[120] overflow-hidden animate-reveal">
+                                        <div className="p-3 border-b border-slate-800/50 bg-slate-800/20">
+                                            <div className="flex items-center bg-slate-950/50 rounded-xl px-3 py-2 border border-slate-700/50">
+                                                <span className="material-symbols-outlined text-slate-500 text-sm mr-2">search</span>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Buscar por placa o código..." 
+                                                    value={searchVehicle}
+                                                    onChange={e => setSearchVehicle(e.target.value)}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="bg-transparent border-none text-[11px] font-bold text-slate-200 placeholder:text-slate-600 focus:ring-0 p-0 w-full uppercase"
+                                                    autoFocus
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                            {vehicles.filter(v => 
+                                                v.codigo_patrimonial?.toLowerCase().includes(searchVehicle.toLowerCase()) || 
+                                                v.placa_principal?.toLowerCase().includes(searchVehicle.toLowerCase())
+                                            ).length > 0 ? (
+                                                vehicles.filter(v => 
+                                                    v.codigo_patrimonial?.toLowerCase().includes(searchVehicle.toLowerCase()) || 
+                                                    v.placa_principal?.toLowerCase().includes(searchVehicle.toLowerCase())
+                                                ).map(v => (
+                                                    <div key={v.id} 
+                                                        className={`px-4 py-3 hover:bg-cyan-500/10 cursor-pointer transition-colors border-b border-slate-800/30 flex items-center justify-between group ${selectedId === v.id ? 'bg-cyan-500/5' : ''}`}
+                                                        onClick={() => { setSelectedType('vehicle'); setSelectedId(v.id); setIsOpenVehicle(false); setSearchVehicle('') }}>
+                                                        <div>
+                                                            <div className="text-[11px] font-black text-slate-100 uppercase tracking-tight">{v.codigo_patrimonial}</div>
+                                                            <div className="text-[9px] font-bold text-slate-500 uppercase">{v.placa_principal || v.tipo_unidad}</div>
+                                                        </div>
+                                                        {selectedId === v.id && <span className="material-symbols-outlined text-cyan-500 text-sm">check_circle</span>}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="p-8 text-center text-slate-500">
+                                                    <span className="material-symbols-outlined block mb-2 opacity-20">search_off</span>
+                                                    <span className="text-[10px] font-bold uppercase">No se hallaron coincidencias</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
+
                     {assetType !== 'fleet' && (
-                        <div className="relative group">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-hover:text-purple-400 transition-colors text-sm">location_on</span>
-                            <select value={selectedType === 'station' ? (selectedId ?? '') : ''} onChange={e => { setSelectedType('station'); setSelectedId(e.target.value ? Number(e.target.value) : null) }}
-                                className="w-full bg-slate-900/40 border border-slate-700/50 rounded-lg pl-9 pr-8 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 transition-all appearance-none outline-none">
-                                <option value="">Seleccionar estación...</option>
-                                {stations.map(s => <option key={s.id} value={s.id}>{s.codigo} — {s.nombre} ({s.tipo})</option>)}
-                            </select>
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 pointer-events-none text-sm">expand_more</span>
+                        <div className="relative">
+                            <div className="flex items-center bg-slate-900/40 border border-slate-700/50 rounded-xl px-3 py-2.5 group transition-all focus-within:ring-1 focus-within:ring-purple-500/50 focus-within:border-purple-500/50 cursor-pointer"
+                                onClick={() => setIsOpenStation(!isOpenStation)}>
+                                <span className="material-symbols-outlined text-slate-400 group-hover:text-purple-400 transition-colors text-sm mr-3">location_on</span>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Estación</div>
+                                    <div className="text-xs font-bold text-slate-200 uppercase truncate">
+                                        {selectedType === 'station' && selectedId 
+                                            ? stations.find(s => s.id === selectedId)?.nombre 
+                                            : 'Seleccionar Estación...'}
+                                    </div>
+                                </div>
+                                <span className={`material-symbols-outlined text-slate-500 transition-transform duration-300 ${isOpenStation ? 'rotate-180' : ''}`}>expand_more</span>
+                            </div>
+
+                            {isOpenStation && (
+                                <>
+                                    <div className="fixed inset-0 z-[110]" onClick={() => setIsOpenStation(false)}></div>
+                                    <div className="absolute top-full left-0 w-full mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl z-[120] overflow-hidden animate-reveal">
+                                        <div className="p-3 border-b border-slate-800/50 bg-slate-800/20">
+                                            <div className="flex items-center bg-slate-950/50 rounded-xl px-3 py-2 border border-slate-700/50">
+                                                <span className="material-symbols-outlined text-slate-500 text-sm mr-2">search</span>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Buscar estación..." 
+                                                    value={searchStation}
+                                                    onChange={e => setSearchStation(e.target.value)}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="bg-transparent border-none text-[11px] font-bold text-slate-200 placeholder:text-slate-600 focus:ring-0 p-0 w-full uppercase"
+                                                    autoFocus
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                            {stations.filter(s => 
+                                                s.nombre?.toLowerCase().includes(searchStation.toLowerCase()) ||
+                                                s.codigo?.toLowerCase().includes(searchStation.toLowerCase())
+                                            ).length > 0 ? (
+                                                stations.filter(s => 
+                                                    s.nombre?.toLowerCase().includes(searchStation.toLowerCase()) ||
+                                                    s.codigo?.toLowerCase().includes(searchStation.toLowerCase())
+                                                ).map(s => (
+                                                    <div key={s.id} 
+                                                        className={`px-4 py-3 hover:bg-purple-500/10 cursor-pointer transition-colors border-b border-slate-800/30 flex items-center justify-between group ${selectedId === s.id ? 'bg-purple-500/5' : ''}`}
+                                                        onClick={() => { setSelectedType('station'); setSelectedId(s.id); setIsOpenStation(false); setSearchStation('') }}>
+                                                        <div>
+                                                            <div className="text-[11px] font-black text-slate-100 uppercase tracking-tight">{s.nombre}</div>
+                                                            <div className="text-[9px] font-bold text-slate-500 uppercase">{s.codigo} — {s.tipo}</div>
+                                                        </div>
+                                                        {selectedId === s.id && <span className="material-symbols-outlined text-purple-500 text-sm">check_circle</span>}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="p-8 text-center text-slate-500">
+                                                    <span className="material-symbols-outlined block mb-2 opacity-20">search_off</span>
+                                                    <span className="text-[10px] font-bold uppercase">No se hallaron coincidencias</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

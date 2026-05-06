@@ -266,8 +266,14 @@ function MainLayout() {
                             <span className="material-symbols-outlined text-sm sm:text-base text-cyan-400">{sidebarActive ? 'close' : 'menu'}</span>
                         </button>
 
+                        <button onClick={() => navigate(-1)}
+                            className="flex flex-shrink-0 items-center justify-center w-8 h-8 sm:w-auto sm:px-4 sm:py-2 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
+                            <span className="material-symbols-outlined text-sm sm:text-lg text-slate-400 group-hover:text-cyan-400">arrow_back</span>
+                            <span className="hidden sm:block text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest ml-2">Atrás</span>
+                        </button>
+
                         <button onClick={() => navigate('/home')}
-                            className="hidden xs:flex flex-shrink-0 items-center justify-center w-8 h-8 sm:w-auto sm:px-4 sm:py-2 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
+                            className="flex flex-shrink-0 items-center justify-center w-8 h-8 sm:w-auto sm:px-4 sm:py-2 bg-slate-800/30 hover:bg-slate-700/50 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all group">
                             <span className="material-symbols-outlined text-sm sm:text-lg text-slate-400 group-hover:text-cyan-400">home</span>
                             <span className="hidden sm:block text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest ml-2">Inicio</span>
                         </button>
