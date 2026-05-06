@@ -84,8 +84,8 @@ export const api = {
     updateDiagnosis: (assetId: number, data: any) => request<any>(`/diagnosis/${assetId}`, { method: 'PUT', body: JSON.stringify(data) }),
 
     // === KPI ===
-    getKPIGlobal: (desde: string, hasta: string, sector?: string, categoria?: string) => request<any>(`/kpi/global?desde=${desde}&hasta=${hasta}${sector ? '&sector=' + encodeURIComponent(sector) : ''}${categoria ? '&categoria=' + encodeURIComponent(categoria) : ''}`),
-    getKPIPorActivo: (desde: string, hasta: string, sector?: string, categoria?: string) => request<any[]>(`/kpi/por-activo?desde=${desde}&hasta=${hasta}${sector ? '&sector=' + encodeURIComponent(sector) : ''}${categoria ? '&categoria=' + encodeURIComponent(categoria) : ''}`),
+    getKPIGlobal: (desde: string, hasta: string, sector?: string) => request<any>(`/kpi/global?desde=${desde}&hasta=${hasta}${sector && sector !== 'General' ? '&sector=' + encodeURIComponent(sector) : ''}`),
+    getKPIPorActivo: (desde: string, hasta: string, sector?: string) => request<any[]>(`/kpi/por-activo?desde=${desde}&hasta=${hasta}${sector && sector !== 'General' ? '&sector=' + encodeURIComponent(sector) : ''}`),
 
     // === Monitoreo de Agua ===
     getWaterReadings: (params: { fecha?: string; inicio?: string; fin?: string }) => {

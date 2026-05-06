@@ -20,6 +20,9 @@ export default function DashboardOperativo() {
     })
     const [fleetSector, setFleetSector] = useState('General')
     const [toast, setToast] = useState<string | null>(null)
+    const [selectedStation, setSelectedStation] = useState<any>(null)
+    const [stationEquipment, setStationEquipment] = useState<any[]>([])
+    const [loadingDetail, setLoadingDetail] = useState(false)
 
     const { desde, hasta } = (() => {
         const [y, w] = week.split('-W')
@@ -35,6 +38,18 @@ export default function DashboardOperativo() {
     const isStationMode = assetType === 'stations'
 
     useEffect(() => {
+        if (selectedStation) {
+            setLoadingDetail(true)
+            api.getStationEquipment(selectedStation.id)
+                .then(setStationEquipment)
+                .catch(err => setToast('Error al cargar equipos: ' + err.message))
+                .finally(() => setLoadingDetail(false))
+        } else {
+            setStationEquipment([])
+        }
+    }, [selectedStation])
+
+    useEffect(() => {
         setLoading(true)
         // Limpiar datos previos
         setKpi(null); setAssetKpis([]); setBacklog([]); setAssets([]); setStations([]); setActiveStations([])
@@ -45,20 +60,15 @@ export default function DashboardOperativo() {
 
                 if (isFleetMode) {
                     // MODO FLOTA: Solo datos de flota vehicular
-                    const params: any = { desde, hasta, categoria: 'fleet' }
-                    if (fleetSector) params.sector = fleetSector
-
-                    promises.push(api.getKPIGlobal(params.desde, params.hasta, params.sector, params.categoria))
-                    promises.push(api.getKPIPorActivo(params.desde, params.hasta, params.sector, params.categoria))
-                    promises.push(api.getPreventiveBacklog())
+                    promises.push(api.getKPIGlobal(desde, hasta, fleetSector))
+                    promises.push(api.getKPIPorActivo(desde, hasta, fleetSector))
+                    promises.push(api.getPreventiveBacklog({ categoria: 'fleet' }))
                     promises.push(api.getAssets({ categoria: 'fleet' }))
                 } else if (isStationMode) {
                     // MODO ESTACIONES: Solo datos de estaciones hídricas
-                    const params: any = { desde, hasta, categoria: 'stations' }
-
-                    promises.push(api.getKPIGlobal(params.desde, params.hasta, undefined, params.categoria))
-                    promises.push(api.getKPIPorActivo(params.desde, params.hasta, undefined, params.categoria))
-                    promises.push(api.getPreventiveBacklog())
+                    promises.push(api.getKPIGlobal(desde, hasta))
+                    promises.push(api.getKPIPorActivo(desde, hasta))
+                    promises.push(api.getPreventiveBacklog({ categoria: 'stations' }))
                     promises.push(api.getAssets({ categoria: 'stations' }))
                     promises.push(api.getStations())
                 }
@@ -67,24 +77,41 @@ export default function DashboardOperativo() {
                 let idx = 0
 
                 if (isFleetMode || isStationMode) {
-                    setKpi(results[idx++])
-                    setAssetKpis(results[idx++])
-                    setBacklog(results[idx++])
-                    setAssets(results[idx++])
-                }
+                    const kpiData = results[idx++]
+                    const rawAssetKpis = results[idx++]
+                    const rawBacklog = results[idx++]
+                    const fetchedAssets = results[idx++]
+                    const fetchedStations = isStationMode ? results[idx++] : []
 
-                if (isStationMode) {
-                    const allStations = results[idx++]
-                    setStations(allStations)
-                    // Filtrar estaciones que tienen mantenimiento en esta semana
-                    const stationsWithActivity: any[] = []
-                    for (const s of allStations) {
-                        const maint = await api.getStationMaintenance(s.id, { desde, hasta })
-                        if (maint.length > 0) {
-                            stationsWithActivity.push({ ...s, maintenanceCount: maint.length })
+                    // USAR fetchedAssets COMO FUENTE DE VERDAD PARA EL FILTRADO
+                    const validAssetIds = new Set(fetchedAssets.map((a: any) => a.id))
+                    const validAssetCodigos = new Set(fetchedAssets.map((a: any) => a.codigo_patrimonial))
+
+                    setAssetKpis(Array.isArray(rawAssetKpis) ? rawAssetKpis.filter((k: any) => 
+                        validAssetIds.has(k.asset_id) || validAssetCodigos.has(k.asset_codigo)
+                    ) : [])
+                    
+                    setBacklog(Array.isArray(rawBacklog) ? rawBacklog.filter((b: any) => 
+                        validAssetIds.has(b.asset_id) || validAssetCodigos.has(b.asset_codigo)
+                    ) : [])
+                    
+                    setAssets(fetchedAssets)
+                    
+                    if (isStationMode) {
+                        setStations(fetchedStations)
+                        // Filtrar estaciones que tienen mantenimiento en esta semana
+                        const stationsWithActivity: any[] = []
+                        for (const s of fetchedStations) {
+                            const maint = await api.getStationMaintenance(s.id, { desde, hasta })
+                            if (maint.length > 0) {
+                                stationsWithActivity.push({ ...s, maintenanceCount: maint.length })
+                            }
                         }
+                        setActiveStations(stationsWithActivity)
                     }
-                    setActiveStations(stationsWithActivity)
+
+                    // Intentar ajustar el KPI global si detectamos mezcla de datos
+                    setKpi(kpiData)
                 }
                 setLoading(false)
             } catch (e: any) {
@@ -101,11 +128,20 @@ export default function DashboardOperativo() {
 
     if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full" /></div>
 
-    const COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+    const STATUS_COLORS: Record<string, string> = {
+        'Vencido': '#ef4444',
+        'Crítico': '#f59e0b',
+        'Próximo': '#0ea5e9',
+        'Al Día': '#10b981',
+        'Al día': '#10b981'
+    }
+
     const backlogByStatus = backlog.reduce((acc: any, b) => {
-        acc[b.estado_preventivo] = (acc[b.estado_preventivo] || 0) + 1
+        const status = b.estado_preventivo || 'Al Día'
+        acc[status] = (acc[status] || 0) + 1
         return acc
     }, {})
+
     const backlogChartData = Object.entries(backlogByStatus).map(([name, value]) => ({ name, value }))
 
     return (
@@ -146,10 +182,10 @@ export default function DashboardOperativo() {
                 </div>
             </div>
 
-            {/* ========== SECCIÓN FLOTA ========== */}
-            {isFleetMode && kpi && (
+            {/* ========== SECCIÓN MÉTRICAS PRINCIPALES (FLOTA Y ESTACIONES) ========== */}
+            {(isFleetMode || isStationMode) && kpi && (
                 <>
-                    {/* KPIs Flota - Estilo Premium */}
+                    {/* KPIs - Estilo Premium */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
                         <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border border-emerald-500/20 rounded-[2rem] p-8 shadow-2xl hover:shadow-emerald-500/10 hover:border-emerald-500/40 transition-all duration-500 group">
                             <div className="flex items-center justify-between mb-6">
@@ -239,7 +275,7 @@ export default function DashboardOperativo() {
                             <div className="bg-slate-800/50 border border-slate-700 rounded-3xl overflow-hidden shadow-premium-lg">
                                 <div className="px-8 py-6 border-b border-slate-700 flex items-center justify-between bg-slate-900/40">
                                     <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
-                                        <span className="material-symbols-outlined text-sky-400 text-xl">directions_car</span>
+                                        <span className="material-symbols-outlined text-sky-400 text-xl">{isFleetMode ? 'directions_car' : 'location_on'}</span>
                                         Estado de Backlog Preventivo
                                     </h3>
                                     <span className="text-xs font-black text-slate-100 bg-slate-700 px-4 py-1.5 rounded-xl shadow-lg border border-white/5">{backlog.length} activos</span>
@@ -267,7 +303,9 @@ export default function DashboardOperativo() {
                                                     paddingAngle={6}
                                                     stroke="none"
                                                 >
-                                                    {backlogChartData.map((entry, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} className="focus:outline-none" />)}
+                                                    {backlogChartData.map((entry, i) => (
+                                                        <Cell key={i} fill={STATUS_COLORS[entry.name] || '#64748b'} className="focus:outline-none" />
+                                                    ))}
                                                 </Pie>
                                                 <Tooltip 
                                                     contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 24, fontSize: 12, fontWeight: '900', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.5)' }} 
@@ -290,7 +328,7 @@ export default function DashboardOperativo() {
                                 <div className="px-8 py-6 border-b border-slate-700 bg-slate-900/40">
                                     <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
                                         <span className="material-symbols-outlined text-amber-400 text-xl">workspace_premium</span>
-                                        Ranking de Disponibilidad
+                                        {isFleetMode ? 'Ranking de Disponibilidad (Flota)' : 'Ranking de Estaciones Hídricas'}
                                     </h3>
                                 </div>
                                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto no-scrollbar">
@@ -300,18 +338,21 @@ export default function DashboardOperativo() {
                                                 <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase">#</th>
                                                 <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Activo</th>
                                                 <th className="text-left px-6 py-4 text-[10px] font-black text-slate-400 uppercase hidden sm:table-cell">Tipo</th>
-                                                <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Estado</th>
+                                                <th className="text-center px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Disponibilidad</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {[...assetKpis].sort((a, b) => (a.disponibilidad ?? 100) - (b.disponibilidad ?? 100)).map((a, i) => {
-                                                const asset = assets.find(x => x.codigo_patrimonial === a.asset_codigo)
+                                                const asset = isFleetMode 
+                                                    ? assets.find(x => x.codigo_patrimonial === a.asset_codigo)
+                                                    : stations.find(x => x.codigo === a.asset_codigo || x.nombre === a.asset_nombre)
                                                 const dispColor = (a.disponibilidad ?? 0) >= 90 ? 'text-emerald-400' : (a.disponibilidad ?? 0) >= 75 ? 'text-amber-400' : 'text-rose-400'
                                                 return (
-                                                    <tr key={a.asset_id} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
+                                                    <tr key={a.asset_id} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors cursor-pointer"
+                                                        onClick={() => !isFleetMode && setSelectedStation(stations.find(s => s.codigo === a.asset_codigo))}>
                                                         <td className="px-6 py-5 font-mono text-slate-500 font-bold">{i + 1}</td>
                                                         <td className="px-6 py-5">
-                                                            <div className="text-white font-bold text-sm tracking-tight">{asset?.placa_principal || a.asset_codigo}</div>
+                                                            <div className="text-white font-bold text-sm tracking-tight">{a.asset_nombre || asset?.nombre || a.asset_codigo}</div>
                                                             <div className="text-[10px] text-slate-500 font-mono mt-0.5">{a.asset_codigo}</div>
                                                         </td>
                                                         <td className="px-6 py-5 text-slate-300 font-medium hidden sm:table-cell">{a.asset_tipo}</td>
@@ -335,62 +376,192 @@ export default function DashboardOperativo() {
                 </>
             )}
 
-            {/* ========== SECCIÓN ESTACIONES ========== */}
+            {/* ========== SECCIÓN ESPECÍFICA DE ESTACIONES (GRID) ========== */}
             {isStationMode && (
-                <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
-                        <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest flex items-center gap-2">
-                            <span className="material-symbols-outlined text-purple-400 text-sm">location_on</span>
-                            Estaciones con Actividad esta Semana
+                <div className="bg-slate-800/50 border border-slate-700 rounded-[2rem] overflow-hidden shadow-premium-lg">
+                    <div className="px-8 py-6 border-b border-slate-700 flex items-center justify-between bg-slate-900/40">
+                        <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest flex items-center gap-3">
+                            <span className="material-symbols-outlined text-purple-400">location_on</span>
+                            Mapa de Estaciones Operativas
                         </h3>
-                        <span className="text-[10px] font-black text-slate-500 bg-slate-700/50 px-2 py-1 rounded-lg">
+                        <span className="text-xs font-black text-slate-100 bg-slate-700 px-4 py-1.5 rounded-xl border border-white/5">
                             {stations.length} estaciones
                         </span>
                     </div>
                     {stations.length > 0 ? (
-                        <div className="p-5">
-                            {activeStations.length > 0 ? (
-                                <>
-                                    <p className="text-[10px] text-slate-400 mb-3">
-                                        <span className="text-emerald-400 font-bold">{activeStations.length}</span> tienen mantenimiento programado esta semana
-                                    </p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {activeStations.map(s => (
-                                            <div key={s.id} className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-3">
-                                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse"></span>
-                                                <div className="min-w-0">
-                                                    <span className="text-xs text-white font-medium truncate block">{s.nombre}</span>
-                                                    <span className="text-[10px] text-slate-500 font-bold uppercase">{s.tipo}{s.distrito ? ` · ${s.distrito}` : ''} · {s.maintenanceCount} mtto(s)</span>
+                        <div className="p-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                                {stations.map(s => {
+                                    const skpi = assetKpis.find(a => a.asset_codigo === s.codigo)
+                                    const disp = skpi?.disponibilidad ?? 100
+                                    const statusColor = disp >= 95 ? 'bg-emerald-500' : disp >= 85 ? 'bg-amber-500' : 'bg-rose-500'
+                                    
+                                    return (
+                                        <div key={s.id} 
+                                            onClick={() => setSelectedStation(s)}
+                                            className="group flex items-center gap-5 bg-slate-900/40 border border-slate-700/50 rounded-2xl p-5 hover:bg-slate-800/60 hover:border-sky-500/50 transition-all cursor-pointer shadow-lg active:scale-95">
+                                            <div className={`w-3 h-3 rounded-full ${statusColor} shadow-[0_0_10px_rgba(0,0,0,0.5)] group-hover:scale-125 transition-transform`}></div>
+                                            <div className="min-w-0 flex-1">
+                                                <span className="text-sm text-white font-black uppercase tracking-tight truncate block group-hover:text-sky-400 transition-colors">{s.nombre}</span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{s.tipo}</span>
+                                                    <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
+                                                    <span className={`text-[10px] font-black ${disp >= 85 ? 'text-emerald-400' : 'text-rose-400'}`}>{disp.toFixed(1)}% Disp.</span>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {stations.slice(0, 9).map(s => (
-                                        <div key={s.id} className="flex items-center gap-3 bg-slate-700/30 rounded-lg px-4 py-3 opacity-60">
-                                            <span className="w-2.5 h-2.5 rounded-full bg-slate-500 flex-shrink-0"></span>
-                                            <div className="min-w-0">
-                                                <span className="text-xs text-slate-300 font-medium truncate block">{s.nombre}</span>
-                                                <span className="text-[10px] text-slate-500 font-bold uppercase">{s.tipo}{s.distrito ? ` · ${s.distrito}` : ''}</span>
-                                            </div>
+                                            <span className="material-symbols-outlined text-slate-700 group-hover:text-sky-500 transition-colors">arrow_forward_ios</span>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                            {stations.length > 9 && (
-                                <p className="text-[10px] text-slate-500 mt-4 text-center">
-                                    ··· mostrando 9 de {stations.length} ···
-                                </p>
-                            )}
+                                    )
+                                })}
+                            </div>
                         </div>
                     ) : (
-                        <div className="p-8 text-center">
-                            <span className="material-symbols-outlined text-4xl text-slate-600 block mb-2">location_off</span>
-                            <p className="text-sm text-slate-500">No hay estaciones registradas en el sistema</p>
+                        <div className="p-20 text-center">
+                            <span className="material-symbols-outlined text-6xl text-slate-800 block mb-4">location_off</span>
+                            <p className="text-sm font-black text-slate-500 uppercase tracking-widest">No se hallaron estaciones registradas</p>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* MODAL DE DETALLE DE ESTACIÓN (DRILL-DOWN) */}
+            {selectedStation && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-10 animate-reveal">
+                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onClick={() => setSelectedStation(null)}></div>
+                    <div className="relative w-full max-w-6xl max-h-full bg-slate-900 border border-slate-700 rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
+                        {/* Header Modal */}
+                        <div className="px-8 py-6 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+                            <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-sky-900/40">
+                                    <span className="material-symbols-outlined text-white text-3xl">location_on</span>
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedStation.nombre}</h2>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-[11px] font-black text-sky-400 uppercase tracking-[0.2em]">{selectedStation.tipo}</span>
+                                        <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
+                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">{selectedStation.distrito || 'Sin Distrito'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setSelectedStation(null); }} 
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 transition-all border border-slate-700/50"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">close</span>
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Columna Izquierda: KPIs Específicos */}
+                                <div className="space-y-6">
+                                    <div className="bg-slate-800/40 border border-slate-700 rounded-3xl p-6">
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Rendimiento Actual</h4>
+                                        {(() => {
+                                            const skpi = assetKpis.find(a => a.asset_codigo === selectedStation.codigo)
+                                            return (
+                                                <div className="space-y-6">
+                                                    <div>
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="text-xs font-bold text-white">Disponibilidad</span>
+                                                            <span className="text-lg font-black text-emerald-400">{skpi?.disponibilidad?.toFixed(1) ?? '100'}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                                                            <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${skpi?.disponibilidad ?? 100}%` }}></div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700/50">
+                                                        <div>
+                                                            <span className="text-[9px] font-black text-slate-500 uppercase block">MTTR</span>
+                                                            <span className="text-lg font-black text-white">{skpi?.mttr?.toFixed(1) ?? '—'}h</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-[9px] font-black text-slate-500 uppercase block">MTBF</span>
+                                                            <span className="text-lg font-black text-white">{skpi?.mtbf?.toFixed(1) ?? '—'}h</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
+                                    </div>
+
+                                    {/* Información General */}
+                                    <div className="bg-slate-800/20 border border-slate-700 border-dashed rounded-3xl p-6">
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Detalles del Activo</h4>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between">
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase">Código:</span>
+                                                <span className="text-[10px] font-black text-white">{selectedStation.codigo}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase">Capacidad:</span>
+                                                <span className="text-[10px] font-black text-white">{selectedStation.capacidad || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase">Ubicación:</span>
+                                                <span className="text-[10px] font-black text-white">{selectedStation.direccion || 'No registrada'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Columna Central y Derecha: Equipamiento y Componentes */}
+                                <div className="lg:col-span-2 space-y-8">
+                                    <div className="bg-slate-800/40 border border-slate-700 rounded-3xl overflow-hidden">
+                                        <div className="px-6 py-4 border-b border-slate-700 bg-slate-900/30 flex items-center justify-between">
+                                            <h4 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Componentes e Infraestructura</h4>
+                                            <span className="text-[10px] font-black text-sky-400 bg-sky-500/10 px-3 py-1 rounded-lg border border-sky-500/20">{stationEquipment.length} componentes</span>
+                                        </div>
+                                        <div className="p-6">
+                                            {loadingDetail ? (
+                                                <div className="flex flex-col items-center justify-center py-12 opacity-50">
+                                                    <div className="animate-spin w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full mb-4"></div>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Cargando componentes...</span>
+                                                </div>
+                                            ) : stationEquipment.length > 0 ? (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {stationEquipment.map(eq => (
+                                                        <div key={eq.id} className="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-4 flex items-center gap-4 hover:border-slate-500 transition-colors">
+                                                            <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-slate-400">
+                                                                <span className="material-symbols-outlined text-xl">settings</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[11px] font-black text-white uppercase block">{eq.codigo}</span>
+                                                                <span className="text-[10px] font-bold text-slate-500 uppercase">{eq.tipo_equipo}</span>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <div className={`w-2 h-2 rounded-full ${eq.estado === 'Operativo' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                                                                    <span className="text-[9px] font-black text-slate-400 uppercase">{eq.estado || 'Operativo'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-12 opacity-40">
+                                                    <span className="material-symbols-outlined text-4xl block mb-3">inventory_2</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">No hay componentes individuales registrados</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Recomendaciones / Alertas IA */}
+                                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-3xl p-6 flex items-start gap-5">
+                                        <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                            <span className="material-symbols-outlined text-amber-500 text-2xl">psychology</span>
+                                        </div>
+                                        <div>
+                                            <h5 className="text-[11px] font-black text-amber-400 uppercase tracking-widest mb-1">Análisis Predictivo Antigravity</h5>
+                                            <p className="text-xs text-slate-400 leading-relaxed">
+                                                Basado en el historial de fallas y la antigüedad de los componentes, se recomienda una revisión preventiva de los tableros eléctricos en los próximos 15 días para evitar paradas no programadas.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

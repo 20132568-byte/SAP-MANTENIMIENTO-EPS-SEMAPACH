@@ -189,7 +189,9 @@ export default function GestionPreventivos() {
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                             <span className="text-4xl font-black text-white leading-none tracking-tighter">{backlog.length}</span>
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">Activos</span>
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">
+                                {assetType === 'fleet' ? 'Unidades' : 'Estaciones'}
+                            </span>
                         </div>
                     </div>
                     <div className="w-full">
@@ -220,22 +222,27 @@ export default function GestionPreventivos() {
                                 <span className="w-2.5 h-2.5 bg-sky-500 rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]"></span>
                                 {editingId ? 'Editar Mantenimiento Realizado' : 'Declaración de Mantenimiento Realizado'}
                             </h3>
-                            <button onClick={() => { setShowForm(false); setEditingId(null); }} className="w-10 h-10 bg-slate-800/50 hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors border border-slate-700/50 hover:border-slate-600">
-                                <span className="material-symbols-outlined text-lg">close</span>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setShowForm(false); setEditingId(null); }} 
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 transition-all border border-slate-700/50"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">close</span>
                             </button>
                         </div>
 
                         <div className="p-8 space-y-8 relative">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div className="space-y-2 relative">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unidad</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                        {assetType === 'fleet' ? 'Unidad' : 'Estación'}
+                                    </label>
                                     <div className="flex items-center bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 shadow-sm group transition-all focus-within:ring-1 focus-within:ring-sky-500/50 focus-within:border-sky-500/50 cursor-pointer"
                                         onClick={() => setIsOpenAsset(!isOpenAsset)}>
                                         <div className="flex-1">
                                             <div className="text-xs font-black text-slate-200 uppercase truncate">
                                                 {form.asset_id 
                                                     ? `${assets.find((a: any) => a.id === Number(form.asset_id))?.placa_principal || 'S/P'} — ${assets.find((a: any) => a.id === Number(form.asset_id))?.codigo_patrimonial}`
-                                                    : 'Seleccionar Activo...'}
+                                                    : assetType === 'fleet' ? 'Seleccionar Unidad...' : 'Seleccionar Estación...'}
                                             </div>
                                         </div>
                                         <span className={`material-symbols-outlined text-slate-500 transition-transform duration-300 ${isOpenAsset ? 'rotate-180' : ''}`}>expand_more</span>

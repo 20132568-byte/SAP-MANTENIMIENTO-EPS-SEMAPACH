@@ -425,7 +425,12 @@ export default function MantenimientoIntegrado() {
                     <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between p-4 border-b border-slate-700">
                             <h2 className="text-lg font-black text-white">Registrar Mantenimiento</h2>
-                            <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-white"><span className="material-symbols-outlined">close</span></button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setShowForm(false); }} 
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 transition-all border border-slate-700/50"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">close</span>
+                            </button>
                         </div>
                         <div className="p-4 space-y-3">
                             <div className="grid grid-cols-2 gap-3">

@@ -63,13 +63,13 @@ export default function DashboardGerencial() {
         setLoading(true)
         const promises: Promise<any>[] = []
         if (showFleet) {
-            promises.push(api.getKPIGlobal(desde, hasta, sector, 'fleet'))
-            promises.push(api.getKPIPorActivo(desde, hasta, sector, 'fleet'))
+            promises.push(api.getKPIGlobal(desde, hasta, sector))
+            promises.push(api.getKPIPorActivo(desde, hasta, sector))
             promises.push(api.getAssets({ categoria: 'fleet' }))
         }
         if (showStations) {
-            promises.push(api.getKPIGlobal(desde, hasta, undefined, 'stations'))
-            promises.push(api.getKPIPorActivo(desde, hasta, undefined, 'stations'))
+            promises.push(api.getKPIGlobal(desde, hasta))
+            promises.push(api.getKPIPorActivo(desde, hasta))
             promises.push(api.getAssets({ categoria: 'stations' }))
             promises.push(api.getStations())
         }

@@ -412,7 +412,12 @@ export default function RegistroDiario() {
                                     <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Reporte rápido de odómetro</p>
                                 </div>
                             </div>
-                            <button onClick={() => { setShowQuickMode(false); setQuickAssetId(''); setQuickKm('') }} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined">close</span></button>
+                            <button 
+                            onClick={(e) => { e.stopPropagation(); setShowQuickMode(false); setQuickAssetId(''); setQuickKm(''); }} 
+                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 transition-all border border-slate-700/50"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">close</span>
+                        </button>
                         </div>
                         
                         <div className="p-6 space-y-6 relative z-10">
@@ -475,7 +480,12 @@ export default function RegistroDiario() {
                                     <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Datos de salida — el chofer completa al comenzar</p>
                                 </div>
                             </div>
-                            <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined">close</span></button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setShowForm(false); }} 
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400 text-slate-500 transition-all border border-slate-700/50"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">close</span>
+                            </button>
                         </div>
 
                         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar relative z-10">
@@ -634,7 +644,12 @@ export default function RegistroDiario() {
                                     <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Datos de retorno — el chofer completa al finalizar</p>
                                 </div>
                             </div>
-                            <button onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined">close</span></button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setShowForm(false); setEditingId(null); setEditingRecord(null); }} 
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400 text-slate-500 transition-all border border-slate-700/50"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">close</span>
+                            </button>
                         </div>
 
                         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar relative z-10">
@@ -738,7 +753,12 @@ export default function RegistroDiario() {
                                     <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Modificación administrativa</p>
                                 </div>
                             </div>
-                            <button onClick={() => { setShowForm(false); setEditingId(null); setEditingRecord(null) }} className="text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined">close</span></button>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setShowForm(false); setEditingId(null); setEditingRecord(null); }} 
+                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400 text-slate-500 transition-all border border-slate-700/50"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">close</span>
+                            </button>
                         </div>
 
                         <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar relative z-10">
