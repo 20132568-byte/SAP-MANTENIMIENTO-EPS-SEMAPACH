@@ -331,8 +331,8 @@ export default function ControlProceso() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                            <div className="flex-1 md:flex-none flex items-center bg-slate-800/50 border border-white/5 rounded-xl px-3 py-2">
+                        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                            <div className="flex-1 md:flex-none flex items-center bg-slate-800/50 border border-white/5 rounded-xl px-3 py-2 min-w-[140px]">
                                 <span className="material-symbols-outlined text-slate-500 text-sm mr-2">calendar_today</span>
                                 <input 
                                     type="date" 
@@ -361,7 +361,7 @@ export default function ControlProceso() {
                             <button 
                                 onClick={handleSave}
                                 disabled={saving}
-                                className={`${success ? 'bg-emerald-600' : 'bg-sky-600'} flex-1 md:flex-none text-white px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all`}
+                                className={`${success ? 'bg-emerald-600' : 'bg-sky-600'} flex-1 md:flex-none text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all min-w-[100px]`}
                             >
                                 <span className="material-symbols-outlined text-sm">{success ? 'check' : 'publish'}</span>
                                 {saving ? '...' : success ? 'LISTO' : 'ENVIAR'}

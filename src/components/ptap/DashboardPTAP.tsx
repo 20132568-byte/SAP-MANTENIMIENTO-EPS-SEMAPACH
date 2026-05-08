@@ -59,8 +59,8 @@ export default function DashboardPTAP() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
-                        <div className="flex flex-col gap-2 w-full sm:w-auto">
+                    <div className="flex flex-wrap items-center gap-6 w-full md:w-auto">
+                        <div className="flex flex-col gap-2 w-full sm:w-auto flex-1 min-w-[200px]">
                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Periodo de Consulta</span>
                             <div className="flex items-center bg-slate-950/80 px-6 py-4 rounded-2xl border border-slate-700/50 shadow-inner min-w-[200px] focus-within:border-sky-500/50 transition-all">
                                 <span className="material-symbols-outlined text-sky-500 text-2xl mr-4">calendar_today</span>
