@@ -124,7 +124,8 @@ waterRouter.post('/ptap', async (req, res) => {
             filtros_ing_turb, filtros_ing_col, filtros_ing_ph,
             filtros_sal_turb, filtros_sal_col, filtros_sal_ph,
             tratada_turbiedad, tratada_conductividad, tratada_color, tratada_ph, tratada_aluminioReal, tratada_cloro, tratada_dureza, tratada_ovl
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)`,
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
+        ON CONFLICT (fecha, hora) DO NOTHING`,
         r.fecha, r.hora, r.operador || 'Operador', r.caudal,
         r.dosis?.aluminio || 0, r.dosis?.anionico || 0, r.apertura?.aluminio || 0, r.apertura?.anionico || 0,
         r.ingreso?.turbiedad || 0, r.ingreso?.conductividad || 0, r.ingreso?.color || 0, r.ingreso?.alcalinidad || 0, r.ingreso?.ph || 0, r.ingreso?.aluminio || 0, r.ingreso?.dureza || 0, r.ingreso?.ovl || 0,
@@ -145,9 +146,9 @@ waterRouter.post('/ptap/bulk', async (req, res) => {
         if (!readings || !Array.isArray(readings)) {
             return res.status(400).json({ error: 'Se requiere un array de readings' });
         }
-        let inserted = 0;
+        let totalInserted = 0;
         for (const r of readings) {
-            await dbRun(`INSERT INTO ptap_readings (
+            const result = await dbRun(`INSERT INTO ptap_readings (
                 fecha, hora, operador, caudal,
                 dosis_aluminio, dosis_anionico, apertura_aluminio, apertura_anionico,
                 ingreso_turbiedad, ingreso_conductividad, ingreso_color, ingreso_alcalinidad, ingreso_ph, ingreso_aluminio, ingreso_dureza, ingreso_ovl,
@@ -155,7 +156,8 @@ waterRouter.post('/ptap/bulk', async (req, res) => {
                 filtros_ing_turb, filtros_ing_col, filtros_ing_ph,
                 filtros_sal_turb, filtros_sal_col, filtros_sal_ph,
                 tratada_turbiedad, tratada_conductividad, tratada_color, tratada_ph, tratada_aluminioReal, tratada_cloro, tratada_dureza, tratada_ovl
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)`,
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
+            ON CONFLICT (fecha, hora) DO NOTHING`,
             r.fecha, r.hora, r.operador, r.caudal,
             r.dosis_aluminio, r.dosis_anionico, r.apertura_aluminio, r.apertura_anionico,
             r.ingreso_turbiedad, r.ingreso_conductividad, r.ingreso_color, r.ingreso_alcalinidad, r.ingreso_ph, r.ingreso_aluminio, r.ingreso_dureza, r.ingreso_ovl,
@@ -163,9 +165,10 @@ waterRouter.post('/ptap/bulk', async (req, res) => {
             r.filtros_ing_turb, r.filtros_ing_col, r.filtros_ing_ph,
             r.filtros_sal_turb, r.filtros_sal_col, r.filtros_sal_ph,
             r.tratada_turbiedad, r.tratada_conductividad, r.tratada_color, r.tratada_ph, r.tratada_aluminioReal, r.tratada_cloro, r.tratada_dureza, r.tratada_ovl);
-            inserted++;
+            
+            totalInserted += result.changes;
         }
-        res.json({ success: true, inserted });
+        res.json({ success: true, total: readings.length, inserted: totalInserted });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

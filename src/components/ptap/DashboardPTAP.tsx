@@ -91,7 +91,7 @@ export default function DashboardPTAP() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <KPICard 
                     label="Máx Turbiedad" 
-                    value={stats.length > 0 ? Math.max(...stats.map(s => s.turb_ing)) : '---'} 
+                    value={stats.length > 0 ? Math.max(...stats.map(s => s.turb_ing)).toFixed(2) : '---'} 
                     unit="NTU" 
                     icon="water_drop" 
                     color={{ bg: 'bg-amber-500/10', text: 'text-amber-400' }}
@@ -105,7 +105,7 @@ export default function DashboardPTAP() {
                 />
                 <KPICard 
                     label="Caudal Promedio" 
-                    value={stats.length > 0 ? (stats.reduce((acc, s) => acc + s.caudal, 0) / stats.length).toFixed(1) : '---'} 
+                    value={stats.length > 0 ? (stats.reduce((acc, s) => acc + s.caudal, 0) / stats.length).toFixed(2) : '---'} 
                     unit="L/S" 
                     icon="fluid_med" 
                     color={{ bg: 'bg-sky-500/10', text: 'text-sky-400' }}
@@ -144,6 +144,7 @@ export default function DashboardPTAP() {
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '16px' }}
                                     itemStyle={{ fontWeight: '900', fontSize: '12px' }}
+                                    formatter={(value: any) => typeof value === 'number' ? value.toFixed(2) : value}
                                 />
                                 <Legend />
                                 <Area type="monotone" dataKey="turb_ing" name="Ingreso Crudo" stroke="#f59e0b" fillOpacity={1} fill="url(#colorIng)" strokeWidth={3} />
@@ -168,6 +169,8 @@ export default function DashboardPTAP() {
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '16px' }}
                                     itemStyle={{ fontWeight: '900', fontSize: '12px' }}
+                                    cursor={{ fill: 'transparent' }}
+                                    formatter={(value: any) => typeof value === 'number' ? value.toFixed(2) : value}
                                 />
                                 <Bar dataKey="cloro" name="Cloro Residual" fill="#10b981" radius={[8, 8, 0, 0]} />
                             </BarChart>
@@ -197,10 +200,10 @@ export default function DashboardPTAP() {
                             {stats.map((s, i) => (
                                 <tr key={i} className="hover:bg-sky-500/5 transition-colors">
                                     <td className="p-4 font-black text-white text-xs">{s.hora}</td>
-                                    <td className="p-4 font-bold text-amber-400 text-xs text-center">{s.turb_ing} NTU</td>
-                                    <td className="p-4 font-bold text-emerald-400 text-xs text-center">{s.turb_sal} NTU</td>
-                                    <td className="p-4 font-bold text-sky-400 text-xs text-center">{s.cloro} mg/L</td>
-                                    <td className="p-4 font-bold text-slate-300 text-xs text-center">{s.caudal} L/S</td>
+                                    <td className="p-4 font-bold text-amber-400 text-xs text-center">{Number(s.turb_ing).toFixed(2)} NTU</td>
+                                    <td className="p-4 font-bold text-emerald-400 text-xs text-center">{Number(s.turb_sal).toFixed(2)} NTU</td>
+                                    <td className="p-4 font-bold text-sky-400 text-xs text-center">{Number(s.cloro).toFixed(2)} mg/L</td>
+                                    <td className="p-4 font-bold text-slate-300 text-xs text-center">{Number(s.caudal).toFixed(2)} L/S</td>
                                 </tr>
                             ))}
                             {stats.length === 0 && (

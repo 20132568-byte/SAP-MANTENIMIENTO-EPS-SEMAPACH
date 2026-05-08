@@ -97,6 +97,7 @@ export const api = {
 
     // === PTAP Portachuelo ===
     savePTAPReading: (data: any) => request<any>('/water/ptap', { method: 'POST', body: JSON.stringify(data) }),
+    bulkCreatePTAPReadings: (readings: any[]) => request<any>('/water/ptap/bulk', { method: 'POST', body: JSON.stringify({ readings }) }),
     getPTAPDaily: (fecha: string) => request<any[]>(`/water/ptap/daily?fecha=${fecha}`),
     getPTAPDashboard: (fecha: string) => request<any[]>(`/water/ptap/dashboard?fecha=${fecha}`),
 

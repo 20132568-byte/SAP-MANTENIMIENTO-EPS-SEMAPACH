@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../../api/client';
+import * as XLSX from 'xlsx';
 
 // Tipado exhaustivo basado en el Excel de Portachuelo
 interface ProcesoLectura {
@@ -71,6 +72,9 @@ export default function ControlProceso() {
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [importProgress, setImportProgress] = useState<{ current: number, total: number } | null>(null);
+    const [dailyReadings, setDailyReadings] = useState<any[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetchDailyData = async () => {
@@ -78,32 +82,31 @@ export default function ControlProceso() {
                 setLoading(true);
                 // Fetch daily readings for selected date
                 const res = await api.getPTAPDaily(selectedDate);
-                // If there are readings, grab the latest one (or first one depending on how we handle daily logs)
-                // Assuming operator wants to see the last reading of that day, or we could handle multiple hours. 
-                // Let's populate with the latest reading if it exists.
+                setDailyReadings(res || []);
+                
                 if (res && res.length > 0) {
                     const lastReading = res[res.length - 1]; // Toma la última toma del día
                     setLectura({
-                        hora: lastReading.hora,
-                        caudal: lastReading.caudal,
-                        dosis: { aluminio: lastReading.dosis_aluminio, anionico: lastReading.dosis_anionico },
-                        apertura: { aluminio: lastReading.apertura_aluminio, anionico: lastReading.apertura_anionico },
+                        hora: lastReading.hora || "00:00",
+                        caudal: lastReading.caudal ?? 0,
+                        dosis: { aluminio: lastReading.dosis_aluminio ?? 0, anionico: lastReading.dosis_anionico ?? 0 },
+                        apertura: { aluminio: lastReading.apertura_aluminio ?? 0, anionico: lastReading.apertura_anionico ?? 0 },
                         ingreso: {
-                            turbiedad: lastReading.ingreso_turbiedad, conductividad: lastReading.ingreso_conductividad,
-                            color: lastReading.ingreso_color, alcalinidad: lastReading.ingreso_alcalinidad,
-                            ph: lastReading.ingreso_ph, aluminio: lastReading.ingreso_aluminio,
-                            dureza: lastReading.ingreso_dureza, ovl: lastReading.ingreso_ovl
+                            turbiedad: lastReading.ingreso_turbiedad ?? 0, conductividad: lastReading.ingreso_conductividad ?? 0,
+                            color: lastReading.ingreso_color ?? 0, alcalinidad: lastReading.ingreso_alcalinidad ?? 0,
+                            ph: lastReading.ingreso_ph ?? 0, aluminio: lastReading.ingreso_aluminio ?? 0,
+                            dureza: lastReading.ingreso_dureza ?? 0, ovl: lastReading.ingreso_ovl ?? 0
                         },
-                        decantador: { turbiedad: lastReading.decantador_turbiedad, color: lastReading.decantador_color, ph: lastReading.decantador_ph },
+                        decantador: { turbiedad: lastReading.decantador_turbiedad ?? 0, color: lastReading.decantador_color ?? 0, ph: lastReading.decantador_ph ?? 0 },
                         filtros: {
-                            ingreso: { turbiedad: lastReading.filtros_ing_turb, color: lastReading.filtros_ing_col, ph: lastReading.filtros_ing_ph },
-                            salida: { turbiedad: lastReading.filtros_sal_turb, color: lastReading.filtros_sal_col, ph: lastReading.filtros_sal_ph }
+                            ingreso: { turbiedad: lastReading.filtros_ing_turb ?? 0, color: lastReading.filtros_ing_col ?? 0, ph: lastReading.filtros_ing_ph ?? 0 },
+                            salida: { turbiedad: lastReading.filtros_sal_turb ?? 0, color: lastReading.filtros_sal_col ?? 0, ph: lastReading.filtros_sal_ph ?? 0 }
                         },
                         tratada: {
-                            turbiedad: lastReading.tratada_turbiedad, conductividad: lastReading.tratada_conductividad,
-                            color: lastReading.tratada_color, ph: lastReading.tratada_ph,
-                            aluminioResidual: lastReading.tratada_aluminioReal, cloroResidual: lastReading.tratada_cloro,
-                            dureza: lastReading.tratada_dureza, ovl: lastReading.tratada_ovl
+                            turbiedad: lastReading.tratada_turbiedad ?? 0, conductividad: lastReading.tratada_conductividad ?? 0,
+                            color: lastReading.tratada_color ?? 0, ph: lastReading.tratada_ph ?? 0,
+                            aluminioResidual: lastReading.tratada_aluminioReal ?? 0, cloroResidual: lastReading.tratada_cloro ?? 0,
+                            dureza: lastReading.tratada_dureza ?? 0, ovl: lastReading.tratada_ovl ?? 0
                         }
                     });
                 } else {
@@ -141,6 +144,126 @@ export default function ControlProceso() {
         }
     };
 
+    const formatExcelTime = (val: any) => {
+        if (typeof val === 'number') {
+            const totalMinutes = Math.round(val * 24 * 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+        return String(val || "00:00");
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                setLoading(true);
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames.find(n => n.includes('CONTROL DE PROCESO')) || wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+                const cleanNum = (val: any) => {
+                    if (val === undefined || val === null || val === "-" || val === "" || isNaN(parseFloat(String(val).replace(',', '.')))) return 0;
+                    if (typeof val === 'string') return parseFloat(val.replace(',', '.'));
+                    return val;
+                };
+
+                const readings: any[] = [];
+                // Empezamos en la fila 14 (índice 13)
+                for (let i = 13; i < data.length; i++) {
+                    const row = data[i];
+                    if (!row || !row[1] || isNaN(Number(row[1]))) continue;
+
+                    // Fecha Excel -> ISO
+                    const dateObj = new Date((Number(row[1]) - 25569) * 86400 * 1000);
+                    const fecha = dateObj.toISOString().split('T')[0];
+                    const hora = formatExcelTime(row[2]);
+
+                    readings.push({
+                        fecha,
+                        hora,
+                        operador: 'Importación Excel Web',
+                        caudal: cleanNum(row[3]),
+                        dosis_aluminio: cleanNum(row[4]),
+                        dosis_anionico: cleanNum(row[5]),
+                        apertura_aluminio: cleanNum(row[6]),
+                        apertura_anionico: cleanNum(row[7]),
+                        ingreso_turbiedad: cleanNum(row[8]),
+                        ingreso_conductividad: cleanNum(row[9]),
+                        ingreso_color: cleanNum(row[10]),
+                        ingreso_alcalinidad: cleanNum(row[11]),
+                        ingreso_ph: cleanNum(row[12]),
+                        ingreso_aluminio: cleanNum(row[13]),
+                        ingreso_dureza: cleanNum(row[14]),
+                        ingreso_ovl: cleanNum(row[15]),
+                        decantador_turbiedad: cleanNum(row[19]),
+                        decantador_color: cleanNum(row[20]),
+                        decantador_ph: cleanNum(row[21]),
+                        filtros_ing_turb: cleanNum(row[22]),
+                        filtros_ing_col: cleanNum(row[23]),
+                        filtros_ing_ph: cleanNum(row[24]),
+                        filtros_sal_turb: cleanNum(row[25]),
+                        filtros_sal_col: cleanNum(row[26]),
+                        filtros_sal_ph: cleanNum(row[27]),
+                        tratada_turbiedad: cleanNum(row[28]),
+                        tratada_conductividad: cleanNum(row[29]),
+                        tratada_color: cleanNum(row[30]),
+                        tratada_ph: cleanNum(row[31]),
+                        tratada_aluminioReal: cleanNum(row[32]),
+                        tratada_cloro: cleanNum(row[33]),
+                        tratada_dureza: cleanNum(row[34]),
+                        tratada_ovl: cleanNum(row[35])
+                    });
+                }
+
+                if (readings.length > 0) {
+                    setImportProgress({ current: 0, total: readings.length });
+                    
+                    const CHUNK_SIZE = 100;
+                    let totalInserted = 0;
+
+                    for (let i = 0; i < readings.length; i += CHUNK_SIZE) {
+                        const chunk = readings.slice(i, i + CHUNK_SIZE);
+                        const res = await api.bulkCreatePTAPReadings(chunk);
+                        totalInserted += res.inserted || 0;
+                        setImportProgress({ current: Math.min(i + CHUNK_SIZE, readings.length), total: readings.length });
+                    }
+
+                    const duplicates = readings.length - totalInserted;
+                    alert(`📊 REPORTE DE IMPORTACIÓN:\n\n` +
+                          `✅ Filas procesadas: ${readings.length}\n` +
+                          `🆕 Nuevos registros: ${totalInserted}\n` +
+                          `♻️ Duplicados omitidos: ${duplicates}\n\n` +
+                          `La base de datos está ahora actualizada y protegida contra duplicados.`);
+                    
+                    // Recargar datos del día actual
+                    const daily = await api.getPTAPDaily(selectedDate);
+                    setDailyReadings(daily || []);
+                } else {
+                    alert('No se encontraron datos válidos para importar.');
+                }
+            } catch (err: any) {
+                console.error(err);
+                alert(`Error al importar: ${err.message}`);
+            } finally {
+                setLoading(false);
+                setImportProgress(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+        reader.readAsBinaryString(file);
+    };
+
     const getStatusColor = (val: number, type: keyof typeof PARAMETROS_LIMITES) => {
         const limits = PARAMETROS_LIMITES[type] as any;
         if (!limits) return 'text-white';
@@ -150,10 +273,10 @@ export default function ControlProceso() {
     };
 
     const InputField = ({ label, value, unit, type, onChange }: any) => {
-        const [localValue, setLocalValue] = useState(value.toFixed(2));
+        const [localValue, setLocalValue] = useState(Number(value || 0).toFixed(2));
 
         useEffect(() => {
-            setLocalValue(value.toFixed(2));
+            setLocalValue(Number(value || 0).toFixed(2));
         }, [value]);
 
         const handleChange = (val: string) => {
@@ -169,6 +292,8 @@ export default function ControlProceso() {
             const num = parseFloat(localValue);
             if (!isNaN(num)) {
                 setLocalValue(num.toFixed(2));
+            } else {
+                setLocalValue(Number(0).toFixed(2));
             }
         };
 
@@ -216,6 +341,23 @@ export default function ControlProceso() {
                                     className="bg-transparent border-none text-white text-[10px] font-black focus:ring-0 p-0 w-full"
                                 />
                             </div>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                onChange={handleFileImport} 
+                                accept=".xlsx, .xls" 
+                                className="hidden" 
+                            />
+                            <button 
+                                onClick={handleImportClick}
+                                disabled={loading}
+                                className="bg-slate-800/80 hover:bg-slate-700 text-emerald-400 px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+                            >
+                                <span className="material-symbols-outlined text-sm">upload_file</span>
+                                {loading && importProgress 
+                                    ? `CARGANDO ${importProgress.current}/${importProgress.total}` 
+                                    : loading ? 'PROCESANDO...' : 'IMPORTAR EXCEL'}
+                            </button>
                             <button 
                                 onClick={handleSave}
                                 disabled={saving}
@@ -323,6 +465,49 @@ export default function ControlProceso() {
                                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.1em]">Fuera de Rango</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Tabla de Registros Recientes para Verificación */}
+                <div className="bg-slate-900/40 border border-slate-700/50 rounded-[2.5rem] overflow-hidden backdrop-blur-md p-8">
+                    <div className="flex items-center gap-3 mb-6">
+                        <span className="material-symbols-outlined text-emerald-400">history</span>
+                        <h4 className="text-xs font-black text-white uppercase tracking-tighter">Últimos Registros Cargados</h4>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">
+                                    <th className="pb-4 px-3">Fecha</th>
+                                    <th className="pb-4 px-3">Hora</th>
+                                    <th className="pb-4 px-3 text-right">Caudal</th>
+                                    <th className="pb-4 px-3 text-right">Cloro (T)</th>
+                                    <th className="pb-4 px-3 text-right">Turb. (T)</th>
+                                    <th className="pb-4 px-3">Operador</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {dailyReadings.length > 0 ? (
+                                    dailyReadings.map((r, idx) => (
+                                        <tr key={idx} className="text-xs font-bold text-slate-200 hover:bg-white/5 transition-colors">
+                                            <td className="py-4 px-3 text-slate-400">{r.fecha}</td>
+                                            <td className="py-4 px-3 font-black text-sky-400">{r.hora}</td>
+                                            <td className="py-4 px-3 text-right">{Number(r.caudal || 0).toFixed(2)}</td>
+                                            <td className="py-4 px-3 text-right text-emerald-400">{Number(r.tratada_cloro || 0).toFixed(2)}</td>
+                                            <td className="py-4 px-3 text-right text-emerald-400">{Number(r.tratada_turbiedad || 0).toFixed(2)}</td>
+                                            <td className="py-4 px-3 text-[10px] text-slate-500 uppercase">{r.operador}</td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr className="text-[9px] font-bold text-slate-400">
+                                        <td colSpan={6} className="py-4 text-center opacity-50 italic">
+                                            No hay registros para la fecha seleccionada.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
