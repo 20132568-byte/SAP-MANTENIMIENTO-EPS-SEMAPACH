@@ -14,6 +14,7 @@ export const validateRegister = [
         .isLength({ min: 3, max: 50 }).withMessage('Usuario debe tener entre 3 y 50 caracteres'),
     body('dni').trim().notEmpty().withMessage('DNI es requerido')
         .matches(/^\d{8}$/).withMessage('DNI debe tener 8 dígitos'),
+    body('email').trim().isEmail().withMessage('Correo electrónico inválido').normalizeEmail(),
     body('password').notEmpty().withMessage('Contraseña es requerida')
         .isLength({ min: 6 }).withMessage('Contraseña debe tener al menos 6 caracteres'),
     body('role').trim().notEmpty().withMessage('Rol es requerido'),

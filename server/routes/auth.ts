@@ -47,37 +47,34 @@ export const authenticateToken = (req: any, res: any, next: any) => {
 
 // POST /register
 authRouter.post('/register', validateRegister, async (req, res) => {
-    const { username, dni, password, role } = req.body
+    const { username, dni, email, password, role } = req.body
 
     try {
-        // Verificar si existe
         const existing = await dbGet('SELECT id FROM users WHERE dni = ? OR username = ?', dni, username)
         if (existing) return res.status(400).json({ message: 'Usuario o DNI ya existe' })
 
         const hashedPassword = await bcrypt.hash(password, 10)
 
         await dbRun(
-            'INSERT INTO users (username, dni, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-            username, dni, hashedPassword, role, 'pending'
+            'INSERT INTO users (username, dni, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?, ?)',
+            username, dni, email || '', hashedPassword, role, 'pending'
         )
 
-        // Enviar Email al Administrador
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: process.env.EMAIL_TO,
-            subject: '🔔 Solicitud de Acceso: Nuevo Usuario Registrado',
+            subject: 'Nueva Solicitud de Acceso',
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
                     <h2 style="color: #00a3ff;">Nueva Solicitud de Registro</h2>
-                    <p>Un nuevo usuario se ha registrado en el sistema <strong>SAP Mantenimiento</strong>:</p>
+                    <p>Un nuevo usuario se ha registrado:</p>
                     <ul>
                         <li><strong>Usuario:</strong> ${username}</li>
                         <li><strong>DNI:</strong> ${dni}</li>
-                        <li><strong>Puesto Solicitado:</strong> ${role.toUpperCase()}</li>
+                        <li><strong>Email:</strong> ${email || 'No proporcionado'}</li>
+                        <li><strong>Puesto:</strong> ${role.toUpperCase()}</li>
                     </ul>
-                    <p>Por favor, ingresa al sistema para aprobar o rechazar esta solicitud.</p>
-                    <hr />
-                    <p style="font-size: 12px; color: #777;">Este es un mensaje automático del sistema EPS SEMAPACH.</p>
+                    <p>Ingresa al sistema para aprobar o rechazar esta solicitud.</p>
                 </div>
             `
         }
@@ -123,9 +120,9 @@ authRouter.post('/login', loginLimiter, validateLogin, async (req, res) => {
 // GET /me
 authRouter.get('/me', authenticateToken, async (req: any, res) => {
     try {
-        const user = await dbGet('SELECT id, username, dni, role, status FROM users WHERE id = ?', req.user.id)
+        const user = await dbGet('SELECT id, username, dni, email, role, status FROM users WHERE id = ?', req.user.id)
         if (!user) return res.status(404).json({ message: 'Usuario no encontrado' })
-        res.json({ id: user.id, username: user.username, role: user.role, status: user.status })
+        res.json({ id: user.id, username: user.username, email: user.email, role: user.role, status: user.status })
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }
@@ -162,8 +159,9 @@ authRouter.post('/forgot-password', rateLimit({ windowMs: 15 * 60 * 1000, max: 5
     if (!identifier) return res.status(400).json({ message: 'Ingresa tu usuario o DNI' })
 
     try {
-        const user = await dbGet('SELECT id, username, dni FROM users WHERE username = ? OR dni = ?', identifier, identifier)
+        const user = await dbGet('SELECT id, username, dni, email FROM users WHERE username = ? OR dni = ?', identifier, identifier)
         if (!user) return res.status(404).json({ message: 'No se encontró una cuenta con ese usuario o DNI' })
+        if (!user.email) return res.status(400).json({ message: 'Esta cuenta no tiene un correo electrónico registrado. Contacta al administrador.' })
 
         const resetToken = jwt.sign(
             { id: user.id, purpose: 'password_reset' },
@@ -175,8 +173,8 @@ authRouter.post('/forgot-password', rateLimit({ windowMs: 15 * 60 * 1000, max: 5
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
-            to: process.env.EMAIL_TO,
-            subject: '🔐 Recuperación de Contraseña — EPS SEMAPACH',
+            to: user.email,
+            subject: 'Recuperación de Contraseña — EPS SEMAPACH',
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
                     <h2 style="color: #00a3ff;">Recuperación de Contraseña</h2>
@@ -201,7 +199,7 @@ authRouter.post('/forgot-password', rateLimit({ windowMs: 15 * 60 * 1000, max: 5
             else console.log('[EMAIL SENT]', info.response)
         })
 
-        res.json({ message: 'Si el usuario existe, recibirás un enlace de recuperación por correo.' })
+        res.json({ message: 'Revisa tu correo electrónico. Recibirás un enlace para restablecer tu contraseña.' })
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }

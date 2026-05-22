@@ -10,7 +10,8 @@ const AuthPage: React.FC = () => {
     const [formData, setFormData] = useState({
         username: '',
         dni: '',
-        identifier: '',  // Para login: puede ser username o DNI
+        email: '',
+        identifier: '',
         password: '',
         role: 'operario'
     })
@@ -27,7 +28,7 @@ const AuthPage: React.FC = () => {
         try {
             const data = isLogin
                 ? await api.login({ identifier: formData.identifier, password: formData.password })
-                : await api.register({ username: formData.username, dni: formData.dni, password: formData.password, role: formData.role })
+                : await api.register({ username: formData.username, dni: formData.dni, email: formData.email, password: formData.password, role: formData.role })
 
             if (isLogin) {
                 localStorage.setItem('token', data.token)
@@ -35,7 +36,7 @@ const AuthPage: React.FC = () => {
                 window.location.href = '/home'
             } else {
                 setMessage(data.message)
-                setFormData({ username: '', dni: '', identifier: '', password: '', role: 'operario' })
+                setFormData({ username: '', dni: '', email: '', identifier: '', password: '', role: 'operario' })
             }
         } catch (err: any) {
             console.error('Auth Error:', err)
@@ -113,6 +114,19 @@ const AuthPage: React.FC = () => {
                                     placeholder="Ingrese su número de DNI"
                                     value={formData.dni}
                                     onChange={e => setFormData({ ...formData, dni: e.target.value })}
+                                />
+                            </div>
+                        )}
+
+                        {!isLogin && (
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Correo Electrónico</label>
+                                <input
+                                    type="email" required
+                                    className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
+                                    placeholder="ej. correo@ejemplo.com"
+                                    value={formData.email}
+                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 />
                             </div>
                         )}
