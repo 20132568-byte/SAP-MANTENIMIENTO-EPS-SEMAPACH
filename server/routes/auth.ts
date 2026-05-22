@@ -224,6 +224,28 @@ authRouter.post('/reset-password', async (req, res) => {
     }
 })
 
+// POST /emergency-reset (solo si MASTER_RESET_CODE está configurado)
+authRouter.post('/emergency-reset', async (req, res) => {
+    const { code, username, newPassword } = req.body
+    const masterCode = process.env.MASTER_RESET_CODE
+    if (!masterCode) return res.status(404).json({ message: 'Endpoint no disponible' })
+    if (code !== masterCode) return res.status(403).json({ message: 'Código inválido' })
+    if (!username || !newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: 'Usuario y nueva contraseña (mín 6 caracteres) requeridos' })
+    }
+
+    try {
+        const user = await dbGet('SELECT id FROM users WHERE username = ?', username)
+        if (!user) return res.status(404).json({ message: `Usuario "${username}" no encontrado` })
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        await dbRun('UPDATE users SET password_hash = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', hashedPassword, 'approved', user.id)
+        res.json({ message: `Contraseña de "${username}" reseteada exitosamente.` })
+    } catch (err: any) {
+        res.status(500).json({ message: err.message })
+    }
+})
+
 // POST /change-password (cualquier usuario logueado)
 authRouter.post('/change-password', authenticateToken, validateChangePassword, async (req: any, res) => {
     const { currentPassword, newPassword } = req.body
