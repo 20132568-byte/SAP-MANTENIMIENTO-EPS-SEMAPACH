@@ -103,6 +103,7 @@ export function ProtectedRoute({ children, reqRole }: { children: React.ReactNod
 }
 
 import { Navigate } from 'react-router-dom'
+import FloatingChat from './FloatingChat'
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
     const [sidebarActive, setSidebarActive] = useState(false)
@@ -274,6 +275,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                 {sidebarActive && (
                     <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[55]" onClick={() => setSidebarActive(false)}></div>
                 )}
+
+                <FloatingChat />
 
                 <footer className="flex h-10 items-center justify-between px-4 sm:px-8 bg-[#05080f] border-t border-slate-900 flex-shrink-0">
                     <div className="flex items-center gap-2">
