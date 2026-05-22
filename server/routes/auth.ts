@@ -128,6 +128,19 @@ authRouter.get('/me', authenticateToken, async (req: any, res) => {
     }
 })
 
+// PATCH /me/email (actualiza correo del usuario logueado)
+authRouter.patch('/me/email', authenticateToken, async (req: any, res) => {
+    const { email } = req.body
+    if (!email || !email.includes('@')) return res.status(400).json({ message: 'Correo electrónico inválido' })
+
+    try {
+        await dbRun('UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', email, req.user.id)
+        res.json({ message: 'Correo actualizado correctamente' })
+    } catch (err: any) {
+        res.status(500).json({ message: err.message })
+    }
+})
+
 // === RUTAS DE ADMINISTRACIÓN ===
 
 // GET /users (solo admin)
