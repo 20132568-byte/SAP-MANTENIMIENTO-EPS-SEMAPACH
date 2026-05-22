@@ -2,16 +2,25 @@ import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import nodemailer from 'nodemailer'
+import rateLimit from 'express-rate-limit'
 import { dbGet, dbRun, dbAll } from '../database.js'
+import { validateRegister, validateLogin, validateChangePassword } from '../validators.js'
 
 export const authRouter = Router()
 
-// Clave Secreta para JWT (Fallback para desarrollo local)
-const JWT_SECRET = process.env.JWT_SECRET || 'semapach_dev_secret_2026_key'
-
-if (!process.env.JWT_SECRET) {
-    console.warn('⚠️ [AUTH] JWT_SECRET no definido. Usando clave de desarrollo por defecto.')
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+    console.error('[AUTH] FATAL: JWT_SECRET no está definido en las variables de entorno.')
+    process.exit(1)
 }
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+})
 
 // Configuración de Email
 const transporter = nodemailer.createTransport({
@@ -37,7 +46,7 @@ export const authenticateToken = (req: any, res: any, next: any) => {
 }
 
 // POST /register
-authRouter.post('/register', async (req, res) => {
+authRouter.post('/register', validateRegister, async (req, res) => {
     const { username, dni, password, role } = req.body
 
     try {
@@ -84,8 +93,8 @@ authRouter.post('/register', async (req, res) => {
     }
 })
 
-// POST /login
-authRouter.post('/login', async (req, res) => {
+// POST /login (con rate limiting)
+authRouter.post('/login', loginLimiter, validateLogin, async (req, res) => {
     const { identifier, password } = req.body  // identifier puede ser username o DNI
 
     try {
@@ -147,8 +156,78 @@ authRouter.post('/approve/:id', authenticateToken, async (req: any, res) => {
     }
 })
 
+// POST /forgot-password (genera token de reseteo y envía email)
+authRouter.post('/forgot-password', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' } }), async (req, res) => {
+    const { identifier } = req.body
+    if (!identifier) return res.status(400).json({ message: 'Ingresa tu usuario o DNI' })
+
+    try {
+        const user = await dbGet('SELECT id, username, dni FROM users WHERE username = ? OR dni = ?', identifier, identifier)
+        if (!user) return res.status(404).json({ message: 'No se encontró una cuenta con ese usuario o DNI' })
+
+        const resetToken = jwt.sign(
+            { id: user.id, purpose: 'password_reset' },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        )
+
+        const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_TO,
+            subject: '🔐 Recuperación de Contraseña — EPS SEMAPACH',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2 style="color: #00a3ff;">Recuperación de Contraseña</h2>
+                    <p>Has solicitado restablecer tu contraseña para el usuario <strong>${user.username}</strong>.</p>
+                    <p>Haz clic en el siguiente enlace para crear una nueva contraseña. Este enlace expira en 1 hora:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetUrl}"
+                           style="background: #00a3ff; color: white; padding: 14px 28px; border-radius: 8px;
+                                  text-decoration: none; font-weight: bold; display: inline-block;">
+                            Restablecer Contraseña
+                        </a>
+                    </div>
+                    <p style="color: #777; font-size: 12px;">Si no solicitaste este cambio, ignora este mensaje.</p>
+                    <hr />
+                    <p style="font-size: 12px; color: #777;">EPS SEMAPACH — Sistema de Gestión de Mantenimiento</p>
+                </div>
+            `
+        }
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) console.error('[EMAIL ERROR]', error)
+            else console.log('[EMAIL SENT]', info.response)
+        })
+
+        res.json({ message: 'Si el usuario existe, recibirás un enlace de recuperación por correo.' })
+    } catch (err: any) {
+        res.status(500).json({ message: err.message })
+    }
+})
+
+// POST /reset-password (usa token para cambiar contraseña sin autenticación)
+authRouter.post('/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body
+    if (!token) return res.status(400).json({ message: 'Token requerido' })
+    if (!newPassword || newPassword.length < 6) return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' })
+
+    try {
+        const decoded: any = jwt.verify(token, JWT_SECRET)
+        if (decoded.purpose !== 'password_reset') return res.status(400).json({ message: 'Token inválido' })
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        await dbRun('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', hashedPassword, decoded.id)
+        res.json({ message: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.' })
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') return res.status(400).json({ message: 'El enlace ha expirado. Solicita uno nuevo.' })
+        res.status(400).json({ message: 'Token inválido o expirado' })
+    }
+})
+
 // POST /change-password (cualquier usuario logueado)
-authRouter.post('/change-password', authenticateToken, async (req: any, res) => {
+authRouter.post('/change-password', authenticateToken, validateChangePassword, async (req: any, res) => {
     const { currentPassword, newPassword } = req.body
     try {
         const user = await dbGet('SELECT * FROM users WHERE id = ?', req.user.id)

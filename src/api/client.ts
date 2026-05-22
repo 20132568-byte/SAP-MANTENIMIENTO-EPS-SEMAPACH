@@ -1,6 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
-/** Cliente HTTP genérico para el backend */
+export class ApiError extends Error {
+    status: number
+    constructor(message: string, status: number) {
+        super(message)
+        this.name = 'ApiError'
+        this.status = status
+    }
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
     const res = await fetch(`${API_BASE}${url}`, {
         headers: { 'Content-Type': 'application/json' },
@@ -8,8 +16,9 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
         ...options,
     })
     if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }))
-        throw new Error(err.error || `Error ${res.status}`)
+        const body = await res.json().catch(() => ({ error: res.statusText }))
+        const message = body.errors?.[0]?.msg || body.error || body.message || `Error ${res.status}`
+        throw new ApiError(message, res.status)
     }
     return res.json()
 }
@@ -142,4 +151,6 @@ export const api = {
     // === Autenticación ===
     login: (data: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
     register: (data: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+    forgotPassword: (identifier: string) => request<any>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ identifier }) }),
+    resetPassword: (token: string, newPassword: string) => request<any>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
 }

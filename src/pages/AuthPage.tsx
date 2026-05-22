@@ -118,7 +118,14 @@ const AuthPage: React.FC = () => {
                         )}
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Contraseña</label>
+                            <div className="flex items-center justify-between ml-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contraseña</label>
+                                {isLogin && (
+                                    <Link to="/forgot-password" className="text-[9px] font-bold text-cyan-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">
+                                        ¿Olvidaste tu contraseña?
+                                    </Link>
+                                )}
+                            </div>
                             <input
                                 type="password" required
                                 className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
