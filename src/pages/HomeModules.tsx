@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
+import { useAuth } from '../hooks/useAuth'
 
 export function ThemeToggleSmall() {
     const { theme, toggleTheme } = useTheme();
@@ -13,8 +14,7 @@ export function ThemeToggleSmall() {
 
 export default function HomeModules() {
     const navigate = useNavigate()
-    const userStr = localStorage.getItem('user')
-    const user = userStr ? JSON.parse(userStr) : null
+    const { user, logout } = useAuth()
 
     const modules = [
         {
@@ -50,19 +50,19 @@ export default function HomeModules() {
     ]
 
     const handleLogout = () => {
-        const currentTheme = localStorage.getItem('app-theme');
-        localStorage.clear();
-        if (currentTheme) localStorage.setItem('app-theme', currentTheme);
+        logout()
         navigate('/login')
     }
 
     return (
-        <div className="min-h-screen bg-mesh-premium flex flex-col items-center justify-center relative overflow-hidden px-4">
+        <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-4"
+            style={{ backgroundColor: 'var(--bg-app)' }}>
 
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gold-500/5 rounded-full blur-[120px]"></div>
 
-            <header className="fixed top-0 left-0 w-full p-4 flex items-center justify-between z-50 bg-[#030712]/90 backdrop-blur-md border-b border-white/5">
+            <header className="fixed top-0 left-0 w-full p-4 flex items-center justify-between z-50 border-b"
+                style={{ backgroundColor: 'var(--bg-header)', borderColor: 'var(--border-color)' }}>
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-900/40">
                         <span className="material-symbols-outlined text-white text-lg">water_drop</span>

@@ -91,7 +91,7 @@ export function AssetTypeFilterBtn() {
 export function ProtectedRoute({ children, reqRole }: { children: React.ReactNode, reqRole?: string }) {
     const token = localStorage.getItem('token')
     const userStr = localStorage.getItem('user')
-    const user = userStr ? JSON.parse(userStr) : null
+    const user: { role: string } | null = userStr ? JSON.parse(userStr) : null
 
     if (!token) return <Navigate to="/" replace />
 
@@ -104,6 +104,9 @@ export function ProtectedRoute({ children, reqRole }: { children: React.ReactNod
 
 import { Navigate } from 'react-router-dom'
 import FloatingChat from './FloatingChat'
+import { useAuth } from '../hooks/useAuth'
+
+interface MenuItem { path: string; label: string; icon: string; appliesTo: string; roles?: string[] }
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
     const [sidebarActive, setSidebarActive] = useState(false)
@@ -111,10 +114,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const { assetType } = useAssetType()
     const location = useLocation()
     const navigate = useNavigate()
-    const hoverTimeout = useRef<any>(null)
-
-    const userStr = localStorage.getItem('user')
-    const user = userStr ? JSON.parse(userStr) : null
+    const hoverTimeout = useRef<ReturnType<typeof setTimeout>>()
+    const { user, logout } = useAuth()
 
     const isPTAPModule = location.pathname.startsWith('/control-ptap')
     const isWaterModule = location.pathname.startsWith('/monitoreo-agua')
@@ -146,7 +147,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
     const visibleItems = currentMenu.map(section => ({
         ...section,
-        items: (section.items as any[]).filter(item => {
+        items: (section.items as MenuItem[]).filter(item => {
             if (!isPTAPModule && !isWaterModule) {
                 if (isMaintenanceModule) {
                     return section.section === 'Mantenimiento Executive' ||
@@ -167,21 +168,20 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const currentLabel = [...menuItems, ...ptapMenuItems, ...waterMenuItems].flatMap(s => s.items).find(i => i.path === location.pathname)?.label || 'Panel de Gestión'
 
     const handleLogout = () => {
-        const currentTheme = localStorage.getItem('app-theme');
-        localStorage.clear();
-        if (currentTheme) localStorage.setItem('app-theme', currentTheme);
-        window.location.href = '/'
+        logout()
+        navigate('/')
     }
 
     const isExpanded = sidebarActive || isHovered
 
     return (
-        <div className="flex bg-[#030712] text-slate-200 h-[100dvh] overflow-hidden font-body">
+        <div className="flex h-[100dvh] overflow-hidden font-body" style={{ backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)' }}>
 
             <aside
                 onMouseEnter={() => { clearTimeout(hoverTimeout.current); setIsHovered(true) }}
                 onMouseLeave={() => { hoverTimeout.current = setTimeout(() => setIsHovered(false), 150) }}
-                className={`flex flex-col flex-shrink-0 fixed lg:relative inset-y-0 left-0 z-[60] lg:z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r border-slate-900/50 bg-[#05080f]/95 lg:bg-[#05080f]/80 backdrop-blur-xl ${isExpanded ? 'w-72 translate-x-0' : 'w-20 -translate-x-full lg:translate-x-0'}`}>
+                className={`flex flex-col flex-shrink-0 fixed lg:relative inset-y-0 left-0 z-[60] lg:z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] border-r ${isExpanded ? 'w-72 translate-x-0' : 'w-20 -translate-x-full lg:translate-x-0'}`}
+                style={{ backgroundColor: 'var(--bg-sidebar)', borderColor: 'var(--border-color)' }}>
 
                 <div className="h-20 flex items-center px-5 gap-3 border-b border-slate-900/30 flex-shrink-0">
                     <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center rounded-xl flex-shrink-0 shadow-lg shadow-cyan-900/20">
@@ -224,7 +224,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </aside>
 
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-                <header className="h-14 sm:h-16 flex items-center justify-between px-2 sm:px-8 bg-[#05080f]/80 backdrop-blur-xl border-b border-slate-900/50 sticky top-0 z-40">
+                <header className="h-14 sm:h-16 flex items-center justify-between px-2 sm:px-8 border-b sticky top-0 z-40"
+                    style={{ backgroundColor: 'var(--bg-header)', borderColor: 'var(--border-color)' }}>
                     <div className="flex items-center gap-1.5 sm:gap-4 overflow-hidden shrink-0">
                         <button onClick={() => setSidebarActive(!sidebarActive)}
                             className="lg:hidden flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-slate-800/50 rounded-xl border border-slate-700 active:scale-95 transition-all">
@@ -266,8 +267,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-4 sm:p-8 no-scrollbar bg-mesh-premium">
-                    <div id="export-canvas" className="w-full max-w-[1500px] mx-auto pb-10">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-8 no-scrollbar" style={{ backgroundColor: 'var(--bg-app)' }}>
+                    <div id="export-canvas" className="w-full max-w-[1500px] mx-auto pb-10" style={{ backgroundImage: 'var(--mesh-gradient)' }}>
                         {children}
                     </div>
                 </div>
@@ -278,7 +279,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
                 <FloatingChat />
 
-                <footer className="flex h-10 items-center justify-between px-4 sm:px-8 bg-[#05080f] border-t border-slate-900 flex-shrink-0">
+                <footer className="flex h-10 items-center justify-between px-4 sm:px-8 border-t flex-shrink-0"
+                    style={{ backgroundColor: 'var(--bg-header)', borderColor: 'var(--border-color)' }}>
                     <div className="flex items-center gap-2">
                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Status:</span>
                         <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.4)]"></div>

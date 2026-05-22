@@ -1,9 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AssetTypeProvider } from './contexts/AssetTypeContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { NotificationProvider } from './contexts/NotificationContext'
 import { MainLayout, ProtectedRoute } from './components/Layout'
+
+const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: 1, staleTime: 1000 * 60 * 5, refetchOnWindowFocus: false } }
+})
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
@@ -44,6 +49,7 @@ export default function App() {
     return (
         <ThemeProvider>
             <NotificationProvider>
+            <QueryClientProvider client={queryClient}>
             <BrowserRouter>
                 <AssetTypeProvider>
                     <Suspense fallback={<PageLoader />}>
@@ -93,6 +99,7 @@ export default function App() {
                     </Suspense>
                 </AssetTypeProvider>
             </BrowserRouter>
+            </QueryClientProvider>
             </NotificationProvider>
         </ThemeProvider>
     )

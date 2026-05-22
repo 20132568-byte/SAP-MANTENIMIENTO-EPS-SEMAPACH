@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { api } from '../api/client'
+import { useAuth } from '../hooks/useAuth'
 
 const AuthPage: React.FC = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const isLogin = location.pathname === '/login'
+    const { login } = useAuth()
 
     const [formData, setFormData] = useState({
         username: '',
@@ -26,15 +28,12 @@ const AuthPage: React.FC = () => {
         setMessage('')
 
         try {
-            const data = isLogin
-                ? await api.login({ identifier: formData.identifier, password: formData.password })
-                : await api.register({ username: formData.username, dni: formData.dni, email: formData.email, password: formData.password, role: formData.role })
-
             if (isLogin) {
-                localStorage.setItem('token', data.token)
-                localStorage.setItem('user', JSON.stringify(data.user))
-                window.location.href = '/home'
+                const data = await api.login({ identifier: formData.identifier, password: formData.password })
+                login(data.token, data.user)
+                navigate('/home')
             } else {
+                const data = await api.register({ username: formData.username, dni: formData.dni, email: formData.email, password: formData.password })
                 setMessage(data.message)
                 setFormData({ username: '', dni: '', email: '', identifier: '', password: '', role: 'operario' })
             }

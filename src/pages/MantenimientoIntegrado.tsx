@@ -22,7 +22,7 @@ export default function MantenimientoIntegrado() {
     const [showForm, setShowForm] = useState(false)
     const [form, setForm] = useState({
         equipment_id: '', activity_code: '', fecha: new Date().toISOString().split('T')[0],
-        tipo: 'preventivo', descripcion: '', horas_trabajadas: '', costo: '', tecnico: '', observaciones: '',
+        tipo: 'preventivo' as 'preventivo' | 'emergencia', descripcion: '', horas_trabajadas: '', costo: '', tecnico: '', observaciones: '',
         asset_id: '', operador_id: '', hora_inicio: '', hora_fin: '', sistema_afectado: '', severidad: '', causa_probable: '', accion_correctiva: ''
     })
     const [searchVehicle, setSearchVehicle] = useState('')
@@ -103,7 +103,7 @@ export default function MantenimientoIntegrado() {
             } else {
                 // For vehicles, create a failure record as maintenance log
                 await api.createFailure({
-                    fecha: form.fecha, asset_id: selectedId, operador_id: form.operador_id || null,
+                    fecha: form.fecha, asset_id: selectedId!, operador_id: form.operador_id ? Number(form.operador_id) : null,
                     hora_inicio: form.hora_inicio || '08:00', hora_fin: form.hora_fin || '17:00',
                     tipo_evento: form.tipo === 'emergencia' ? 'Correctivo' : 'Preventivo',
                     clasificacion_falla: form.tipo, sistema_afectado: form.sistema_afectado || 'General',
@@ -111,7 +111,7 @@ export default function MantenimientoIntegrado() {
                     descripcion: form.descripcion, causa_probable: form.causa_probable || '',
                     accion_correctiva: form.accion_correctiva || '',
                     inmovilizo_unidad: 0, es_correctiva_no_programada: form.tipo === 'emergencia' ? 1 : 0,
-                    costo_reparacion: form.costo || null, observaciones: form.observaciones || ''
+                    costo_reparacion: form.costo ? Number(form.costo) : null, observaciones: form.observaciones || ''
                 })
                 showToast('Mantenimiento registrado en vehículo', 'ok')
             }
@@ -440,7 +440,7 @@ export default function MantenimientoIntegrado() {
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
-                                    <select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mt-1">
+                                    <select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value as 'preventivo' | 'emergencia' })} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white mt-1">
                                         <option value="preventivo">Preventivo</option>
                                         <option value="correctivo">Correctivo</option>
                                         <option value="emergencia">Emergencia</option>

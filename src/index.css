@@ -14,10 +14,56 @@
   --font-body: 'Inter', sans-serif;
 }
 
+:root {
+  --bg-app: #030712;
+  --bg-panel: #0f172a;
+  --bg-card: rgba(15, 23, 42, 0.7);
+  --bg-header: rgba(5, 8, 15, 0.8);
+  --bg-sidebar: rgba(5, 8, 15, 0.95);
+  --bg-input: rgba(15, 23, 42, 0.8);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --border-color: rgba(148, 163, 184, 0.1);
+  --border-hover: rgba(148, 163, 184, 0.2);
+
+  --scrollbar-track: #030712;
+  --scrollbar-thumb: #1e293b;
+
+  --mesh-gradient: radial-gradient(at 0% 0%, rgba(0, 229, 255, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(197, 160, 89, 0.03) 0px, transparent 50%);
+}
+
+html.light-theme {
+  color-scheme: light;
+
+  --bg-app: #f1f5f9;
+  --bg-panel: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-header: rgba(248, 250, 252, 0.95);
+  --bg-sidebar: rgba(248, 250, 252, 0.98);
+  --bg-input: rgba(255, 255, 255, 0.9);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --border-color: rgba(148, 163, 184, 0.25);
+  --border-hover: rgba(100, 116, 139, 0.35);
+
+  --scrollbar-track: #e2e8f0;
+  --scrollbar-thumb: #94a3b8;
+
+  --mesh-gradient: radial-gradient(at 0% 0%, rgba(0, 229, 255, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(197, 160, 89, 0.02) 0px, transparent 50%);
+}
+
 body {
   font-family: var(--font-body);
-  background-color: var(--color-background-app);
-  color: var(--color-text-luxury);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -26,29 +72,16 @@ body {
 }
 
 html.light-theme body {
-  filter: invert(1) hue-rotate(180deg) brightness(1.05) contrast(0.85);
-  background-color: #f8fafc;
+  color-scheme: light;
 }
 
 html.light-theme img,
 html.light-theme canvas,
 html.light-theme video,
 html.light-theme svg,
-html.light-theme [data-revert-theme="true"],
-html.light-theme .material-symbols-outlined,
-html.light-theme .gold-gradient-text,
-html.light-theme .btn-premium-cyan,
-html.light-theme .btn-premium-gold {
+html.light-theme [data-revert-theme="true"] {
   filter: invert(1) hue-rotate(180deg);
 }
-
-html.light-theme {
-  color-scheme: light;
-}
-
-html.light-theme ::-webkit-scrollbar-track { background: #e2e8f0; }
-html.light-theme ::-webkit-scrollbar-thumb { background: #94a3b8; }
-html.light-theme ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -63,17 +96,15 @@ h1, h2, h3, h4, .font-display {
 }
 
 .bg-mesh-premium {
-  background-color: #030712;
-  background-image:
-    radial-gradient(at 0% 0%, rgba(0, 229, 255, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(197, 160, 89, 0.03) 0px, transparent 50%);
+  background-color: var(--bg-app);
+  background-image: var(--mesh-gradient);
 }
 
 .glass-morphism {
-  background: var(--color-surface-glass);
+  background: var(--bg-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-border-premium);
+  border: 1px solid var(--border-color);
 }
 
 .glass-gold {
@@ -125,8 +156,8 @@ h1, h2, h3, h4, .font-display {
 .animate-reveal { animation: reveal-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #030712; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #00e5ff; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -139,15 +170,15 @@ h1, h2, h3, h4, .font-display {
 }
 
 .premium-card {
-  background: var(--color-surface-glass);
+  background: var(--bg-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--color-border-premium);
+  border: 1px solid var(--border-color);
   border-radius: 1.5rem;
   padding: 1.5rem;
   transition: all 0.5s ease;
 }
 .premium-card:hover {
-  border-color: rgba(148, 163, 184, 0.2);
-  background-color: rgba(15, 23, 42, 0.5);
+  border-color: var(--border-hover);
+  background: var(--bg-card);
 }
