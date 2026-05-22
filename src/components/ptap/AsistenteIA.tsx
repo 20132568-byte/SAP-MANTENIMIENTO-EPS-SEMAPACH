@@ -111,56 +111,56 @@ export default function AsistenteIA() {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-280px)] bg-[#0f172a]/40 backdrop-blur-2xl border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-fade-in">
+        <div className="flex flex-col h-[calc(100vh-180px)] bg-[#0f172a]/40 backdrop-blur-2xl border border-slate-800 rounded-2xl overflow-hidden shadow-2xl animate-fade-in">
             {/* Header del Chat */}
-            <div className="px-8 py-5 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="px-4 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center gap-3">
                     <div className="relative">
-                        <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-900/20">
-                            <span className="material-symbols-outlined text-white text-2xl">psychology</span>
+                        <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-900/20">
+                            <span className="material-symbols-outlined text-white text-lg">psychology</span>
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-4 border-[#0f172a] rounded-full animate-pulse"></div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#0f172a] rounded-full animate-pulse"></div>
                     </div>
                     <div>
-                        <h3 className="text-sm font-black text-white uppercase tracking-widest text-cyan-400">RAG Engine Portachuelo</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Nucleo de Inteligencia ISO</p>
+                        <h3 className="text-xs font-bold text-white">RAG Portachuelo</h3>
+                        <p className="text-[9px] text-slate-500 font-medium">Nucleo de Inteligencia ISO</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-900/60 rounded-xl border border-white/5">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900/60 rounded-lg border border-white/5">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest border-none">Conectado a Drive D:\</span>
+                    <span className="text-[8px] font-semibold text-emerald-500 uppercase tracking-wider">Drive D:\</span>
                 </div>
             </div>
 
             {/* Area de Mensajes */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-6 no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar">
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-reveal`}>
-                        <div className={`max-w-[92%] sm:max-w-[85%] space-y-3 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                            <div className={`p-5 rounded-[1.8rem] text-sm leading-relaxed ${
+                        <div className={`${msg.role === 'user' ? 'max-w-[88%] sm:max-w-[80%]' : 'max-w-[95%] sm:max-w-[88%]'}`}>
+                            <div className={`p-3 rounded-2xl text-sm leading-relaxed ${
                                 msg.role === 'user' 
-                                ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-sm' 
-                                : 'bg-slate-800/80 text-slate-200 border border-slate-700/50 rounded-tl-sm'
+                                ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/20 rounded-tr-md' 
+                                : 'bg-slate-800/80 text-slate-200 border border-slate-700/50 rounded-tl-md'
                             }`}>
                                 {renderMessageContent(msg.content)}
                             </div>
                             
                             {msg.sources && (
-                                <div className="flex flex-wrap gap-2 pt-1">
+                                <div className="flex flex-wrap gap-1.5 mt-1.5">
                                     {msg.sources.map((s, i) => (
                                         <button 
                                             key={i} 
                                             onClick={() => handleDownload(s)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-[9px] font-bold text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all active:scale-95 group"
+                                            className="flex items-center gap-1 px-2 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-[8px] font-semibold text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all active:scale-95 group"
                                         >
-                                            <span className="material-symbols-outlined text-xs group-hover:animate-bounce">download</span>
+                                            <span className="material-symbols-outlined text-[10px] group-hover:animate-bounce">download</span>
                                             {s}
                                         </button>
                                     ))}
                                 </div>
                             )}
 
-                            <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest px-2">
+                            <div className="text-[7px] font-medium text-slate-600 mt-0.5 px-1">
                                 {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </div>
                         </div>
@@ -168,7 +168,7 @@ export default function AsistenteIA() {
                 ))}
                 {isTyping && (
                     <div className="flex justify-start animate-pulse">
-                        <div className="bg-slate-800/50 p-4 rounded-2xl flex gap-1">
+                        <div className="bg-slate-800/50 p-3 rounded-2xl flex gap-1">
                             <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce"></div>
                             <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
                             <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
@@ -179,13 +179,13 @@ export default function AsistenteIA() {
             </div>
 
             {/* Input y Sugerencias */}
-            <div className="p-6 border-t border-white/5 bg-white/[0.01]">
-                <div className="flex overflow-x-auto gap-2 mb-4 pb-2 no-scrollbar scroll-smooth">
+            <div className="p-3 border-t border-white/5 bg-white/[0.01] flex-shrink-0">
+                <div className="flex overflow-x-auto gap-1.5 mb-2 no-scrollbar scroll-smooth">
                     {suggestedQuestions.map((q, i) => (
                         <button 
                             key={i} 
                             onClick={() => handleSend(q)}
-                            className="text-[10px] font-bold text-slate-400 bg-slate-900/40 border border-white/5 px-4 py-2 rounded-xl hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/30 transition-all active:scale-95 text-left whitespace-nowrap flex-shrink-0"
+                            className="text-[9px] font-medium text-slate-400 bg-slate-900/40 border border-white/5 px-3 py-1.5 rounded-lg hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/30 transition-all active:scale-95 text-left whitespace-nowrap flex-shrink-0"
                         >
                             {q}
                         </button>
@@ -199,17 +199,17 @@ export default function AsistenteIA() {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
                         placeholder="Pregunta sobre manuales ISO, NCs o procedimientos..."
-                        className="w-full bg-slate-900/80 border border-slate-700/50 rounded-2xl py-4 pl-6 pr-16 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all shadow-inner"
+                        className="w-full bg-slate-900/80 border border-slate-700/50 rounded-xl py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all shadow-inner"
                     />
                     <button 
                         onClick={() => handleSend(input)}
-                        className="absolute right-2 top-2 w-10 h-10 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl flex items-center justify-center transition-all shadow-lg active:scale-90"
+                        className="absolute right-1.5 top-1.5 w-8 h-8 bg-cyan-500 hover:bg-cyan-400 text-white rounded-lg flex items-center justify-center transition-all shadow-lg active:scale-90"
                     >
-                        <span className="material-symbols-outlined text-xl">send</span>
+                        <span className="material-symbols-outlined text-lg">send</span>
                     </button>
                 </div>
-                <p className="text-[9px] text-center text-slate-600 mt-4 font-black uppercase tracking-widest">
-                    AI Core: Qwen (Alibaba Cloud) — RAG ENGINE V2.1 PTAP Portachuelo
+                <p className="text-[8px] text-center text-slate-600 mt-2 font-medium uppercase tracking-wider">
+                    AI Core: Qwen — RAG ENGINE V2.1 PTAP Portachuelo
                 </p>
             </div>
         </div>
