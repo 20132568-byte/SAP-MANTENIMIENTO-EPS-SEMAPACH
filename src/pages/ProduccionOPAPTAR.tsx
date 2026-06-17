@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, Navigate } from 'react-router-dom'
+import { toPng } from 'html-to-image'
+import { jsPDF } from 'jspdf'
 import { api } from '../api/client'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -29,6 +31,20 @@ const FUENTES_MAP: Record<string, string> = {
     'EBAP PNUE': 'EBAP Pueblo Nuevo',
 }
 
+const format2Dec = (val: any) => {
+    if (val === undefined || val === null || val === '') return '0.00'
+    const num = Number(val)
+    if (isNaN(num)) return String(val)
+    return num.toFixed(2)
+}
+
+const format2DecLocale = (val: any) => {
+    if (val === undefined || val === null || val === '') return '0.00'
+    const num = Number(val)
+    if (isNaN(num)) return String(val)
+    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 export default function ProduccionOPAPTAR() {
     const location = useLocation()
     const isOperacion = location.pathname.includes('/operacion')
@@ -51,6 +67,12 @@ export default function ProduccionOPAPTAR() {
     const [uploading, setUploading] = useState(false)
     const [showEntry, setShowEntry] = useState(false)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
+const [multiMes, setMultiMes] = useState<string[]>([])
+const [comparativaData, setComparativaData] = useState<any[]>([])
+const [metasData, setMetasData] = useState<any[]>([])
+const [alertasRio, setAlertasRio] = useState<any>(null)
+const [frecuenciaSurtidor, setFrecuenciaSurtidor] = useState<any[]>([])
+const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500) }
@@ -96,6 +118,46 @@ export default function ProduccionOPAPTAR() {
     useEffect(() => { if (isSurtidor) loadSurtidor() }, [isSurtidor, fecha])
     useEffect(() => { if (isRSanjuan) loadRio() }, [isRSanjuan])
     useEffect(() => { if (isDashboard) loadDashboard() }, [isDashboard])
+
+    const loadComparativa = async (meses: string[]) => {
+        if (!meses.length) return
+        try {
+            const data = await api.getProduccionComparativa(meses.join(','))
+            setComparativaData(data)
+        } catch (err) { console.error(err) }
+    }
+
+    const loadMetas = async () => {
+        try {
+            const data = await api.getProduccionMetas(2026, Number(mes))
+            setMetasData(data)
+        } catch (err) { console.error(err) }
+    }
+
+    const loadAlertasRio = async () => {
+        try {
+            const data = await api.getProduccionAlertas()
+            setAlertasRio(data)
+        } catch (err) { console.error(err) }
+    }
+
+    const loadFrecuenciaSurtidor = async () => {
+        try {
+            const data = await api.getProduccionSurtidorFrecuencia()
+            setFrecuenciaSurtidor(data)
+        } catch (err) { console.error(err) }
+    }
+
+    const loadEvolucionSurtidor = async () => {
+        try {
+            const data = await api.getProduccionSurtidorEvolucion()
+            setEvolucionSurtidor(data)
+        } catch (err) { console.error(err) }
+    }
+
+    useEffect(() => { if (isOperacion) loadMetas() }, [isOperacion, mes])
+    useEffect(() => { if (isRSanjuan) loadAlertasRio() }, [isRSanjuan])
+    useEffect(() => { if (isSurtidor) { loadFrecuenciaSurtidor(); loadEvolucionSurtidor() } }, [isSurtidor, fecha])
 
     const handleFileUpload = async (tipo: string) => {
         const file = selectedFile || fileInputRef.current?.files?.[0]
@@ -181,6 +243,157 @@ export default function ProduccionOPAPTAR() {
         }
     }
 
+    const FUENTES_LIST = [
+        { key: 'pz10', label: 'PZ10', color: '#06b6d4' }, { key: 'pz11', label: 'PZ11', color: '#10b981' },
+        { key: 'pz13', label: 'PZ13', color: '#f59e0b' }, { key: 'pzmed', label: 'PZ MED', color: '#ef4444' },
+        { key: 'gfmin', label: 'GF MIN', color: '#8b5cf6' }, { key: 'ptap1', label: 'PTAP1', color: '#ec4899' },
+        { key: 'gfnar', label: 'GF NAR', color: '#14b8a6' }, { key: 'pzchb', label: 'PZ CHB', color: '#f97316' },
+        { key: 'pzcm', label: 'PZ CM', color: '#6366f1' }, { key: 'pztm', label: 'PZ TM', color: '#84cc16' },
+        { key: 'ebaphija', label: 'EBAP HIJA', color: '#0ea5e9' }, { key: 'ebapalar', label: 'EBAP ALAR', color: '#d946ef' },
+        { key: 'ebappnue', label: 'EBAP PNUE', color: '#22c55e' },
+    ]
+
+    const getEvolucionDiariaFuentes = () => {
+        if (!bdData.length) return []
+        return bdData.slice(0, 31).map(r => {
+            const entry: any = { dia: r.dia }
+            FUENTES_LIST.forEach(f => { entry[f.label] = Number(r[`${f.key}_caudal`]) || 0 })
+            return entry
+        })
+    }
+
+    const getProduccionVsHoras = () => {
+        if (!bdData.length) return []
+        return FUENTES_LIST.map(f => {
+            const totalM3 = bdData.reduce((a, r) => a + (Number(r[`${f.key}_m3`]) || 0), 0)
+            const totalHoras = bdData.reduce((a, r) => a + (Number(r[`${f.key}_horas`]) || 0), 0)
+            return {
+                name: f.label,
+                m3: totalM3,
+                horas: +totalHoras.toFixed(2),
+            }
+        }).filter(d => d.m3 > 0 || d.horas > 0)
+    }
+
+    const getLecturasMedidores = () => {
+        if (!bdData.length) return []
+        const ultimo = bdData[bdData.length - 1]
+        return FUENTES_LIST.map(f => ({
+            name: f.label,
+            inicio: Number(ultimo[`${f.key}_inicio`]) || 0,
+            final: Number(ultimo[`${f.key}_final`]) || 0,
+        })).filter(d => d.final > 0)
+    }
+
+    const getComparativaSources = () => {
+        if (!comparativaData.length) return []
+        const sourceLabels: Record<string, string> = {
+            pz10: 'PZ10', pz11: 'PZ11', pz13: 'PZ13', pzmed: 'PZ MED',
+            gfmin: 'GF MIN', ptap1: 'PTAP1', gfnar: 'GF NAR',
+            pzchb: 'PZ CHB', pzcm: 'PZ CM', pztm: 'PZ TM',
+            ebaphija: 'EBAP HIJA', ebapalar: 'EBAP ALAR', ebappnue: 'EBAP PNUE',
+        }
+        return Object.entries(sourceLabels).map(([key, label]) => ({
+            name: label,
+            ...Object.fromEntries(comparativaData.map((m: any) => [`mes${m.mes}`, Number(m[key]) || 0]))
+        })).filter(d => Object.values(d).some(v => typeof v === 'number' && v > 0))
+    }
+
+    const getCumplimientoMetas = () => {
+        if (!metasData.length || !bdData.length) return []
+        const totals: Record<string, number> = {}
+        bdData.forEach((r: any) => {
+            FUENTES_LIST.forEach(f => {
+                if (!totals[f.label]) totals[f.label] = 0
+                totals[f.label] += Number(r[`${f.key}_m3`]) || 0
+            })
+        })
+        return metasData.map(m => {
+            const real = totals[m.fuente] || 0
+            return {
+                name: m.fuente,
+                meta: Number(m.meta_m3) || 0,
+                real,
+                cumplimiento: m.meta_m3 > 0 ? +((real / Number(m.meta_m3)) * 100).toFixed(2) : 0,
+            }
+        }).filter(d => d.meta > 0)
+    }
+
+    const getEvolucionDiariaSurtidor = () => {
+        if (!evolucionSurtidor.length) return []
+        return evolucionSurtidor.map(r => ({
+            fecha: r.fecha?.split('T')[0] || r.fecha,
+            galones: Number(r.total_galones) || 0,
+            vehiculos: Number(r.vehiculos) || 0,
+            despachos: Number(r.despachos) || 0,
+        }))
+    }
+
+    const getDistribucionHorariaRio = () => {
+        if (!rioData.length) return []
+        const hourly: Record<string, number[]> = {}
+        rioData.forEach(r => {
+            const h = r.hora ? r.hora.split(':')[0] : ''
+            if (!h) return
+            if (!hourly[h]) hourly[h] = []
+            hourly[h].push(Number(r.caudal) || 0)
+        })
+        return Object.entries(hourly).sort(([a], [b]) => Number(a) - Number(b)).map(([hora, vals]) => ({
+            hora: `${hora}:00`,
+            caudal: +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2),
+            max: +Math.max(...vals).toFixed(2),
+        }))
+    }
+
+    const getComparativaMensualRio = () => {
+        if (!rioData.length) return []
+        const monthly: Record<string, number[]> = {}
+        rioData.forEach(r => {
+            const m = String(r.mes || '').padStart(2, '0')
+            if (!monthly[m]) monthly[m] = []
+            monthly[m].push(Number(r.caudal) || 0)
+        })
+        return Object.entries(monthly).sort(([a], [b]) => Number(a) - Number(b)).map(([mes, vals]) => ({
+            mes: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'][Number(mes) - 1] || mes,
+            caudal: +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2),
+            max: +Math.max(...vals).toFixed(2),
+            min: +Math.min(...vals).toFixed(2),
+        }))
+    }
+
+    const getScoreConsolidado = () => {
+        if (!dashData) return { score: 0, items: [] }
+        const produccion = Number(dashData.bd?.produccion_total) || 0
+        const galones = Number(dashData.surtidor?.total_galones) || 0
+        const caudal = Number(dashData.rio?.caudal_promedio) || 0
+        const pProduccion = Math.min(100, +(produccion / 1000).toFixed(2))
+        const pSurtidor = Math.min(100, +(galones / 1000).toFixed(2))
+        const pRio = Math.min(100, +(caudal * 10).toFixed(2))
+        const score = Math.min(100, +(pProduccion * 0.4 + pSurtidor * 0.3 + pRio * 0.3).toFixed(2))
+        return {
+            score,
+            items: [
+                { label: 'Producción', value: pProduccion, max: 100, peso: '40%' },
+                { label: 'Despacho', value: pSurtidor, max: 100, peso: '30%' },
+                { label: 'Río San Juan', value: pRio, max: 100, peso: '30%' },
+            ]
+        }
+    }
+
+    const getFrecuenciaViajes = () => {
+        if (!frecuenciaSurtidor.length) return []
+        return frecuenciaSurtidor.slice(0, 10)
+    }
+
+    const getCloroVsVolumen = () => {
+        if (!surtidorData.length) return []
+        return surtidorData.map(r => ({
+            volumen: Number(r.volumen_gln) || 0,
+            cloro: Number(r.hipoclorito) || 0,
+            placa: r.placa || 'N/A',
+        })).filter(r => r.volumen > 0 && r.cloro > 0)
+    }
+
     const getRioChartData = () => {
         if (!rioData.length) return []
         const daily: Record<string, number[]> = {}
@@ -192,9 +405,9 @@ export default function ProduccionOPAPTAR() {
         })
         return Object.entries(daily).map(([fecha, vals]) => ({
             fecha,
-            caudal: +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(3),
-            max: +Math.max(...vals).toFixed(3),
-            min: +Math.min(...vals).toFixed(3),
+            caudal: +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2),
+            max: +Math.max(...vals).toFixed(2),
+            min: +Math.min(...vals).toFixed(2),
         })).slice(0, 60)
     }
 
@@ -271,7 +484,7 @@ export default function ProduccionOPAPTAR() {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl">
                                         <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Producción Total</span>
-                                        <h3 className="text-2xl font-black text-white mt-1">{Number(dashData.bd.produccion_total || 0).toLocaleString()}</h3>
+                                        <h3 className="text-2xl font-black text-white mt-1">{format2DecLocale(dashData.bd.produccion_total)}</h3>
                                         <p className="text-[9px] text-slate-500 font-bold">m³ totales</p>
                                     </div>
                                     <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl">
@@ -310,7 +523,7 @@ export default function ProduccionOPAPTAR() {
                                             <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                             <XAxis dataKey="dia" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
                                             <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
-                                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                            <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                             <Area type="monotone" dataKey="total" stroke="#f59e0b" fill="url(#gradTotal)" strokeWidth={3} />
                                         </AreaChart>
                                     </ResponsiveContainer>
@@ -327,7 +540,7 @@ export default function ProduccionOPAPTAR() {
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
                                                 <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
                                                 <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" width={90} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Bar dataKey="promedio" fill="#06b6d4" radius={[0, 6, 6, 0]} barSize={16} />
                                             </BarChart>
                                         </ResponsiveContainer>
@@ -343,7 +556,7 @@ export default function ProduccionOPAPTAR() {
                                                         <Cell key={idx} fill={COLORS_POZOS[idx % COLORS_POZOS.length]} />
                                                     ))}
                                                 </Pie>
-                                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 900 }} />
                                             </PieChart>
                                         </ResponsiveContainer>
@@ -362,12 +575,145 @@ export default function ProduccionOPAPTAR() {
                                             <PolarRadiusAxis stroke="#334155" fontSize={8} />
                                             <Radar name="Caudal Prom (L/s)" dataKey="promedio" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.2} strokeWidth={2} />
                                             <Radar name="Caudal Máx (L/s)" dataKey="maximo" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} strokeWidth={2} />
-                                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                            <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                             <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 900 }} />
                                         </RadarChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
+
+                            {/* Evolución Diaria por Fuente (Líneas) */}
+                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
+                                    Evolución Diaria del Caudal por Fuente (L/s)
+                                </h3>
+                                <div className="h-[400px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={getEvolucionDiariaFuentes()}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                            <XAxis dataKey="dia" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                            <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                            <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                            <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
+                                            {FUENTES_LIST.filter(f => getEvolucionDiariaFuentes().some(d => d[f.label] > 0)).map(f => (
+                                                <Line key={f.key} type="monotone" dataKey={f.label} stroke={f.color} strokeWidth={2} dot={false} />
+                                            ))}
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Producción vs Horas por Fuente */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Producción vs Horas Operadas</h3>
+                                    <div className="h-[350px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ComposedChart data={getProduccionVsHoras()} layout="vertical">
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                                                <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" width={90} />
+                                                <Tooltip cursor={false} formatter={(value, name) => [Number(value).toFixed(2), name === 'm3' ? 'm³ total' : 'Horas']} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
+                                                <Bar dataKey="m3" fill="#06b6d4" radius={[0, 6, 6, 0]} barSize={12} name="m3" />
+                                                <Bar dataKey="horas" fill="#f59e0b" radius={[0, 6, 6, 0]} barSize={12} name="horas" />
+                                            </ComposedChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                                <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Lecturas de Medidores (Inicio vs Final)</h3>
+                                    <div className="h-[350px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={getLecturasMedidores()} layout="vertical">
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                                                <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" width={90} />
+                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
+                                                <Bar dataKey="inicio" fill="#64748b" radius={[0, 4, 4, 0]} barSize={8} stackId="a" />
+                                                <Bar dataKey="final" fill="#06b6d4" radius={[0, 4, 4, 0]} barSize={8} stackId="a" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Comparativa Mensual (multi-mes) */}
+                            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-violet-500 rounded-full"></span>
+                                        Comparativa Mensual de Producción (m³)
+                                    </h3>
+                                    <div className="flex gap-2">
+                                        {['1', '2', '3', '4', '5', '6'].map(m => (
+                                            <button key={m} onClick={() => {
+                                                const updated = multiMes.includes(m) ? multiMes.filter(x => x !== m) : [...multiMes, m]
+                                                setMultiMes(updated)
+                                                if (updated.length) loadComparativa(updated)
+                                            }}
+                                                className={`text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl transition-all ${multiMes.includes(m) ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-500 hover:bg-slate-700'}`}>
+                                                Mes {m}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                {comparativaData.length > 0 && (
+                                    <div className="h-[400px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={getComparativaSources()}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                                <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
+                                                {comparativaData.map((m: any, i: number) => (
+                                                    <Bar key={m.mes} dataKey={`mes${m.mes}`} fill={COLORS_POZOS[i % COLORS_POZOS.length]} radius={[4, 4, 0, 0]} barSize={20} />
+                                                ))}
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Cumplimiento de Metas */}
+                            {metasData.length > 0 && (
+                                <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                        Cumplimiento de Metas — m³ (Programado vs Real)
+                                    </h3>
+                                    <div className="h-[400px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={getCumplimientoMetas()}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                                <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
+                                                <Bar dataKey="meta" fill="#64748b" radius={[4, 4, 0, 0]} barSize={16} />
+                                                <Bar dataKey="real" fill="#10b981" radius={[4, 4, 0, 0]} barSize={16} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div className="grid grid-cols-4 md:grid-cols-6 gap-3 mt-6">
+                                        {getCumplimientoMetas().map(d => (
+                                            <div key={d.name} className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-3 text-center">
+                                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{d.name}</span>
+                                                <h4 className={`text-lg font-black ${d.cumplimiento >= 80 ? 'text-emerald-400' : d.cumplimiento >= 50 ? 'text-amber-400' : 'text-rose-400'}`}>
+                                                    {d.cumplimiento}%
+                                                </h4>
+                                                <div className="w-full h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                                    <div className={`h-full rounded-full ${d.cumplimiento >= 80 ? 'bg-emerald-500' : d.cumplimiento >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                                                        style={{ width: `${Math.min(100, d.cumplimiento)}%` }}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Tabla BD */}
                             <div className="bg-slate-800/50 border border-slate-700 rounded-3xl overflow-hidden">
@@ -393,14 +739,14 @@ export default function ProduccionOPAPTAR() {
                                             {bdData.slice(0, 31).map((r, i) => (
                                                 <tr key={i} className="hover:bg-slate-800/20">
                                                     <td className="p-3 font-black text-slate-100">{r.dia}/{r.mes}</td>
-                                                    <td className="p-3 font-mono font-bold">{Number(r.pz10_m3 || 0).toFixed(0)}</td>
-                                                    <td className="p-3 font-mono font-bold">{Number(r.pz11_m3 || 0).toFixed(0)}</td>
-                                                    <td className="p-3 font-mono font-bold">{Number(r.pz13_m3 || 0).toFixed(0)}</td>
-                                                    <td className="p-3 font-mono font-bold">{Number(r.pzmed_m3 || 0).toFixed(0)}</td>
-                                                    <td className="p-3 font-mono font-bold text-emerald-400">{Number(r.ptap1_m3 || 0).toFixed(0)}</td>
-                                                    <td className="p-3 font-mono font-bold">{Number(r.ebaphija_m3 || 0).toFixed(0)}</td>
-                                                    <td className="p-3 font-mono font-bold">{Number(r.ebapalar_m3 || 0).toFixed(0)}</td>
-                                                    <td className="p-3 font-mono font-bold">{Number(r.ebappnue_m3 || 0).toFixed(0)}</td>
+                                                    <td className="p-3 font-mono font-bold">{Number(r.pz10_m3 || 0).toFixed(2)}</td>
+                                                    <td className="p-3 font-mono font-bold">{Number(r.pz11_m3 || 0).toFixed(2)}</td>
+                                                    <td className="p-3 font-mono font-bold">{Number(r.pz13_m3 || 0).toFixed(2)}</td>
+                                                    <td className="p-3 font-mono font-bold">{Number(r.pzmed_m3 || 0).toFixed(2)}</td>
+                                                    <td className="p-3 font-mono font-bold text-emerald-400">{Number(r.ptap1_m3 || 0).toFixed(2)}</td>
+                                                    <td className="p-3 font-mono font-bold">{Number(r.ebaphija_m3 || 0).toFixed(2)}</td>
+                                                    <td className="p-3 font-mono font-bold">{Number(r.ebapalar_m3 || 0).toFixed(2)}</td>
+                                                    <td className="p-3 font-mono font-bold">{Number(r.ebappnue_m3 || 0).toFixed(2)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -446,7 +792,7 @@ export default function ProduccionOPAPTAR() {
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
                                                 <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                                                 <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} width={70} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Bar dataKey="valor" fill="#10b981" radius={[0, 6, 6, 0]} barSize={14}>
                                                     {getSurtidorResumen().porVehiculo.map((_, idx) => (
                                                         <Cell key={idx} fill={COLORS_POZOS[idx % COLORS_POZOS.length]} />
@@ -466,13 +812,73 @@ export default function ProduccionOPAPTAR() {
                                                         <Cell key={idx} fill={COLORS_POZOS[idx % COLORS_POZOS.length]} />
                                                     ))}
                                                 </Pie>
-                                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 900 }} />
                                             </PieChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Evolución Diaria de Despachos */}
+                            {evolucionSurtidor.length > 0 && (
+                                <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                        Evolución Diaria de Despachos
+                                    </h3>
+                                    <div className="h-[350px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ComposedChart data={getEvolucionDiariaSurtidor()}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                                <XAxis dataKey="fecha" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} fontWeight="900" tickFormatter={v => v?.split('-').slice(1).join('/') || ''} />
+                                                <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <YAxis yAxisId="right" orientation="right" stroke="#10b981" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
+                                                <Bar yAxisId="left" dataKey="despachos" fill="#334155" radius={[4, 4, 0, 0]} barSize={12} name="Despachos" />
+                                                <Line yAxisId="right" type="monotone" dataKey="galones" stroke="#10b981" strokeWidth={3} dot={false} name="Galones" />
+                                            </ComposedChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Cloro vs Volumen (Scatter) */}
+                            {getCloroVsVolumen().length > 0 && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                        <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Consumo de Cloro vs Volumen Despachado</h3>
+                                        <div className="h-[350px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <ScatterChart>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                                    <XAxis dataKey="volumen" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" name="Volumen (gal)" />
+                                                    <YAxis dataKey="cloro" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" name="Cloro (mg/L)" />
+                                                    <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                    <Scatter data={getCloroVsVolumen()} fill="#10b981" opacity={0.6} />
+                                                </ScatterChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                        <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Frecuencia de Viajes por Vehículo</h3>
+                                        <div className="h-[350px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={getFrecuenciaViajes()} layout="vertical">
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                                                    <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                    <YAxis type="category" dataKey="placa" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} fontWeight="900" width={70} />
+                                                    <Tooltip cursor={false} formatter={(value, name) => [value, name === 'viajes' ? 'Viajes' : 'Galones']} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                    <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
+                                                    <Bar dataKey="viajes" fill="#06b6d4" radius={[0, 6, 6, 0]} barSize={14} name="viajes" />
+                                                    <Bar dataKey="total_galones" fill="#10b981" radius={[0, 6, 6, 0]} barSize={14} name="total_galones" />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Tabla Surtidor */}
                             <div className="bg-slate-800/50 border border-slate-700 rounded-3xl overflow-hidden">
@@ -500,9 +906,9 @@ export default function ProduccionOPAPTAR() {
                                                     <td className="p-3 font-mono">{r.surtidor}</td>
                                                     <td className="p-3 font-bold text-sky-400">{r.placa}</td>
                                                     <td className="p-3">{r.tvehiculo}</td>
-                                                    <td className="p-3 font-mono font-bold text-emerald-400">{r.volumen_gln}</td>
-                                                    <td className="p-3 font-mono text-cyan-400">{r.volumen_m3}</td>
-                                                    <td className="p-3 font-mono">{r.hipoclorito}</td>
+                                                    <td className="p-3 font-mono font-bold text-emerald-400">{format2Dec(r.volumen_gln)}</td>
+                                                    <td className="p-3 font-mono text-cyan-400">{format2Dec(r.volumen_m3)}</td>
+                                                    <td className="p-3 font-mono">{format2Dec(r.hipoclorito)}</td>
                                                     <td className="p-3 text-slate-400">{r.operador}</td>
                                                 </tr>
                                             ))}
@@ -543,7 +949,7 @@ export default function ProduccionOPAPTAR() {
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                                 <XAxis dataKey="fecha" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} fontWeight="900" tickFormatter={v => v?.split('-').slice(1).join('/') || ''} />
                                                 <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Area type="monotone" dataKey="caudal" stroke="#06b6d4" fill="url(#gradRio)" strokeWidth={3} dot={false} />
                                                 <Area type="monotone" dataKey="max" stroke="#f59e0b" fill="none" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
                                                 <Area type="monotone" dataKey="min" stroke="#ef4444" fill="none" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
@@ -553,22 +959,105 @@ export default function ProduccionOPAPTAR() {
                                 </div>
                             </div>
 
+                            {/* Distribución Horaria del Caudal */}
+                            {getDistribucionHorariaRio().length > 0 && (
+                                <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
+                                        Distribución Horaria del Caudal (m³/s)
+                                    </h3>
+                                    <div className="h-[350px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={getDistribucionHorariaRio()}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                                <XAxis dataKey="hora" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Bar dataKey="caudal" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={20}>
+                                                    {getDistribucionHorariaRio().map((_, idx) => (
+                                                        <Cell key={idx} fill={COLORS_POZOS[idx % COLORS_POZOS.length]} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Comparativa Mensual Río */}
+                            {getComparativaMensualRio().length > 1 && (
+                                <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                                        Comparativa Mensual — Caudal Río San Juan
+                                    </h3>
+                                    <div className="h-[350px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ComposedChart data={getComparativaMensualRio()}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                                <XAxis dataKey="mes" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
+                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
+                                                <Bar dataKey="max" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={12} name="Máximo" />
+                                                <Bar dataKey="caudal" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={12} name="Promedio" />
+                                                <Bar dataKey="min" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={12} name="Mínimo" />
+                                            </ComposedChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alertas Río San Juan */}
+                            {alertasRio?.disparos?.length > 0 && (
+                                <div className="bg-slate-800/50 border border-rose-500/30 p-8 rounded-3xl">
+                                    <h3 className="text-xs font-black text-rose-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-lg">warning</span>
+                                        Alertas de Caudal Bajo
+                                    </h3>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs">
+                                            <thead>
+                                                <tr className="border-b border-slate-700">
+                                                    <th className="p-3 text-[9px] font-black text-slate-500 uppercase">Tipo</th>
+                                                    <th className="p-3 text-[9px] font-black text-slate-500 uppercase">Parámetro</th>
+                                                    <th className="p-3 text-[9px] font-black text-slate-500 uppercase">Umbral</th>
+                                                    <th className="p-3 text-[9px] font-black text-rose-400 uppercase">Valor Actual</th>
+                                                    <th className="p-3 text-[9px] font-black text-slate-500 uppercase">Fecha</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-800">
+                                                {alertasRio.disparos.slice(0, 5).map((a: any, i: number) => (
+                                                    <tr key={i} className="hover:bg-slate-800/20">
+                                                        <td className="p-3 font-black text-rose-400">{a.tipo}</td>
+                                                        <td className="p-3">{a.parametro}</td>
+                                                        <td className="p-3">{a.umbral} m³/s</td>
+                                                        <td className="p-3 font-bold text-rose-400">{Number(a.valor_actual).toFixed(2)} m³/s</td>
+                                                        <td className="p-3">{a.fecha} {a.hora}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Resumen Río */}
                             {dashData?.rio && (
                                 <div className="grid grid-cols-3 gap-4">
                                     <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl">
                                         <span className="text-[9px] font-black text-cyan-400 uppercase tracking-widest">Caudal Promedio</span>
-                                        <h3 className="text-2xl font-black text-white mt-1">{Number(dashData.rio.caudal_promedio || 0).toFixed(3)}</h3>
+                                        <h3 className="text-2xl font-black text-white mt-1">{Number(dashData.rio.caudal_promedio || 0).toFixed(2)}</h3>
                                         <p className="text-[9px] text-slate-500 font-bold">m³/s</p>
                                     </div>
                                     <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl">
                                         <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Caudal Máximo</span>
-                                        <h3 className="text-2xl font-black text-white mt-1">{Number(dashData.rio.caudal_maximo || 0).toFixed(3)}</h3>
+                                        <h3 className="text-2xl font-black text-white mt-1">{Number(dashData.rio.caudal_maximo || 0).toFixed(2)}</h3>
                                         <p className="text-[9px] text-slate-500 font-bold">m³/s</p>
                                     </div>
                                     <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl">
                                         <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Caudal Mínimo</span>
-                                        <h3 className="text-2xl font-black text-white mt-1">{Number(dashData.rio.caudal_minimo || 0).toFixed(3)}</h3>
+                                        <h3 className="text-2xl font-black text-white mt-1">{Number(dashData.rio.caudal_minimo || 0).toFixed(2)}</h3>
                                         <p className="text-[9px] text-slate-500 font-bold">m³/s</p>
                                     </div>
                                 </div>
@@ -580,7 +1069,7 @@ export default function ProduccionOPAPTAR() {
 
             {/* ===== SUB-VISTA: DASHBOARD ===== */}
             {isDashboard && (
-                <div className="space-y-8">
+                <div className="space-y-8" id="export-canvas-produccion">
                     {!dashData && !loading && (
                         <div className="text-center py-20 text-slate-500">
                             <span className="material-symbols-outlined text-6xl mb-4 block">analytics</span>
@@ -595,13 +1084,13 @@ export default function ProduccionOPAPTAR() {
                                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-8 rounded-3xl shadow-lg relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
                                     <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest relative">Producción Total</span>
-                                    <h3 className="text-4xl font-black text-white mt-2 relative tracking-tighter">{Number(dashData.bd?.produccion_total || 0).toLocaleString()}</h3>
+                                    <h3 className="text-4xl font-black text-white mt-2 relative tracking-tighter">{format2DecLocale(dashData.bd?.produccion_total)}</h3>
                                     <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 relative">m³ totales generados</p>
                                 </div>
                                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-8 rounded-3xl shadow-lg relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
                                     <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest relative">Agua Despachada</span>
-                                    <h3 className="text-4xl font-black text-white mt-2 relative tracking-tighter">{Number(dashData.surtidor?.total_galones || 0).toLocaleString()}</h3>
+                                    <h3 className="text-4xl font-black text-white mt-2 relative tracking-tighter">{format2DecLocale(dashData.surtidor?.total_galones)}</h3>
                                     <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 relative">galones de agua distribuidos</p>
                                 </div>
                                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-8 rounded-3xl shadow-lg relative overflow-hidden">
@@ -628,7 +1117,7 @@ export default function ProduccionOPAPTAR() {
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
                                                 <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                                                 <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} width={120} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Bar dataKey="m3" radius={[0, 8, 8, 0]} barSize={18}>
                                                     {dashData.topFuentes?.map((_: any, idx: number) => (
                                                         <Cell key={idx} fill={COLORS_POZOS[idx % COLORS_POZOS.length]} />
@@ -649,7 +1138,7 @@ export default function ProduccionOPAPTAR() {
                                                         <Cell key={idx} fill={COLORS_POZOS[idx % COLORS_POZOS.length]} />
                                                     ))}
                                                 </Pie>
-                                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Legend formatter={(v: string) => FUENTES_MAP[v] || v} wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
                                             </PieChart>
                                         </ResponsiveContainer>
@@ -670,15 +1159,104 @@ export default function ProduccionOPAPTAR() {
                                                     ))}
                                                 </RadialBar>
                                                 <Legend formatter={(v: string) => FUENTES_MAP[v] || v} wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
-                                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
-                                            </RadialBarChart>
-                                        </ResponsiveContainer>
+                                        <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                </RadialBarChart>
+                                            </ResponsiveContainer>
+                                        </div>
                                     </div>
+                                )}
+
+                                {/* Score Consolidado */}
+                                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-8 rounded-3xl">
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                                        Score de Gestión — Indicador Consolidado
+                                    </h3>
+                                    {(() => {
+                                        const scoreData = getScoreConsolidado()
+                                        return (
+                                            <div className="flex flex-col md:flex-row items-center gap-8">
+                                                <div className="relative w-40 h-40 flex items-center justify-center">
+                                                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                                                        <circle cx="60" cy="60" r="54" fill="none" stroke="#1e293b" strokeWidth="8" />
+                                                        <circle cx="60" cy="60" r="54" fill="none" stroke={
+                                                            scoreData.score >= 80 ? '#10b981' : scoreData.score >= 50 ? '#f59e0b' : '#ef4444'
+                                                        } strokeWidth="8" strokeDasharray={`${(scoreData.score / 100) * 339.292} 339.292`} strokeLinecap="round" />
+                                                    </svg>
+                                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                        <span className={`text-4xl font-black ${
+                                                            scoreData.score >= 80 ? 'text-emerald-400' : scoreData.score >= 50 ? 'text-amber-400' : 'text-rose-400'
+                                                        }`}>{Number(scoreData.score).toFixed(2)}</span>
+                                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">/ 100</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 grid grid-cols-3 gap-4 w-full">
+                                                    {scoreData.items.map((item: any) => (
+                                                        <div key={item.label} className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-4 text-center">
+                                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
+                                                            <h4 className="text-xl font-black text-white mt-1">{Number(item.value).toFixed(2)}</h4>
+                                                            <div className="w-full h-2 bg-slate-800 rounded-full mt-2 overflow-hidden">
+                                                                <div className={`h-full rounded-full ${
+                                                                    item.value >= 80 ? 'bg-emerald-500' : item.value >= 50 ? 'bg-amber-500' : 'bg-rose-500'
+                                                                }`} style={{ width: `${Math.min(100, item.value)}%` }}></div>
+                                                            </div>
+                                                            <span className="text-[8px] text-slate-600 font-bold mt-1 block">{item.peso}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )
+                                    })()}
                                 </div>
-                            )}
-                        </>
-                    )}
-                </div>
+
+                                {/* Botón Exportar PDF */}
+                                <div className="flex justify-end">
+                                    <button onClick={async () => {
+                                        const exportEl = document.getElementById('export-canvas-produccion')
+                                        if (!exportEl) return
+                                        try {
+                                            const blob = await toPng(exportEl, { quality: 0.95, pixelRatio: 2 })
+                                            const pdf = new jsPDF('l', 'mm', 'a3')
+                                            const imgProps = pdf.getImageProperties(blob)
+                                            const pdfW = pdf.internal.pageSize.getWidth()
+                                            const pdfH = (imgProps.height * pdfW) / imgProps.width
+                                            pdf.addImage(blob, 'PNG', 0, 0, pdfW, pdfH)
+                                            pdf.save('Dashboard-Produccion-OPAPTAR.pdf')
+                                        } catch { }
+                                    }}
+                                        className="text-[10px] font-black uppercase tracking-widest px-8 py-4 bg-amber-600 text-white rounded-2xl hover:bg-amber-700 transition-all flex items-center gap-3 shadow-lg shadow-amber-900/30">
+                                        <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
+                                        Exportar Dashboard PDF
+                                    </button>
+                                </div>
+
+                                {/* Cumplimiento Metas en Dashboard */}
+                                {metasData.length > 0 && bdData.length > 0 && (
+                                    <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
+                                        <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Cumplimiento de Metas por Fuente</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                            {getCumplimientoMetas().map(d => (
+                                                <div key={d.name} className="bg-slate-900/60 border border-slate-700/50 rounded-2xl p-5 text-center">
+                                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{d.name}</span>
+                                                    <h4 className={`text-2xl font-black mt-1 ${
+                                                        d.cumplimiento >= 80 ? 'text-emerald-400' : d.cumplimiento >= 50 ? 'text-amber-400' : 'text-rose-400'
+                                                    }`}>{d.cumplimiento}%</h4>
+                                                    <div className="w-full h-2 bg-slate-800 rounded-full mt-2 overflow-hidden">
+                                                        <div className={`h-full rounded-full ${
+                                                            d.cumplimiento >= 80 ? 'bg-emerald-500' : d.cumplimiento >= 50 ? 'bg-amber-500' : 'bg-rose-500'
+                                                        }`} style={{ width: `${Math.min(100, d.cumplimiento)}%` }}></div>
+                                                    </div>
+                                                    <span className="text-[8px] text-slate-500 font-bold mt-1 block">
+                                                        {d.real.toFixed(2)} / {d.meta.toFixed(2)} m³
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
             )}
         </div>
     )
