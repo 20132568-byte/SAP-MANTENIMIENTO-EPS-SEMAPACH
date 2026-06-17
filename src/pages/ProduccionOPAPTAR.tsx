@@ -50,6 +50,7 @@ export default function ProduccionOPAPTAR() {
     const [toast, setToast] = useState<string | null>(null)
     const [uploading, setUploading] = useState(false)
     const [showEntry, setShowEntry] = useState(false)
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500) }
@@ -97,7 +98,7 @@ export default function ProduccionOPAPTAR() {
     useEffect(() => { if (isDashboard) loadDashboard() }, [isDashboard])
 
     const handleFileUpload = async (tipo: string) => {
-        const file = fileInputRef.current?.files?.[0]
+        const file = selectedFile || fileInputRef.current?.files?.[0]
         if (!file) { notify('Selecciona un archivo Excel'); return }
         setUploading(true)
         try {
@@ -106,6 +107,7 @@ export default function ProduccionOPAPTAR() {
             if (tipo === 'bd') loadBD()
             else if (tipo === 'surtidor') loadSurtidor()
             else if (tipo === 'rsanjuan') loadRio()
+            setSelectedFile(null)
             if (fileInputRef.current) fileInputRef.current.value = ''
         } catch (err: any) {
             notify(err.message || 'Error al importar')
@@ -210,10 +212,21 @@ export default function ProduccionOPAPTAR() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <input type="file" ref={fileInputRef} accept=".xlsx,.xls,.csv,.ods" className="hidden" />
+                        {selectedFile && (
+                            <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl max-w-[200px] truncate">
+                                Listo: {selectedFile.name}
+                            </span>
+                        )}
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            accept=".xlsx,.xls,.csv,.ods" 
+                            className="hidden" 
+                            onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                        />
                         <button onClick={() => fileInputRef.current?.click()} className="text-[10px] font-black uppercase tracking-widest px-5 py-3 bg-slate-800 border border-slate-700 rounded-2xl hover:bg-slate-700 transition-all flex items-center gap-2">
                             <span className="material-symbols-outlined text-[16px]">upload_file</span>
-                            Subir Excel
+                            {selectedFile ? 'Cambiar Excel' : 'Subir Excel'}
                         </button>
                     </div>
                 </div>
