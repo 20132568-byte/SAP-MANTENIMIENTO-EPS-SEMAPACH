@@ -104,6 +104,12 @@ export const api = {
     },
     bulkCreateProduccionRSanjuan: (rows: any[]) => request<any>('/produccion/rsanjuan/bulk', { method: 'POST', body: JSON.stringify({ rows }) }),
     getProduccionDashboard: () => request<any>('/produccion/dashboard'),
+    getProduccionComparativa: (meses: string) => request<any[]>(`/produccion/bd/comparativa?meses=${meses}`),
+    getProduccionMetas: (anio?: number, mes?: number) => request<any[]>(`/produccion/metas${anio ? `?anio=${anio}` : ''}${mes ? `${anio ? '&' : '?'}mes=${mes}` : ''}`),
+    updateProduccionMeta: (data: any) => request<any>('/produccion/metas', { method: 'PUT', body: JSON.stringify(data) }),
+    getProduccionAlertas: () => request<any>('/produccion/alertas'),
+    getProduccionSurtidorFrecuencia: (desde?: string, hasta?: string) => request<any[]>(`/produccion/surtidor/frecuencia?desde=${desde || ''}&hasta=${hasta || ''}`),
+    getProduccionSurtidorEvolucion: (desde?: string, hasta?: string) => request<any[]>(`/produccion/surtidor/evolucion?desde=${desde || ''}&hasta=${hasta || ''}`),
     uploadProduccionExcel: (file: File, tipo: string) => {
         const formData = new FormData()
         formData.append('file', file)

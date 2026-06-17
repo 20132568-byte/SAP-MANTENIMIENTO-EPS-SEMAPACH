@@ -177,6 +177,30 @@ export async function initDb() {
                 id SERIAL PRIMARY KEY, fecha_reporte DATE, semana INTEGER,
                 titulo TEXT, valor TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
+            // === METAS DE PRODUCCIÓN ===
+            `CREATE TABLE IF NOT EXISTS produccion_metas (
+                id SERIAL PRIMARY KEY, anio INTEGER NOT NULL, mes INTEGER NOT NULL,
+                fuente VARCHAR(50) NOT NULL, meta_m3 REAL DEFAULT 0, meta_horas REAL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(anio, mes, fuente)
+            )`,
+            // Seed metas 2026 por defecto
+            `INSERT INTO produccion_metas (anio, mes, fuente, meta_m3, meta_horas) VALUES
+                (2026, 1, 'PZ10', 45000, 720), (2026, 1, 'PZ11', 42000, 720), (2026, 1, 'PZ13', 38000, 720),
+                (2026, 1, 'PTAP1', 120000, 720), (2026, 1, 'PZ MED', 25000, 720),
+                (2026, 1, 'GF MIN', 15000, 600), (2026, 1, 'GF NAR', 12000, 600),
+                (2026, 1, 'PZ CHB', 8000, 600), (2026, 1, 'PZ CM', 6000, 500), (2026, 1, 'PZ TM', 5000, 500),
+                (2026, 1, 'EBAP HIJA', 30000, 720), (2026, 1, 'EBAP ALAR', 25000, 720), (2026, 1, 'EBAP PNUE', 20000, 720)
+            ON CONFLICT (anio, mes, fuente) DO NOTHING`,
+            `CREATE TABLE IF NOT EXISTS produccion_alertas (
+                id SERIAL PRIMARY KEY, tipo VARCHAR(50) NOT NULL, fuente VARCHAR(50),
+                parametro VARCHAR(50), umbral REAL, operador VARCHAR(10) DEFAULT '<',
+                activo INTEGER DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `INSERT INTO produccion_alertas (tipo, fuente, parametro, umbral, operador) VALUES
+                ('caudal_bajo', 'RSANJUAN', 'caudal', 5.0, '<'),
+                ('caudal_critico', 'RSANJUAN', 'caudal', 3.0, '<')
+            ON CONFLICT DO NOTHING`,
             // Unique constraints for produccion tables (for ON CONFLICT DO NOTHING)
             `CREATE UNIQUE INDEX IF NOT EXISTS idx_produccion_bd_fecha ON produccion_bd(fecha)`,
             `CREATE UNIQUE INDEX IF NOT EXISTS idx_produccion_surtidor_row ON produccion_surtidor(fecha, surtidor, itm, placa)`,
@@ -301,6 +325,8 @@ function transformQuery(sql: string): string {
     let index = 1
     return sql.replace(/\?/g, () => `$${index++}`)
 }
+
+export function getPgPool() { return pool }
 
 export async function dbAll(sql: string, ...params: any[]): Promise<any[]> {
     const pgSql = transformQuery(sql)

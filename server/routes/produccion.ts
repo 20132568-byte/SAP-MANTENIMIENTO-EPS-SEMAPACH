@@ -1,5 +1,7 @@
 import { Router } from 'express'
-import { dbAll, dbRun, dbGet } from '../database.js'
+import { dbAll, dbRun, dbGet, getPgPool } from '../database.js'
+
+const pool = getPgPool()
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
@@ -47,7 +49,7 @@ produccionRouter.post('/bd/bulk', async (req, res) => {
                 ebaphija_caudal, ebaphija_horas, ebaphija_inicio, ebaphija_final, ebaphija_m3,
                 ebapalar_caudal, ebapalar_horas, ebapalar_inicio, ebapalar_final, ebapalar_m3,
                 ebappnue_caudal, ebappnue_horas, ebappnue_inicio, ebappnue_final, ebappnue_m3
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60,$61,$62,$63,$64,$65,$66)
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60,$61,$62,$63,$64,$65,$66,$67,$68)
             ON CONFLICT DO NOTHING`,
                 r.mes, r.dia, r.fecha,
                 r.pz10_caudal, r.pz10_horas, r.pz10_inicio, r.pz10_final, r.pz10_m3,
@@ -144,6 +146,134 @@ produccionRouter.post('/rsanjuan/bulk', async (req, res) => {
             count++
         }
         res.json({ success: true, total: rows.length, inserted: count })
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === COMPARATIVA MENSUAL (multi-mes) ===
+
+produccionRouter.get('/bd/comparativa', async (req, res) => {
+    try {
+        const { meses } = req.query
+        const listaMeses = meses ? String(meses).split(',').map(Number) : [new Date().getMonth() + 1]
+        const sql = `
+            SELECT mes,
+                SUM(pz10_m3) as pz10, SUM(pz11_m3) as pz11, SUM(pz13_m3) as pz13,
+                SUM(pzmed_m3) as pzmed, SUM(gfmin_m3) as gfmin, SUM(ptap1_m3) as ptap1,
+                SUM(gfnar_m3) as gfnar, SUM(pzchb_m3) as pzchb, SUM(pzcm_m3) as pztm,
+                SUM(pztm_m3) as pztm,
+                SUM(ebaphija_m3) as ebaphija, SUM(ebapalar_m3) as ebapalar, SUM(ebappnue_m3) as ebappnue,
+                SUM(pz10_m3 + pz11_m3 + pz13_m3 + pzmed_m3 + gfmin_m3 + ptap1_m3 +
+                    gfnar_m3 + pzchb_m3 + pzcm_m3 + pztm_m3 +
+                    ebaphija_m3 + ebapalar_m3 + ebappnue_m3) as total
+            FROM produccion_bd
+            WHERE mes = ANY($1::int[])
+            GROUP BY mes
+            ORDER BY mes
+        `
+        const pgSql = sql.replace(/\?/g, () => `$${1}`)
+        const { rows } = await pool.query(pgSql, [listaMeses])
+        res.json(rows)
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === METAS DE PRODUCCIÓN ===
+
+produccionRouter.get('/metas', async (req, res) => {
+    try {
+        const { anio, mes } = req.query
+        let sql = 'SELECT * FROM produccion_metas WHERE 1=1'
+        const params: any[] = []
+        if (anio) { sql += ' AND anio = $' + (params.length + 1); params.push(Number(anio)) }
+        if (mes) { sql += ' AND mes = $' + (params.length + 1); params.push(Number(mes)) }
+        sql += ' ORDER BY fuente'
+        const { rows } = await pool.query(sql, params)
+        res.json(rows)
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+produccionRouter.put('/metas', async (req, res) => {
+    try {
+        const { anio, mes, fuente, meta_m3, meta_horas } = req.body
+        if (!anio || !mes || !fuente) return res.status(400).json({ error: 'anio, mes, fuente requeridos' })
+        const { rows } = await pool.query(
+            `INSERT INTO produccion_metas (anio, mes, fuente, meta_m3, meta_horas)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (anio, mes, fuente) DO UPDATE SET meta_m3 = EXCLUDED.meta_m3, meta_horas = EXCLUDED.meta_horas
+             RETURNING *`,
+            [anio, mes, fuente, meta_m3 || 0, meta_horas || 0]
+        )
+        res.json(rows[0])
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === ALERTAS (RÍO SAN JUAN) ===
+
+produccionRouter.get('/alertas', async (req, res) => {
+    try {
+        const alertas = await pool.query(`SELECT * FROM produccion_alertas WHERE activo = 1`)
+        const { rows: lecturas } = await pool.query(
+            `SELECT caudal, fecha, hora FROM produccion_rsanjuan ORDER BY fecha DESC, hora DESC LIMIT 50`
+        )
+        const disparos: any[] = []
+        for (const alerta of alertas.rows) {
+            for (const r of lecturas) {
+                const val = Number(r[alerta.parametro])
+                const umbral = Number(alerta.umbral)
+                if (alerta.operador === '<' && val < umbral) {
+                    disparos.push({ ...alerta, valor_actual: val, fecha: r.fecha, hora: r.hora })
+                    break
+                }
+                if (alerta.operador === '>' && val > umbral) {
+                    disparos.push({ ...alerta, valor_actual: val, fecha: r.fecha, hora: r.hora })
+                    break
+                }
+            }
+        }
+        res.json({ alertas: alertas.rows, disparos })
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === SURTIDOR - FRECUENCIA DE VIAJES ===
+
+produccionRouter.get('/surtidor/frecuencia', async (req, res) => {
+    try {
+        const { desde, hasta } = req.query
+        let sql = `SELECT placa, tvehiculo, COUNT(*) as viajes, SUM(volumen_gln) as total_galones, AVG(volumen_gln) as promedio_gln
+                   FROM produccion_surtidor WHERE 1=1`
+        const params: any[] = []
+        if (desde) { sql += ' AND fecha >= $' + (params.length + 1); params.push(desde) }
+        if (hasta) { sql += ' AND fecha <= $' + (params.length + 1); params.push(hasta) }
+        sql += ' GROUP BY placa, tvehiculo ORDER BY viajes DESC'
+        const { rows } = await pool.query(sql, params)
+        res.json(rows)
+    } catch (error: any) {
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === SURTIDOR - EVOLUCIÓN DIARIA ===
+
+produccionRouter.get('/surtidor/evolucion', async (req, res) => {
+    try {
+        const { desde, hasta } = req.query
+        let sql = `SELECT fecha, SUM(volumen_gln) as total_galones, COUNT(DISTINCT placa) as vehiculos, COUNT(*) as despachos
+                   FROM produccion_surtidor WHERE 1=1`
+        const params: any[] = []
+        if (desde) { sql += ' AND fecha >= $' + (params.length + 1); params.push(desde) }
+        if (hasta) { sql += ' AND fecha <= $' + (params.length + 1); params.push(hasta) }
+        sql += ' GROUP BY fecha ORDER BY fecha'
+        const { rows } = await pool.query(sql, params)
+        res.json(rows)
     } catch (error: any) {
         res.status(500).json({ error: error.message })
     }
@@ -288,7 +418,7 @@ produccionRouter.post('/import', upload.single('file'), async (req, res) => {
                     ebaphija_caudal, ebaphija_horas, ebaphija_inicio, ebaphija_final, ebaphija_m3,
                     ebapalar_caudal, ebapalar_horas, ebapalar_inicio, ebapalar_final, ebapalar_m3,
                     ebappnue_caudal, ebappnue_horas, ebappnue_inicio, ebappnue_final, ebappnue_m3
-                ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60,$61,$62,$63,$64,$65,$66)
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$60,$61,$62,$63,$64,$65,$66,$67,$68)
                 ON CONFLICT DO NOTHING`,
                     mes, dia, fecha,
                     r[2], r[3], r[4], r[5], r[6],
