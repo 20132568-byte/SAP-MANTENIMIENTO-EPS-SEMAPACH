@@ -31,13 +31,15 @@ const allowedOrigins = process.env.CORS_ORIGIN
 
 async function main() {
     const app = express()
-    app.use(helmet())
-    app.use(cors({
+    app.use(helmet({
+        contentSecurityPolicy: false
+    }))
+    app.use('/api', cors({
         origin: (origin, callback) => {
             if (!origin || allowedOrigins.includes(origin)) {
                 callback(null, true)
             } else {
-                callback(new Error(`Origen no permitido: ${origin}`))
+                callback(null, false)
             }
         },
         credentials: true,
