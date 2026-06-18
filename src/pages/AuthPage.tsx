@@ -151,7 +151,7 @@ const AuthPage: React.FC = () => {
                         </button>
                     </form>
 
-                    <div className="mt-8 text-center">
+                    <div className="mt-8 text-center space-y-3">
                         <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
                             {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
                             <Link
@@ -161,6 +161,13 @@ const AuthPage: React.FC = () => {
                                 {isLogin ? 'Solicita Registro' : 'Inicia Sesión'}
                             </Link>
                         </p>
+                        {isLogin && (
+                            <p>
+                                <Link to="/forgot-password" className="text-slate-500 hover:text-cyan-400 text-[10px] font-bold uppercase tracking-widest transition-colors">
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
+                            </p>
+                        )}
                     </div>
                 </div>
 

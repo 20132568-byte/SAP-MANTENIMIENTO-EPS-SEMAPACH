@@ -23,6 +23,9 @@ import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import UserManagement from './pages/UserManagement'
 import MiPerfil from './pages/MiPerfil'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import FloatingChat from './components/FloatingChat'
 import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 
@@ -548,6 +551,8 @@ export default function App() {
                         {/* Rutas Públicas */}
                         <Route path="/login" element={<AuthPage />} />
                         <Route path="/register" element={<AuthPage />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
 
                         {/* Home con módulos (protegido) */}
                         <Route path="/home" element={
@@ -563,6 +568,7 @@ export default function App() {
                             </ProtectedRoute>
                         } />
                     </Routes>
+                    <FloatingChat />
                 </AssetTypeProvider>
             </BrowserRouter>
         </ThemeProvider>

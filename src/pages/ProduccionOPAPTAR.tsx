@@ -507,10 +507,11 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
 
                             {/* Gráfico: Producción Diaria (Área Acumulada) */}
                             <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
-                                <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-1 flex items-center gap-2">
                                     <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
                                     Producción Diaria — m³/día
                                 </h3>
+                                <p className="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Volumen total de agua producido cada día en metros cúbicos (m³)</p>
                                 <div className="h-[400px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={getProduccionDiaria()}>
@@ -533,7 +534,8 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                             {/* Gráfico: Caudal Promedio por Fuente */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
-                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Caudal Promedio por Fuente (L/s)</h3>
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-1">Caudal Promedio por Fuente (L/s)</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Litros de agua por segundo (L/s) que aporta cada pozo en promedio</p>
                                     <div className="h-[350px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={getCaudalData()} layout="vertical">
@@ -547,7 +549,8 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                                     </div>
                                 </div>
                                 <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
-                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Volumen Total por Fuente (m³)</h3>
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-1">Volumen Total por Fuente (m³)</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Aporte total del mes en metros cúbicos y porcentaje de contribución</p>
                                     <div className="h-[350px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
@@ -566,7 +569,8 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
 
                             {/* Gráfico: Radar de Eficiencia */}
                             <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
-                                <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Eficiencia por Fuente (Caudal vs Horas)</h3>
+                                <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-1">Caudal Promedio vs Máximo por Fuente (L/s)</h3>
+                                <p className="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Comparación entre flujo habitual (promedio) y pico de capacidad (máximo)</p>
                                 <div className="h-[400px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RadarChart data={getCaudalData()}>
@@ -584,17 +588,18 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
 
                             {/* Evolución Diaria por Fuente (Líneas) */}
                             <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
-                                <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-1 flex items-center gap-2">
                                     <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
                                     Evolución Diaria del Caudal por Fuente (L/s)
                                 </h3>
+                                <p className="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Variación del caudal de cada pozo día a día durante el mes</p>
                                 <div className="h-[400px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={getEvolucionDiariaFuentes()}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                             <XAxis dataKey="dia" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
                                             <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
-                                            <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                            <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                             <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
                                             {FUENTES_LIST.filter(f => getEvolucionDiariaFuentes().some(d => d[f.label] > 0)).map(f => (
                                                 <Line key={f.key} type="monotone" dataKey={f.label} stroke={f.color} strokeWidth={2} dot={false} />
@@ -607,7 +612,8 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                             {/* Producción vs Horas por Fuente */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
-                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Producción vs Horas Operadas</h3>
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-1">Producción vs Horas Operadas</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Comparación de volumen producido (m³) frente a horas trabajadas</p>
                                     <div className="h-[350px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <ComposedChart data={getProduccionVsHoras()} layout="vertical">
@@ -623,14 +629,15 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                                     </div>
                                 </div>
                                 <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-3xl">
-                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-6">Lecturas de Medidores (Inicio vs Final)</h3>
+                                    <h3 className="text-xs font-black text-slate-100 uppercase tracking-widest mb-1">Lecturas de Medidores (Inicio vs Final)</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Diferencia entre las marcas iniciales y finales de los medidores</p>
                                     <div className="h-[350px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={getLecturasMedidores()} layout="vertical">
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
                                                 <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
                                                 <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" width={90} />
-                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
                                                 <Bar dataKey="inicio" fill="#64748b" radius={[0, 4, 4, 0]} barSize={8} stackId="a" />
                                                 <Bar dataKey="final" fill="#06b6d4" radius={[0, 4, 4, 0]} barSize={8} stackId="a" />
@@ -667,7 +674,7 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                                 <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
                                                 <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
-                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
                                                 {comparativaData.map((m: any, i: number) => (
                                                     <Bar key={m.mes} dataKey={`mes${m.mes}`} fill={COLORS_POZOS[i % COLORS_POZOS.length]} radius={[4, 4, 0, 0]} barSize={20} />
@@ -834,7 +841,7 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                                                 <XAxis dataKey="fecha" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} fontWeight="900" tickFormatter={v => v?.split('-').slice(1).join('/') || ''} />
                                                 <YAxis yAxisId="left" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
                                                 <YAxis yAxisId="right" orientation="right" stroke="#10b981" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
-                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
                                                 <Bar yAxisId="left" dataKey="despachos" fill="#334155" radius={[4, 4, 0, 0]} barSize={12} name="Despachos" />
                                                 <Line yAxisId="right" type="monotone" dataKey="galones" stroke="#10b981" strokeWidth={3} dot={false} name="Galones" />
@@ -855,7 +862,7 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                                                     <XAxis dataKey="volumen" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" name="Volumen (gal)" />
                                                     <YAxis dataKey="cloro" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" name="Cloro (mg/L)" />
-                                                    <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                    <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                     <Scatter data={getCloroVsVolumen()} fill="#10b981" opacity={0.6} />
                                                 </ScatterChart>
                                             </ResponsiveContainer>
@@ -869,7 +876,7 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
                                                     <XAxis type="number" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
                                                     <YAxis type="category" dataKey="placa" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} fontWeight="900" width={70} />
-                                                    <Tooltip cursor={false} formatter={(value, name) => [value, name === 'viajes' ? 'Viajes' : 'Galones']} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                    <Tooltip cursor={false} formatter={(value, name) => [Number(value).toFixed(2), name === 'viajes' ? 'Viajes' : 'Galones']} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                     <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
                                                     <Bar dataKey="viajes" fill="#06b6d4" radius={[0, 6, 6, 0]} barSize={14} name="viajes" />
                                                     <Bar dataKey="total_galones" fill="#10b981" radius={[0, 6, 6, 0]} barSize={14} name="total_galones" />
@@ -972,7 +979,7 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                                 <XAxis dataKey="hora" stroke="#64748b" fontSize={9} tickLine={false} axisLine={false} fontWeight="900" />
                                                 <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
-                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Bar dataKey="caudal" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={20}>
                                                     {getDistribucionHorariaRio().map((_, idx) => (
                                                         <Cell key={idx} fill={COLORS_POZOS[idx % COLORS_POZOS.length]} />
@@ -997,7 +1004,7 @@ const [evolucionSurtidor, setEvolucionSurtidor] = useState<any[]>([])
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                                 <XAxis dataKey="mes" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
                                                 <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} fontWeight="900" />
-                                                <Tooltip cursor={false} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
+                                                <Tooltip cursor={false} formatter={(value) => [Number(value).toFixed(2)]} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '16px' }} />
                                                 <Legend wrapperStyle={{ fontSize: '9px', fontWeight: 900 }} />
                                                 <Bar dataKey="max" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={12} name="Máximo" />
                                                 <Bar dataKey="caudal" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={12} name="Promedio" />
