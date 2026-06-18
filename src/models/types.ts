@@ -84,6 +84,12 @@ export interface DailyRecord {
     estado_dia: string
     observaciones: string
     created_at?: string
+    horas_parada?: number
+    hora_inicio_parada?: string
+    hora_fin_parada?: string
+    hora_inicio_jornada?: string
+    hora_fin_jornada?: string
+    jornada_completa?: number
     // Campos virtuales para vistas
     asset_codigo?: string
     asset_tipo?: string
@@ -204,4 +210,177 @@ export interface AssetKPI {
     costo_total: number
     salud: number | null
     riesgo: string | null
+}
+
+// § Usuario
+export interface User {
+    id: number
+    username: string
+    dni?: string
+    email?: string
+    role: string
+    status: string
+    created_at?: string
+    updated_at?: string
+}
+
+export interface LoginResponse {
+    token: string
+    user: User
+}
+
+// § PTAP Lecturas
+export interface PtapReading {
+    id?: number
+    fecha: string
+    hora: string
+    [key: string]: any
+}
+
+// § Agua / Monitoreo
+export interface WaterReading {
+    id?: number
+    fecha: string
+    distrito: string
+    zona: string
+    presion_kg: number | null
+    caudal_lps: number | null
+    horas_servicio: number | null
+    created_at?: string
+}
+
+export interface WaterStats {
+    porDistrito: { distrito: string; promedio_presion: number; promedio_caudal: number; total_registros: number }[]
+}
+
+// § Estaciones Hídricas
+export interface WaterStation {
+    id: number
+    codigo: string
+    nombre: string
+    ubicacion: string
+    tipo_estacion: string
+    estado: string
+    latitud: number | null
+    longitud: number | null
+    created_at?: string
+    updated_at?: string
+}
+
+export interface StationEquipment {
+    id: number
+    station_id: number
+    codigo: string
+    tipo_equipo: string
+    marca: string
+    modelo: string
+    serie: string
+    potencia_hp: number | null
+    estado: string
+    created_at?: string
+    updated_at?: string
+}
+
+export interface StationMaintenance {
+    id: number
+    station_id: number
+    equipo_id: number | null
+    tipo_mantenimiento: string
+    descripcion: string
+    fecha_programada: string
+    fecha_ejecucion: string | null
+    estado: string
+    created_at?: string
+}
+
+// § Plan 2026
+export interface Plan2026Activity {
+    id: number
+    estacion: string
+    actividad: string
+    mes: string
+    estado: string
+    [key: string]: any
+}
+
+export interface Plan2026Summary {
+    total_actividades: number
+    ejecutadas: number
+    pendientes: number
+    por_estacion: { estacion: string; total: number; ejecutadas: number }[]
+}
+
+// § Inteligencia Estaciones
+export interface StationAlert {
+    id: number
+    station_id: number
+    station_nombre?: string
+    tipo: 'critico' | 'advertencia' | 'aviso'
+    titulo: string
+    descripcion: string
+    fecha: string
+    reconocida: number
+}
+
+export interface StationRecommendation {
+    station_id: number
+    station_nombre: string
+    tipo: string
+    mensaje: string
+    prioridad: 'alta' | 'media' | 'baja'
+}
+
+export interface StationRankings {
+    worst: { station_id: number; station_nombre: string; score: number }[]
+    best: { station_id: number; station_nombre: string; score: number }[]
+}
+
+// § Backlog Preventivo
+export interface PreventiveBacklog {
+    id: number
+    asset_id: number
+    asset_codigo?: string
+    asset_tipo?: string
+    tipo_preventivo: string
+    fecha_vencimiento: string
+    dias_vencidos: number
+    estado: string
+}
+
+// § Dashboard KPI
+export interface KPIGlobal {
+    mttr_global: number | null
+    mtbf_global: number | null
+    disponibilidad_global: number | null
+    total_fallas: number
+    horas_perdidas: number
+    costo_correctivo: number
+    costo_preventivo: number
+    costo_total: number
+    flota_operativa_pct: number | null
+    preventivos_ejecutados: number
+    preventivos_vencidos: number
+}
+
+// § Diagnóstico
+export interface Diagnosis extends InitialDiagnosis {}
+
+// § Maintenance records (general)
+export interface MaintenanceRecord {
+    id?: number
+    asset_id: number
+    tipo: string
+    descripcion: string
+    fecha: string
+    costo: number | null
+    created_at?: string
+}
+
+// § Weekly snapshot
+export interface WeeklySnapshot {
+    id: number
+    semana_iso: string
+    fecha_inicio: string
+    fecha_fin: string
+    created_at: string
 }

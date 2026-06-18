@@ -1,16 +1,19 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { api } from '../api/client'
+import { useAuth } from '../hooks/useAuth'
 
 const AuthPage: React.FC = () => {
     const navigate = useNavigate()
     const location = useLocation()
     const isLogin = location.pathname === '/login'
+    const { login } = useAuth()
 
     const [formData, setFormData] = useState({
         username: '',
         dni: '',
-        identifier: '',  // Para login: puede ser username o DNI
+        email: '',
+        identifier: '',
         password: '',
         role: 'operario'
     })
@@ -25,17 +28,14 @@ const AuthPage: React.FC = () => {
         setMessage('')
 
         try {
-            const data = isLogin
-                ? await api.login({ identifier: formData.identifier, password: formData.password })
-                : await api.register({ username: formData.username, dni: formData.dni, password: formData.password, role: formData.role })
-
             if (isLogin) {
-                localStorage.setItem('token', data.token)
-                localStorage.setItem('user', JSON.stringify(data.user))
-                window.location.href = '/home'
+                const data = await api.login({ identifier: formData.identifier, password: formData.password })
+                login(data.token, data.user)
+                navigate('/home')
             } else {
+                const data = await api.register({ username: formData.username, dni: formData.dni, email: formData.email, password: formData.password })
                 setMessage(data.message)
-                setFormData({ username: '', dni: '', identifier: '', password: '', role: 'operario' })
+                setFormData({ username: '', dni: '', email: '', identifier: '', password: '', role: 'operario' })
             }
         } catch (err: any) {
             console.error('Auth Error:', err)
@@ -117,8 +117,28 @@ const AuthPage: React.FC = () => {
                             </div>
                         )}
 
+                        {!isLogin && (
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Correo Electrónico</label>
+                                <input
+                                    type="email" required
+                                    className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
+                                    placeholder="ej. correo@ejemplo.com"
+                                    value={formData.email}
+                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                />
+                            </div>
+                        )}
+
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Contraseña</label>
+                            <div className="flex items-center justify-between ml-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contraseña</label>
+                                {isLogin && (
+                                    <Link to="/forgot-password" className="text-[9px] font-bold text-cyan-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">
+                                        ¿Olvidaste tu contraseña?
+                                    </Link>
+                                )}
+                            </div>
                             <input
                                 type="password" required
                                 className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"

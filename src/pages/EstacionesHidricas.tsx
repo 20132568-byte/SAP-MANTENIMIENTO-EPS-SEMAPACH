@@ -48,7 +48,7 @@ export default function EstacionesHidricas() {
                 api.getStations(),
                 api.getCatalog('tipo_estacion').catch(() => [])
             ])
-            setStations(stationsRes)
+            setStations(stationsRes as unknown as Station[])
             setCatalogs({ tipo_estacion: catalogsRes.map((c: any) => c.valor) })
         } catch (e: any) {
             showToast(e.message, 'err')
@@ -62,7 +62,7 @@ export default function EstacionesHidricas() {
             if (search) params.buscar = search
             if (filterTipo) params.tipo = filterTipo
             if (filterEstado) params.estado = filterEstado
-            setStations(await api.getStations(params))
+            setStations(await api.getStations(params) as unknown as Station[])
         } catch (e: any) {
             showToast(e.message, 'err')
         }
