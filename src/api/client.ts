@@ -1,5 +1,12 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
+export class ApiError extends Error {
+    constructor(public message: string, public status?: number) {
+        super(message)
+        this.name = 'ApiError'
+    }
+}
+
 /** Cliente HTTP genérico para el backend */
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
     const res = await fetch(`${API_BASE}${url}`, {
@@ -9,7 +16,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     })
     if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }))
-        throw new Error(err.error || `Error ${res.status}`)
+        throw new ApiError(err.error || `Error ${res.status}`, res.status)
     }
     return res.json()
 }
@@ -177,4 +184,8 @@ export const api = {
     register: (data: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
     forgotPassword: (identifier: string) => request<any>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ identifier }) }),
     resetPassword: (token: string, newPassword: string) => request<any>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
+
+    // === Usuarios ===
+    getUsers: () => request<any[]>('/auth/users'),
+    getMe: () => request<any>('/auth/me'),
 }
