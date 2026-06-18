@@ -4,7 +4,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { initDb } from './database.js'
-import { seedCatalogs } from './seed.js'
+import { runSeeds } from './seed.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { assetsRouter } from './routes/assets.js'
@@ -94,7 +94,7 @@ async function main() {
         // Inicializar BD en segundo plano o después de escuchar
         setTimeout(async () => {
             await initDb()
-            await seedCatalogs()
+            await runSeeds()
         }, 0)
     })
 }
