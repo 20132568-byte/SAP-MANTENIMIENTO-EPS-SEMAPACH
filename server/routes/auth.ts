@@ -115,7 +115,15 @@ authRouter.post('/login', loginLimiter, validateLogin, async (req, res) => {
             { expiresIn: '24h' }
         )
 
-        res.json({ token, user: { id: user.id, username: user.username, role: user.role, status: user.status } })
+        const { getPgPool } = await import('../database.js')
+        const pool = getPgPool()
+        let area: { id: string, name: string } | undefined = undefined
+        if (user.area_id) {
+            const a = await pool.query('SELECT name FROM inventario.areas WHERE id = $1', [user.area_id])
+            if (a.rows.length) area = { id: user.area_id, name: a.rows[0].name }
+        }
+
+        res.json({ token, user: { id: user.id, username: user.username, role: user.role, status: user.status, area } })
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }
@@ -124,9 +132,18 @@ authRouter.post('/login', loginLimiter, validateLogin, async (req, res) => {
 // GET /me
 authRouter.get('/me', authenticateToken, async (req: any, res) => {
     try {
-        const user = await dbGet('SELECT id, username, dni, email, role, status FROM public.users WHERE id = ?', req.user.id)
+        const user = await dbGet('SELECT id, username, dni, email, role, status, area_id FROM public.users WHERE id = ?', req.user.id)
         if (!user) return res.status(404).json({ message: 'Usuario no encontrado' })
-        res.json({ id: user.id, username: user.username, email: user.email, role: user.role, status: user.status })
+
+        const { getPgPool } = await import('../database.js')
+        const pool = getPgPool()
+        let area: { id: string, name: string } | undefined = undefined
+        if (user.area_id) {
+            const a = await pool.query('SELECT name FROM inventario.areas WHERE id = $1', [user.area_id])
+            if (a.rows.length) area = { id: user.area_id, name: a.rows[0].name }
+        }
+
+        res.json({ id: user.id, username: user.username, email: user.email, role: user.role, status: user.status, area })
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }
@@ -151,8 +168,20 @@ authRouter.patch('/me/email', authenticateToken, async (req: any, res) => {
 authRouter.get('/users', authenticateToken, async (req: any, res) => {
     if (req.user.role !== 'gerencia') return res.status(403).json({ message: 'No autorizado' })
     try {
-        const users = await dbAll('SELECT id, username, dni, role, status, created_at FROM users ORDER BY created_at DESC')
-        res.json(users)
+        const users = await dbAll('SELECT id, username, dni, role, status, created_at, area_id FROM users ORDER BY created_at DESC')
+        
+        const { getPgPool } = await import('../database.js')
+        const pool = getPgPool()
+        const areasRes = await pool.query('SELECT id, name FROM inventario.areas')
+        const areaMap: Record<string, string> = {}
+        areasRes.rows.forEach(a => areaMap[a.id] = a.name)
+
+        const mappedUsers = users.map(u => ({
+            ...u,
+            area: u.area_id && areaMap[u.area_id] ? { id: u.area_id, name: areaMap[u.area_id] } : undefined
+        }))
+        
+        res.json(mappedUsers)
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }
