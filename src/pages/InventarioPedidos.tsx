@@ -425,7 +425,7 @@ export default function InventarioPedidos() {
             </>
           )}
 
-          {user.role === 'trabajador' && (
+          {['trabajador', 'operador', 'mantenimiento', 'admin'].includes(user.role) && (
             <button 
               onClick={() => {
                 setOrderCart([])
