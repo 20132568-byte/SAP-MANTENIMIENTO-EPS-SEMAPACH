@@ -211,6 +211,8 @@ export const api = {
         request<any>(`/auth/approve/${id}`, { method: 'POST', body: JSON.stringify({ status }) }),
     updateUserRole: (id: number, role: string) =>
         request<any>(`/auth/update-role/${id}`, { method: 'POST', body: JSON.stringify({ role }) }),
+    updateUserArea: (id: number, area_id: string) =>
+        request<any>(`/auth/update-area/${id}`, { method: 'POST', body: JSON.stringify({ area_id }) }),
     adminResetPassword: (id: number, newPassword: string) =>
         request<any>(`/auth/reset-password/${id}`, { method: 'POST', body: JSON.stringify({ newPassword }) }),
     changePassword: (currentPassword: string, newPassword: string) =>

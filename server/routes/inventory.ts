@@ -170,8 +170,11 @@ inventoryRouter.get('/requests/:id', authenticateToken, async (req, res) => {
 inventoryRouter.post('/orders', authenticateToken, async (req: any, res) => {
   const { items, notes } = req.body
   const workerId = req.user.id
-  const areaId = req.user.area_id
+  
   try {
+    const invUser = await inventoryService.getCurrentUser(workerId)
+    const areaId = invUser ? invUser.area.id : req.user.area_id
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Debes incluir al menos un producto en el pedido.' })
     }

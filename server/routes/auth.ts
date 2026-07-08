@@ -309,7 +309,7 @@ authRouter.post('/update-role/:id', authenticateToken, async (req: any, res) => 
     const { role } = req.body
     
     // Lista de roles/puestos válidos
-    const validRoles = ['gerencia', 'jefatura_produccion', 'jefatura_distribucion', 'jefatura_logistica', 'operador', 'mantenimiento']
+    const validRoles = ['gerencia', 'jefatura_produccion', 'jefatura_distribucion', 'jefatura_logistica', 'almacenero', 'operador', 'mantenimiento']
     if (!validRoles.includes(role)) {
         return res.status(400).json({ message: 'Puesto o rol inválido' })
     }
@@ -322,7 +322,32 @@ authRouter.post('/update-role/:id', authenticateToken, async (req: any, res) => 
             }
         }
         await dbRun('UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', role, req.params.id)
+        
+        // Sincronizar con base de datos de inventario si ya existe
+        const { getPgPool } = await import('../database.js')
+        const pool = getPgPool()
+        await pool.query('UPDATE inventario.users SET role = $1 WHERE id = $2', [role, req.params.id])
+        
         res.json({ message: `Puesto actualizado a ${role.replace(/_/g, ' ')} con éxito.` })
+    } catch (err: any) {
+        res.status(500).json({ message: err.message })
+    }
+})
+
+// POST /update-area/:id (solo admin)
+authRouter.post('/update-area/:id', authenticateToken, async (req: any, res) => {
+    if (req.user.role !== 'gerencia' && req.user.username !== 'DanielAdmin') return res.status(403).json({ message: 'No autorizado' })
+    const { area_id } = req.body
+
+    try {
+        await dbRun('UPDATE users SET area_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', area_id, req.params.id)
+        
+        // Sincronizar con base de datos de inventario
+        const { getPgPool } = await import('../database.js')
+        const pool = getPgPool()
+        await pool.query('UPDATE inventario.users SET area_id = $1 WHERE id = $2', [area_id, req.params.id])
+
+        res.json({ message: 'Área actualizada con éxito.' })
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }

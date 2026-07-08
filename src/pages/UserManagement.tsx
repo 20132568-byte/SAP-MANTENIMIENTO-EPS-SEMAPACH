@@ -3,7 +3,7 @@ import { api } from '../api/client'
 import { formatDateDMY } from '../utils/date'
 import { useAuth } from '../hooks/useAuth'
 
-const roles = ['gerencia', 'jefatura_produccion', 'jefatura_distribucion', 'jefatura_logistica', 'operador', 'mantenimiento']
+const roles = ['gerencia', 'jefatura_produccion', 'jefatura_distribucion', 'jefatura_logistica', 'almacenero', 'operador', 'mantenimiento']
 
 export default function UserManagement() {
   const { user } = useAuth()
@@ -12,7 +12,9 @@ export default function UserManagement() {
   const [toast, setToast] = useState<string | null>(null)
   const [resetPwd, setResetPwd] = useState<{ id: number; username: string } | null>(null)
   const [newPwd, setNewPwd] = useState('')
+  const [areas, setAreas] = useState<any[]>([])
   const [roleMenu, setRoleMenu] = useState<number | null>(null)
+  const [areaMenu, setAreaMenu] = useState<number | null>(null)
 
   if (user?.username !== 'DanielAdmin') {
     return (
@@ -25,14 +27,26 @@ export default function UserManagement() {
     )
   }
 
-  const load = () => {
+  const load = async () => {
     setLoading(true)
-    api.getUsers().then(setUsers).catch(() => {}).finally(() => setLoading(false))
+    try {
+      const data = await api.getUsers()
+      setUsers(data)
+      try {
+        const areaData = await api.inventoryGetAreas()
+        setAreas(areaData)
+      } catch (err) {
+        console.error("Error cargando areas:", err)
+      }
+    } catch (e: any) {
+      setToast('Error al cargar usuarios')
+    }
+    setLoading(false)
   }
   useEffect(() => { load() }, [])
 
-  const approve = async (id: number) => {
-    try { await api.approveUser(id, 'approved'); setToast('Usuario aprobado'); load() }
+  const approve = async (id: number, status: 'approved' | 'rejected') => {
+    try { await api.approveUser(id, status); setToast(`Usuario ${status === 'approved' ? 'aprobado' : 'rechazado'}`); load() }
     catch (e: any) { setToast(e.message) }
     setTimeout(() => setToast(null), 2500)
   }
@@ -45,7 +59,13 @@ export default function UserManagement() {
   }
 
   const changeRole = async (id: number, role: string) => {
-    try { await api.updateUserRole(id, role); setToast(`Rol cambiado a ${role}`); setRoleMenu(null); load() }
+    try { await api.updateUserRole(id, role); setToast(`Rol cambiado a ${role.replace(/_/g, ' ')}`); setRoleMenu(null); load() }
+    catch (e: any) { setToast(e.message) }
+    setTimeout(() => setToast(null), 2500)
+  }
+
+  const changeArea = async (id: number, area_id: string, areaName: string) => {
+    try { await api.updateUserArea(id, area_id); setToast(`Área cambiada a ${areaName}`); setAreaMenu(null); load() }
     catch (e: any) { setToast(e.message) }
     setTimeout(() => setToast(null), 2500)
   }
@@ -94,6 +114,7 @@ export default function UserManagement() {
                 <th className="text-left p-3">Email</th>
                 <th className="text-left p-3">DNI</th>
                 <th className="text-left p-3">Rol</th>
+                <th className="text-left p-3">Área</th>
                 <th className="text-left p-3">Estado</th>
                 <th className="text-left p-3">Registro</th>
                 <th className="text-right p-3">Acción</th>
@@ -132,6 +153,31 @@ export default function UserManagement() {
                         ))}
                       </div>
                     )}
+                  </td>
+                  <td className="p-3 relative">
+                    <div className="relative">
+                      <button 
+                        onClick={() => setAreaMenu(areaMenu === u.id ? null : u.id)}
+                        className="text-[10px] px-2 py-1 rounded-md font-semibold bg-[var(--bg-input)] text-[var(--text-primary)] border border-[var(--border)] transition-colors inline-flex items-center gap-1"
+                      >
+                        {areas.find(a => a.id === u.area_id)?.name || 'Sin Asignar'} ▼
+                      </button>
+                      {areaMenu === u.id && (
+                        <div className="absolute top-full left-0 mt-1 w-40 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl z-50 overflow-hidden">
+                          {areas.map((a) => (
+                            <button
+                              key={a.id}
+                              onClick={() => changeArea(u.id, a.id, a.name)}
+                              className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] transition-colors ${
+                                a.id === u.area_id ? 'text-[var(--accent)] font-semibold' : 'text-[var(--text-primary)]'
+                              }`}
+                            >
+                              {a.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize ${getStatusColor(u.status)}`}>
