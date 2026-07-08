@@ -90,7 +90,7 @@ export default function InventarioPedidos() {
             username: globalUser.username,
             full_name: globalUser.username,
             email: '',
-            role: ((globalUser.role === 'admin' || globalUser.username === 'DanielAdmin') ? 'admin' : 'trabajador') as any,
+            role: ((globalUser.role === 'admin' || globalUser.username === 'DanielAdmin') ? 'admin' : 'operario') as any,
             area_id: '00000000-0000-0000-0000-000000000000',
             area: {
               id: '00000000-0000-0000-0000-000000000000',
@@ -130,7 +130,7 @@ export default function InventarioPedidos() {
       const res = await fetch('/api/auth/users')
       if (res.ok) {
         const uList = await res.json()
-        setInventoryUsers(uList.filter((x: any) => x.role.startsWith('jefatura') || x.role === 'admin' || x.role === 'gerencia'))
+        setInventoryUsers(uList.filter((x: any) => x.role === 'jefatura' || x.role === 'admin' || x.role === 'gerencia'))
       }
     } catch (e: any) {
       showToast(e.message || 'Error al cargar datos del módulo')
@@ -425,7 +425,7 @@ export default function InventarioPedidos() {
             </>
           )}
 
-          {['trabajador', 'operador', 'mantenimiento', 'admin'].includes(user.role) && (
+          {['operario', 'admin'].includes(user.role) && (
             <button 
               onClick={() => {
                 setOrderCart([])
@@ -708,7 +708,7 @@ export default function InventarioPedidos() {
                   {/* Acciones del Flujo según Rol y Estado */}
                   <div className="pt-4 border-t border-[var(--border)] space-y-2">
                     {/* Botón Jefe de Área valida pedido */}
-                    {selectedRequest.status === 'CARGADO' && ((user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
+                    {selectedRequest.status === 'CARGADO' && (user.role === 'admin' || (user.role === 'jefatura' && user.area.id === selectedRequest.area_id)) && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('VALIDAR', true)}
@@ -729,7 +729,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Almacenero prepara */}
-                    {selectedRequest.status === 'VALIDADO' && (user.role === 'almacenero' || user.role === 'admin') && (
+                    {selectedRequest.status === 'VALIDADO' && (user.area?.name === 'Logística' || user.role === 'admin') && (
                       <button
                         onClick={() => handleTransition('PREPARAR')}
                         className="w-full py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded font-bold transition-colors text-xs"
@@ -738,7 +738,7 @@ export default function InventarioPedidos() {
                       </button>
                     )}
 
-                    {selectedRequest.status === 'PREPARANDO' && (user.role === 'almacenero' || user.role === 'admin') && (
+                    {selectedRequest.status === 'PREPARANDO' && (user.area?.name === 'Logística' || user.role === 'admin') && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('MARCAR_LISTO')}
@@ -759,7 +759,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Jefe de Logística aprueba entrega */}
-                    {selectedRequest.status === 'PREPARADO' && (user.role === 'jefatura_logistica' || user.role === 'admin') && (
+                    {selectedRequest.status === 'PREPARADO' && ((user.role === 'jefatura' && user.area?.name === 'Logística') || user.role === 'admin') && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('APROBAR_ENTREGA', true)}
@@ -780,7 +780,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Confirmar entrega física (Doble firma: Logística + Área) */}
-                    {selectedRequest.status === 'ENTREGA_PENDIENTE' && (user.role === 'jefatura_logistica' || (user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
+                    {selectedRequest.status === 'ENTREGA_PENDIENTE' && (user.role === 'admin' || (user.role === 'jefatura' && (user.area?.name === 'Logística' || user.area.id === selectedRequest.area_id))) && (
                       <div className="space-y-2">
                         <div className="p-2.5 rounded bg-zinc-900 border border-[var(--border)]">
                           <label className="block text-[10px] font-semibold text-[var(--text-secondary)] mb-1">
@@ -1010,7 +1010,7 @@ export default function InventarioPedidos() {
                   )}
 
                   {/* Doble aprobación de Jefes */}
-                  {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'jefatura_logistica' || (user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
+                  {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'admin' || (user.role === 'jefatura' && (user.area?.name === 'Logística' || user.area.id === selectedRequest.area_id))) && (
                     <div className="pt-4 border-t border-[var(--border)] space-y-2">
                       <div className="text-[10px] text-[var(--text-secondary)] mb-2 font-semibold">
                         *Este ingreso requiere la aprobación del Jefe de Logística y un Jefe de Área para ingresar al Stock.
@@ -1068,7 +1068,7 @@ export default function InventarioPedidos() {
           <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Transferencias de Stock entre Áreas</h2>
-              {user.role === 'trabajador' && (
+              {user.role === 'operario' && (
                 <button
                   onClick={() => {
                     setTransferCart([])
@@ -1186,7 +1186,7 @@ export default function InventarioPedidos() {
                   {/* Acciones de Flujo de Transferencias */}
                   <div className="pt-4 border-t border-[var(--border)] space-y-2">
                     {/* Jefe del Área Origen libera */}
-                    {selectedRequest.status === 'CARGADO' && ((user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && user.area.id === selectedRequest.origin_area_id && (
+                    {selectedRequest.status === 'CARGADO' && (user.role === 'admin' || (user.role === 'jefatura' && user.area.id === selectedRequest.origin_area_id)) && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('APROBAR_LIBERACION')}
@@ -1207,7 +1207,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Jefe del Área Destino acepta */}
-                    {selectedRequest.status === 'VALIDADO' && ((user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && user.area.id === selectedRequest.dest_area_id && (
+                    {selectedRequest.status === 'VALIDADO' && (user.role === 'admin' || (user.role === 'jefatura' && user.area.id === selectedRequest.dest_area_id)) && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('APROBAR_RECEPCION')}
@@ -1228,7 +1228,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Almacenero prepara */}
-                    {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'almacenero' || user.role === 'admin') && (
+                    {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.area?.name === 'Logística' || user.role === 'admin') && (
                       <button
                         onClick={() => handleTransition('PREPARAR')}
                         className="w-full py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded font-bold transition-colors text-xs"
@@ -1237,7 +1237,7 @@ export default function InventarioPedidos() {
                       </button>
                     )}
 
-                    {selectedRequest.status === 'PREPARANDO' && (user.role === 'almacenero' || user.role === 'admin') && (
+                    {selectedRequest.status === 'PREPARANDO' && (user.area?.name === 'Logística' || user.role === 'admin') && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('MARCAR_LISTO')}
@@ -1258,7 +1258,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Jefe de Logística aprueba entrega */}
-                    {selectedRequest.status === 'PREPARADO' && (user.role === 'jefatura_logistica' || user.role === 'admin') && (
+                    {selectedRequest.status === 'PREPARADO' && ((user.role === 'jefatura' && user.area?.name === 'Logística') || user.role === 'admin') && (
                       <button
                         onClick={() => handleTransition('APROBAR_ENTREGA')}
                         className="w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold transition-colors text-xs"
@@ -1268,7 +1268,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Confirmación física final (Doble firma: Logística + Jefe Destino) */}
-                    {selectedRequest.status === 'ENTREGA_PENDIENTE' && (user.role === 'jefatura_logistica' || (user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
+                    {selectedRequest.status === 'ENTREGA_PENDIENTE' && (user.role === 'admin' || (user.role === 'jefatura' && (user.area?.name === 'Logística' || user.area.id === selectedRequest.origin_area_id || user.area.id === selectedRequest.dest_area_id))) && (
                       <div className="space-y-2">
                         <div className="p-2.5 rounded bg-zinc-900 border border-[var(--border)]">
                           <label className="block text-[10px] font-semibold text-[var(--text-secondary)] mb-1">
@@ -1314,7 +1314,7 @@ export default function InventarioPedidos() {
           <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Reporte de Bajas por Deterioro o Pérdida</h2>
-              {(user.role === 'almacenero' || user.role === 'trabajador') && (
+              {(user.area?.name === 'Logística' || user.role === 'operario') && (
                 <button
                   onClick={() => {
                     setBajaForm({ productId: '', quantity: 1, reason: '', areaId: user.area.id })
@@ -1417,7 +1417,7 @@ export default function InventarioPedidos() {
                   )}
 
                   {/* Doble aprobación Jefe Área + Jefe Logística */}
-                  {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'jefatura_logistica' || (user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
+                  {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'admin' || (user.role === 'jefatura' && (user.area?.name === 'Logística' || user.area.id === selectedRequest.area_id))) && (
                     <div className="pt-4 border-t border-[var(--border)] space-y-2">
                       <div className="text-[10px] text-red-400 mb-2 font-semibold">
                         *Se requiere la doble aprobación del Jefe de Área y el Jefe de Logística para descontar stock de la base de datos de Supabase.

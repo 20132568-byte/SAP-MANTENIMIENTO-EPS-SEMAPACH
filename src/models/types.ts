@@ -223,6 +223,7 @@ export interface User {
     status: string
     created_at?: string
     updated_at?: string
+    area?: { id: string; name: string }
 }
 
 export interface LoginResponse {

@@ -309,16 +309,20 @@ authRouter.post('/update-role/:id', authenticateToken, async (req: any, res) => 
     const { role } = req.body
     
     // Lista de roles/puestos válidos
-    const validRoles = ['gerencia', 'jefatura_produccion', 'jefatura_distribucion', 'jefatura_logistica', 'almacenero', 'operador', 'mantenimiento']
+    const validRoles = ['operario', 'jefatura', 'gerencia', 'admin']
     if (!validRoles.includes(role)) {
         return res.status(400).json({ message: 'Puesto o rol inválido' })
     }
-    
+
     try {
-        if (role.startsWith('jefatura')) {
-            const existing = await dbGet("SELECT id FROM users WHERE role = ? AND id != ? AND status = 'approved'", role, req.params.id)
+        if (role === 'jefatura') {
+            const existing = await dbGet(`
+                SELECT u.id FROM users u
+                WHERE u.role = 'jefatura' AND u.id != ? AND u.status = 'approved'
+                AND (SELECT area_id FROM users WHERE id = ?) = u.area_id
+            `, req.params.id, req.params.id)
             if (existing) {
-                return res.status(400).json({ message: `Cargo ocupado: Ya existe un usuario activo como ${role.replace(/_/g, ' ')}.` })
+                return res.status(400).json({ message: `Cargo ocupado: Ya existe un jefe activo en esta área.` })
             }
         }
         await dbRun('UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', role, req.params.id)

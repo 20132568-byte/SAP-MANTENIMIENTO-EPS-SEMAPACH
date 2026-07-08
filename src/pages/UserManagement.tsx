@@ -3,7 +3,7 @@ import { api } from '../api/client'
 import { formatDateDMY } from '../utils/date'
 import { useAuth } from '../hooks/useAuth'
 
-const roles = ['gerencia', 'jefatura_produccion', 'jefatura_distribucion', 'jefatura_logistica', 'almacenero', 'operador', 'mantenimiento']
+const roles = ['operario', 'jefatura', 'gerencia', 'admin']
 
 export default function UserManagement() {
   const { user } = useAuth()
@@ -123,9 +123,9 @@ export default function UserManagement() {
                     <button
                       onClick={() => setRoleMenu(roleMenu === u.id ? null : u.id)}
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize cursor-pointer hover:opacity-80 ${
+                        u.role === 'admin' ? 'bg-[var(--color-purple-bg)] text-[var(--color-purple)]' :
                         u.role === 'gerencia' ? 'bg-[var(--color-error-bg)] text-[var(--color-error)]' :
-                        u.role.startsWith('jefatura') ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' :
-                        u.role === 'mantenimiento' ? 'bg-[var(--color-purple-bg)] text-[var(--color-purple)]' :
+                        u.role === 'jefatura' ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' :
                         'bg-[var(--color-info-bg)] text-[var(--color-info)]'
                       }`}
                     >

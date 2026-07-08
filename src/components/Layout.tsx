@@ -120,8 +120,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   // Redirección para roles exclusivos de inventario/logística
   useEffect(() => {
-    const role = user?.role
-    if ((role === 'jefe_logistica' || role === 'almacenero') && location.pathname !== '/inventario') {
+    // Redirigir a inventario si es del área de logística (antiguo almacenero/jefe_logistica)
+    if (user?.area?.name === 'Logística' && location.pathname !== '/inventario') {
       navigate('/inventario', { replace: true })
     }
   }, [user, location.pathname, navigate])
@@ -170,7 +170,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
           {/* Enlaces Generales / Globales */}
           <div className="space-y-1">
-            {user?.role !== 'jefe_logistica' && user?.role !== 'almacenero' && (
+            {user?.area?.name !== 'Logística' && (
               <NavLink
                 to="/home"
                 onClick={() => setSidebarOpen(false)}
@@ -211,7 +211,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               const role = user?.role;
 
               // Roles exclusivos de inventario/logística sólo ven inventario
-              if (role === 'jefe_logistica' || role === 'almacenero') {
+              if (user?.area?.name === 'Logística') {
                 return item.path === '/inventario';
               }
 
