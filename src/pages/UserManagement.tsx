@@ -51,13 +51,6 @@ export default function UserManagement() {
     setTimeout(() => setToast(null), 2500)
   }
 
-  const reject = async (id: number) => {
-    if (!confirm('¿Rechazar este usuario?')) return
-    try { await api.approveUser(id, 'rejected'); setToast('Usuario rechazado'); load() }
-    catch (e: any) { setToast(e.message) }
-    setTimeout(() => setToast(null), 2500)
-  }
-
   const changeRole = async (id: number, role: string) => {
     try { await api.updateUserRole(id, role); setToast(`Rol cambiado a ${role.replace(/_/g, ' ')}`); setRoleMenu(null); load() }
     catch (e: any) { setToast(e.message) }
@@ -189,8 +182,8 @@ export default function UserManagement() {
                     <div className="flex items-center justify-end gap-1">
                       {u.status === 'pending' && (
                         <>
-                          <button onClick={() => approve(u.id)} className="px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)] transition-colors">Aprobar</button>
-                          <button onClick={() => reject(u.id)} className="px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors">Rechazar</button>
+                          <button onClick={() => approve(u.id, 'approved')} className="px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)] transition-colors">Aprobar</button>
+                          <button onClick={() => approve(u.id, 'rejected')} className="px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors">Rechazar</button>
                         </>
                       )}
                       {(u.status === 'approved' || u.status === 'active') && (
