@@ -11,7 +11,7 @@ interface InvUser {
   username: string
   email: string
   full_name: string
-  role: 'trabajador' | 'jefe_area' | 'almacenero' | 'jefe_logistica' | 'admin'
+  role: string
   area: {
     id: string
     name: string
@@ -130,7 +130,7 @@ export default function InventarioPedidos() {
       const res = await fetch('/api/auth/users')
       if (res.ok) {
         const uList = await res.json()
-        setInventoryUsers(uList.filter((x: any) => x.role === 'jefe_area' || x.role === 'jefe_logistica' || x.role === 'gerencia' || x.role === 'admin'))
+        setInventoryUsers(uList.filter((x: any) => x.role.startsWith('jefatura') || x.role === 'admin' || x.role === 'gerencia'))
       }
     } catch (e: any) {
       showToast(e.message || 'Error al cargar datos del módulo')
@@ -708,7 +708,7 @@ export default function InventarioPedidos() {
                   {/* Acciones del Flujo según Rol y Estado */}
                   <div className="pt-4 border-t border-[var(--border)] space-y-2">
                     {/* Botón Jefe de Área valida pedido */}
-                    {selectedRequest.status === 'CARGADO' && (user.role === 'jefe_area' || user.role === 'admin') && (
+                    {selectedRequest.status === 'CARGADO' && ((user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('VALIDAR', true)}
@@ -759,7 +759,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Jefe de Logística aprueba entrega */}
-                    {selectedRequest.status === 'PREPARADO' && (user.role === 'jefe_logistica' || user.role === 'admin') && (
+                    {selectedRequest.status === 'PREPARADO' && (user.role === 'jefatura_logistica' || user.role === 'admin') && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('APROBAR_ENTREGA', true)}
@@ -780,7 +780,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Confirmar entrega física (Doble firma: Logística + Área) */}
-                    {selectedRequest.status === 'ENTREGA_PENDIENTE' && (user.role === 'jefe_logistica' || user.role === 'jefe_area' || user.role === 'admin') && (
+                    {selectedRequest.status === 'ENTREGA_PENDIENTE' && (user.role === 'jefatura_logistica' || (user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
                       <div className="space-y-2">
                         <div className="p-2.5 rounded bg-zinc-900 border border-[var(--border)]">
                           <label className="block text-[10px] font-semibold text-[var(--text-secondary)] mb-1">
@@ -1010,7 +1010,7 @@ export default function InventarioPedidos() {
                   )}
 
                   {/* Doble aprobación de Jefes */}
-                  {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'jefe_logistica' || user.role === 'jefe_area' || user.role === 'admin') && (
+                  {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'jefatura_logistica' || (user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
                     <div className="pt-4 border-t border-[var(--border)] space-y-2">
                       <div className="text-[10px] text-[var(--text-secondary)] mb-2 font-semibold">
                         *Este ingreso requiere la aprobación del Jefe de Logística y un Jefe de Área para ingresar al Stock.
@@ -1186,7 +1186,7 @@ export default function InventarioPedidos() {
                   {/* Acciones de Flujo de Transferencias */}
                   <div className="pt-4 border-t border-[var(--border)] space-y-2">
                     {/* Jefe del Área Origen libera */}
-                    {selectedRequest.status === 'CARGADO' && (user.role === 'jefe_area' || user.role === 'admin') && user.area.id === selectedRequest.origin_area_id && (
+                    {selectedRequest.status === 'CARGADO' && ((user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && user.area.id === selectedRequest.origin_area_id && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('APROBAR_LIBERACION')}
@@ -1207,7 +1207,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Jefe del Área Destino acepta */}
-                    {selectedRequest.status === 'VALIDADO' && (user.role === 'jefe_area' || user.role === 'admin') && user.area.id === selectedRequest.dest_area_id && (
+                    {selectedRequest.status === 'VALIDADO' && ((user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && user.area.id === selectedRequest.dest_area_id && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleTransition('APROBAR_RECEPCION')}
@@ -1258,7 +1258,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Jefe de Logística aprueba entrega */}
-                    {selectedRequest.status === 'PREPARADO' && (user.role === 'jefe_logistica' || user.role === 'admin') && (
+                    {selectedRequest.status === 'PREPARADO' && (user.role === 'jefatura_logistica' || user.role === 'admin') && (
                       <button
                         onClick={() => handleTransition('APROBAR_ENTREGA')}
                         className="w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded font-bold transition-colors text-xs"
@@ -1268,7 +1268,7 @@ export default function InventarioPedidos() {
                     )}
 
                     {/* Confirmación física final (Doble firma: Logística + Jefe Destino) */}
-                    {selectedRequest.status === 'ENTREGA_PENDIENTE' && (user.role === 'jefe_logistica' || user.role === 'jefe_area' || user.role === 'admin') && (
+                    {selectedRequest.status === 'ENTREGA_PENDIENTE' && (user.role === 'jefatura_logistica' || (user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
                       <div className="space-y-2">
                         <div className="p-2.5 rounded bg-zinc-900 border border-[var(--border)]">
                           <label className="block text-[10px] font-semibold text-[var(--text-secondary)] mb-1">
@@ -1417,7 +1417,7 @@ export default function InventarioPedidos() {
                   )}
 
                   {/* Doble aprobación Jefe Área + Jefe Logística */}
-                  {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'jefe_logistica' || user.role === 'jefe_area' || user.role === 'admin') && (
+                  {selectedRequest.status === 'PENDIENTE_APROBACION' && (user.role === 'jefatura_logistica' || (user.role === 'jefatura_produccion' || user.role === 'jefatura_distribucion') || user.role === 'admin') && (
                     <div className="pt-4 border-t border-[var(--border)] space-y-2">
                       <div className="text-[10px] text-red-400 mb-2 font-semibold">
                         *Se requiere la doble aprobación del Jefe de Área y el Jefe de Logística para descontar stock de la base de datos de Supabase.

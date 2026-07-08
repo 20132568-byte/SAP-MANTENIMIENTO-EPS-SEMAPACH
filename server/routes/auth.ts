@@ -309,14 +309,20 @@ authRouter.post('/update-role/:id', authenticateToken, async (req: any, res) => 
     const { role } = req.body
     
     // Lista de roles/puestos válidos
-    const validRoles = ['gerencia', 'jefatura', 'operador', 'mantenimiento']
+    const validRoles = ['gerencia', 'jefatura_produccion', 'jefatura_distribucion', 'jefatura_logistica', 'operador', 'mantenimiento']
     if (!validRoles.includes(role)) {
         return res.status(400).json({ message: 'Puesto o rol inválido' })
     }
     
     try {
+        if (role.startsWith('jefatura')) {
+            const existing = await dbGet("SELECT id FROM users WHERE role = ? AND id != ? AND status = 'approved'", role, req.params.id)
+            if (existing) {
+                return res.status(400).json({ message: `Cargo ocupado: Ya existe un usuario activo como ${role.replace(/_/g, ' ')}.` })
+            }
+        }
         await dbRun('UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', role, req.params.id)
-        res.json({ message: `Puesto actualizado a ${role} con éxito.` })
+        res.json({ message: `Puesto actualizado a ${role.replace(/_/g, ' ')} con éxito.` })
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }

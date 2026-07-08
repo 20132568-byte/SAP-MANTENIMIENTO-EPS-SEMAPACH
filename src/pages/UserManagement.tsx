@@ -3,7 +3,7 @@ import { api } from '../api/client'
 import { formatDateDMY } from '../utils/date'
 import { useAuth } from '../hooks/useAuth'
 
-const roles = ['gerencia', 'jefatura', 'operador', 'mantenimiento']
+const roles = ['gerencia', 'jefatura_produccion', 'jefatura_distribucion', 'jefatura_logistica', 'operador', 'mantenimiento']
 
 export default function UserManagement() {
   const { user } = useAuth()
@@ -110,12 +110,12 @@ export default function UserManagement() {
                       onClick={() => setRoleMenu(roleMenu === u.id ? null : u.id)}
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize cursor-pointer hover:opacity-80 ${
                         u.role === 'gerencia' ? 'bg-[var(--color-error-bg)] text-[var(--color-error)]' :
-                        u.role === 'jefatura' ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' :
+                        u.role.startsWith('jefatura') ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' :
                         u.role === 'mantenimiento' ? 'bg-[var(--color-purple-bg)] text-[var(--color-purple)]' :
                         'bg-[var(--color-info-bg)] text-[var(--color-info)]'
                       }`}
                     >
-                      {u.role} ▼
+                      {u.role.replace(/_/g, ' ')} ▼
                     </button>
                     {roleMenu === u.id && (
                       <div className="absolute top-full left-3 mt-1 z-50 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl py-1 min-w-[140px]">
@@ -127,7 +127,7 @@ export default function UserManagement() {
                               r === u.role ? 'text-[var(--accent)] font-semibold' : 'text-[var(--text-primary)]'
                             }`}
                           >
-                            {r}
+                            {r.replace(/_/g, ' ')}
                           </button>
                         ))}
                       </div>

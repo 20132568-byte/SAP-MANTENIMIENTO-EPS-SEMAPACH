@@ -306,7 +306,7 @@ export const inventoryService = {
     const userRes = await pool.query('SELECT role, full_name FROM inventario.users WHERE id = $1', [userId])
     const { role, full_name } = userRes.rows[0]
 
-    if (role !== 'jefe_logistica' && role !== 'jefe_area' && role !== 'admin') {
+    if (role !== 'jefatura_logistica' && role !== 'jefatura_produccion' && role !== 'jefatura_distribucion' && role !== 'admin') {
       throw new Error('Solo el jefe de logística, jefe de área o admin pueden aprobar ingresos')
     }
 
@@ -344,7 +344,7 @@ export const inventoryService = {
       [requestId]
     )
     const approvedRoles = approvalsRes.rows.map(r => r.role_at_action)
-    const hasLogistica = approvedRoles.includes('jefe_logistica') || approvedRoles.includes('admin')
+    const hasLogistica = approvedRoles.includes('jefatura_logistica') || approvedRoles.includes('admin')
     const hasArea = approvedRoles.includes('jefe_area') || approvedRoles.includes('admin')
 
     if (approvedRoles.length >= 2 && hasLogistica && hasArea) {
@@ -423,7 +423,7 @@ export const inventoryService = {
 
     if (action === 'APROBAR_LIBERACION') {
       // Jefe de Área de Origen aprueba liberar
-      if (role !== 'jefe_area' && role !== 'admin') throw new Error('Solo el jefe de área de origen puede liberar')
+      if (role !== 'jefatura_produccion' && role !== 'jefatura_distribucion' && role !== 'admin') throw new Error('Solo el jefe de área de origen puede liberar')
       if (area_id !== request.origin_area_id && role !== 'admin') throw new Error('No eres jefe del área origen')
 
       await pool.query(
@@ -443,7 +443,7 @@ export const inventoryService = {
 
     } else if (action === 'APROBAR_RECEPCION') {
       // Jefe de Área Destino aprueba recibir
-      if (role !== 'jefe_area' && role !== 'admin') throw new Error('Solo el jefe de área destino puede aceptar')
+      if (role !== 'jefatura_produccion' && role !== 'jefatura_distribucion' && role !== 'admin') throw new Error('Solo el jefe de área destino puede aceptar')
       if (area_id !== request.dest_area_id && role !== 'admin') throw new Error('No eres jefe del área destino')
 
       await pool.query(
@@ -484,7 +484,7 @@ export const inventoryService = {
 
     } else if (action === 'APROBAR_ENTREGA') {
       // Jefe de Logística aprueba entrega
-      if (role !== 'jefe_logistica' && role !== 'admin') throw new Error('Solo jefe de logística puede aprobar')
+      if (role !== 'jefatura_logistica' && role !== 'admin') throw new Error('Solo jefe de logística puede aprobar')
       await pool.query(
         `UPDATE inventario.requests SET status = 'ENTREGA_PENDIENTE', updated_at = NOW() WHERE id = $1`,
         [requestId]
@@ -497,7 +497,7 @@ export const inventoryService = {
 
     } else if (action === 'CONFIRMAR_TRANSFERENCIA') {
       // Confirmar entrega final (Jefe Logística + Jefe Área Destino)
-      if (role !== 'jefe_logistica' && role !== 'jefe_area' && role !== 'admin') {
+      if (role !== 'jefatura_logistica' && role !== 'jefatura_produccion' && role !== 'jefatura_distribucion' && role !== 'admin') {
         throw new Error('Solo jefe de logística, jefe de área destino o admin confirman la transferencia')
       }
 
@@ -513,8 +513,8 @@ export const inventoryService = {
         [requestId]
       )
       const roles = signatures.rows.map(r => r.role_at_action)
-      const hasLogistica = roles.includes('jefe_logistica') || roles.includes('admin')
-      const hasDestino = roles.includes('jefe_area') || roles.includes('admin')
+      const hasLogistica = roles.includes('jefatura_logistica') || roles.includes('admin')
+      const hasDestino = roles.includes('jefatura_produccion') || roles.includes('jefatura_distribucion') || roles.includes('admin')
 
       if (roles.length >= 2 && hasLogistica && hasDestino) {
         // Ejecutar transferencia real de stock!
@@ -611,7 +611,7 @@ export const inventoryService = {
     const reqRes = await pool.query('SELECT * FROM inventario.requests WHERE id = $1', [requestId])
     const request = reqRes.rows[0]
 
-    if (role !== 'jefe_logistica' && role !== 'jefe_area' && role !== 'admin') {
+    if (role !== 'jefatura_logistica' && role !== 'jefatura_produccion' && role !== 'jefatura_distribucion' && role !== 'admin') {
       throw new Error('Solo el jefe de logística, jefe de área o admin pueden aprobar bajas')
     }
 
@@ -641,8 +641,8 @@ export const inventoryService = {
       [requestId]
     )
     const roles = approvalsRes.rows.map(r => r.role_at_action)
-    const hasLogistica = roles.includes('jefe_logistica') || roles.includes('admin')
-    const hasArea = roles.includes('jefe_area') || roles.includes('admin')
+    const hasLogistica = roles.includes('jefatura_logistica') || roles.includes('admin')
+    const hasArea = roles.includes('jefatura_produccion') || roles.includes('jefatura_distribucion') || roles.includes('admin')
 
     if (roles.length >= 2 && hasLogistica && hasArea) {
       await pool.query(
