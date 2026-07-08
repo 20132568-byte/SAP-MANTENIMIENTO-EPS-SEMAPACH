@@ -1068,7 +1068,7 @@ export default function InventarioPedidos() {
           <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Transferencias de Stock entre Áreas</h2>
-              {user.role === 'operario' && (
+              {['operario', 'admin'].includes(user.role) && (
                 <button
                   onClick={() => {
                     setTransferCart([])
@@ -1314,7 +1314,7 @@ export default function InventarioPedidos() {
           <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Reporte de Bajas por Deterioro o Pérdida</h2>
-              {(user.area?.name === 'Logística' || user.role === 'operario') && (
+              {(user.area?.name === 'Logística' || ['operario', 'admin'].includes(user.role)) && (
                 <button
                   onClick={() => {
                     setBajaForm({ productId: '', quantity: 1, reason: '', areaId: user.area.id })
