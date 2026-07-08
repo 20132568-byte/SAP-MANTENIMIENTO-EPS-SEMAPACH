@@ -1,182 +1,113 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
+import KpiCard from '../components/KpiCard'
 
 export default function PlanMantenimiento2026() {
-    const [activities, setActivities] = useState<any[]>([])
-    const [summary, setSummary] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [selectedTrimester, setSelectedTrimester] = useState<number | null>(null)
+  const [activities, setActivities] = useState<any[]>([])
+  const [summary, setSummary] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [filterEstacion, setFilterEstacion] = useState('')
+  const [filterMes, setFilterMes] = useState('')
 
-    useEffect(() => {
-        loadData()
-    }, [])
+  useEffect(() => {
+    setLoading(true)
+    api.getPlan2026Activities().then((act) => {
+      setActivities(act)
+      const completed = act.filter((a: any) => a.estado === 'Ejecutado' || a.estado === 'Completado').length
+      const pending = act.length - completed
+      setSummary({ total_actividades: act.length, ejecutadas: completed, pendientes: pending })
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
 
-    const loadData = async () => {
-        setLoading(true)
-        try {
-            const [actRes, sumRes] = await Promise.all([
-                api.getPlan2026Activities(),
-                api.getPlan2026Summary()
-            ])
-            setActivities(actRes)
-            setSummary(sumRes)
-        } catch (e: any) {
-            console.error(e)
-        }
-        setLoading(false)
+  const estaciones = [...new Set(activities.map((a: any) => a.estacion || a.codigo_estacion).filter(Boolean))].sort()
+  const meses = [...new Set(activities.map((a: any) => a.mes).filter(Boolean))].sort()
+
+  const filtered = activities.filter((a) => {
+    if (filterEstacion && a.estacion !== filterEstacion && a.codigo_estacion !== filterEstacion) return false
+    if (filterMes && a.mes !== filterMes) return false
+    return true
+  })
+
+  const getStatusColor = (s: string) => {
+    switch (s) {
+      case 'Ejecutado': case 'Completado': return 'text-[var(--color-success)] bg-[var(--color-success-bg)]'
+      case 'En Progreso': return 'text-[var(--color-info)] bg-[var(--color-info-bg)]'
+      case 'Pendiente': case 'Programado': return 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]'
+      case 'Vencido': return 'text-[var(--color-error)] bg-[var(--color-error-bg)]'
+      default: return 'text-[var(--text-muted)] bg-[var(--bg-tertiary)]'
     }
+  }
 
-    const totalPresupuesto = activities.reduce((s, a) => s + (Number(a.presupuesto_anual) || 0), 0)
-    const totalEjecutado = Number(summary?.ejecutado_total) || 0
-    const porcentajeEjecucion = totalPresupuesto > 0 ? ((totalEjecutado / totalPresupuesto) * 100) : 0
-
-    const trimestres = [
-        { key: 't1', label: 'Trimestre 1', field: 'presupuesto_t1', months: 'Ene - Mar' },
-        { key: 't2', label: 'Trimestre 2', field: 'presupuesto_t2', months: 'Abr - Jun' },
-        { key: 't3', label: 'Trimestre 3', field: 'presupuesto_t3', months: 'Jul - Sep' },
-        { key: 't4', label: 'Trimestre 4', field: 'presupuesto_t4', months: 'Oct - Dic' },
-    ]
-
-    const filteredActivities = selectedTrimester !== null
-        ? activities.filter(a => (Number(a[trimestres[selectedTrimester].field]) || 0) > 0)
-        : activities
-
-    if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full" /></div>
-
+  if (loading) {
     return (
-        <div className="space-y-4">
-            {/* Header */}
-            <div>
-                <h1 className="text-xl font-black text-white uppercase tracking-tight">Plan de Mantenimiento 2026</h1>
-                <p className="text-xs text-slate-400 mt-0.5">EPS SEMAPACH — Seguimiento presupuestal y metas físicas</p>
-            </div>
-
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-gradient-to-br from-sky-600/20 to-sky-800/10 rounded-xl border border-sky-500/20 p-4">
-                    <div className="text-[10px] text-sky-300 font-black uppercase tracking-wider">Presupuesto Total</div>
-                    <div className="text-xl font-black text-white mt-1">S/ {totalPresupuesto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</div>
-                </div>
-                <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-800/10 rounded-xl border border-emerald-500/20 p-4">
-                    <div className="text-[10px] text-emerald-300 font-black uppercase tracking-wider">Ejecutado</div>
-                    <div className="text-xl font-black text-emerald-400 mt-1">S/ {totalEjecutado.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</div>
-                </div>
-                <div className="bg-gradient-to-br from-amber-600/20 to-amber-800/10 rounded-xl border border-amber-500/20 p-4">
-                    <div className="text-[10px] text-amber-300 font-black uppercase tracking-wider">% Ejecución</div>
-                    <div className="text-xl font-black text-amber-400 mt-1">{porcentajeEjecucion.toFixed(2)}%</div>
-                </div>
-                <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/10 rounded-xl border border-purple-500/20 p-4">
-                    <div className="text-[10px] text-purple-300 font-black uppercase tracking-wider">Actividades</div>
-                    <div className="text-xl font-black text-purple-400 mt-1">{activities.filter(a => (Number(a.presupuesto_anual) || 0) > 0).length}</div>
-                </div>
-            </div>
-
-            {/* Barra de ejecución general */}
-            <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
-                <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-black text-slate-400 uppercase">Ejecución Presupuestal General</span>
-                    <span className="text-xs font-bold text-white">{porcentajeEjecucion.toFixed(2)}%</span>
-                </div>
-                <div className="w-full bg-slate-700 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-sky-500 to-emerald-500 h-3 rounded-full transition-all duration-500" style={{ width: `${Math.min(porcentajeEjecucion, 100)}%` }} />
-                </div>
-            </div>
-
-            {/* Selector de trimestre */}
-            <div className="flex gap-2 overflow-x-auto pb-1">
-                <button onClick={() => setSelectedTrimester(null)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase whitespace-nowrap transition-colors ${selectedTrimester === null ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-white'}`}>
-                    Todas
-                </button>
-                {trimestres.map((t, i) => {
-                    const totalT = activities.reduce((s, a) => s + (Number(a[t.field]) || 0), 0)
-                    return (
-                        <button key={t.key} onClick={() => setSelectedTrimester(selectedTrimester === i ? null : i)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase whitespace-nowrap transition-colors flex items-center gap-1.5 ${selectedTrimester === i ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-400 hover:text-white'}`}>
-                            {t.label} <span className="opacity-60">·</span> S/ {totalT.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        </button>
-                    )
-                })}
-            </div>
-
-            {/* Tabla de actividades */}
-            <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="border-b border-slate-700/50 bg-slate-800/80">
-                                <th className="text-left px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase sticky left-0 bg-slate-800/95 z-10">Código</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase">Actividad</th>
-                                <th className="text-right px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase">Anual</th>
-                                <th className="text-right px-3 py-2.5 text-[10px] font-black text-sky-400 uppercase hidden sm:table-cell">T1</th>
-                                <th className="text-right px-3 py-2.5 text-[10px] font-black text-sky-400 uppercase hidden sm:table-cell">T2</th>
-                                <th className="text-right px-3 py-2.5 text-[10px] font-black text-sky-400 uppercase hidden md:table-cell">T3</th>
-                                <th className="text-right px-3 py-2.5 text-[10px] font-black text-sky-400 uppercase hidden md:table-cell">T4</th>
-                                <th className="text-right px-3 py-2.5 text-[10px] font-black text-emerald-400 uppercase hidden lg:table-cell">Ejecutado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredActivities.map(a => {
-                                const hasBudget = (Number(a.presupuesto_anual) || 0) > 0
-                                return (
-                                    <tr key={a.codigo} className={`border-b border-slate-700/30 hover:bg-slate-700/20 ${!hasBudget ? 'opacity-40' : ''}`}>
-                                        <td className="px-3 py-2 font-mono font-bold text-sky-400 sticky left-0 bg-slate-800/50 z-10">{a.codigo}</td>
-                                        <td className="px-3 py-2 text-white max-w-[200px] truncate">{a.nombre}</td>
-                                        <td className="px-3 py-2 text-right font-bold text-white">{Number(a.presupuesto_anual).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2 text-right text-slate-300 hidden sm:table-cell">{Number(a.presupuesto_t1).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2 text-right text-slate-300 hidden sm:table-cell">{Number(a.presupuesto_t2).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2 text-right text-slate-300 hidden md:table-cell">{Number(a.presupuesto_t3).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2 text-right text-slate-300 hidden md:table-cell">{Number(a.presupuesto_t4).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2 text-right text-emerald-400 font-bold hidden lg:table-cell">—</td>
-                                    </tr>
-                                )
-                            })}
-                            {/* Totales */}
-                            <tr className="border-t-2 border-slate-600 bg-slate-700/40 font-black">
-                                <td className="px-3 py-3 text-sky-400 sticky left-0 bg-slate-700/60 z-10">TOTAL</td>
-                                <td className="px-3 py-3 text-white">{filteredActivities.length} actividades</td>
-                                <td className="px-3 py-3 text-right text-white">{filteredActivities.reduce((s, a) => s + (Number(a.presupuesto_anual) || 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                <td className="px-3 py-3 text-right text-sky-300 hidden sm:table-cell">{filteredActivities.reduce((s, a) => s + (Number(a.presupuesto_t1) || 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                <td className="px-3 py-3 text-right text-sky-300 hidden sm:table-cell">{filteredActivities.reduce((s, a) => s + (Number(a.presupuesto_t2) || 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                <td className="px-3 py-3 text-right text-sky-300 hidden md:table-cell">{filteredActivities.reduce((s, a) => s + (Number(a.presupuesto_t3) || 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                <td className="px-3 py-3 text-right text-sky-300 hidden md:table-cell">{filteredActivities.reduce((s, a) => s + (Number(a.presupuesto_t4) || 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                                <td className="px-3 py-3 text-right text-emerald-400 hidden lg:table-cell">{totalEjecutado.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Resumen por estación */}
-            {summary?.por_estacion && summary.por_estacion.length > 0 && (
-                <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-slate-700/50">
-                        <h2 className="text-sm font-black text-white uppercase">Ejecución por Estación</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                            <thead>
-                                <tr className="border-b border-slate-700/50">
-                                    <th className="text-left px-3 py-2 text-[10px] font-black text-slate-400 uppercase">Estación</th>
-                                    <th className="text-left px-3 py-2 text-[10px] font-black text-slate-400 uppercase">Tipo</th>
-                                    <th className="text-right px-3 py-2 text-[10px] font-black text-slate-400 uppercase">Mantenimientos</th>
-                                    <th className="text-right px-3 py-2 text-[10px] font-black text-slate-400 uppercase">Costo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {summary.por_estacion.map((e: any, i: number) => (
-                                    <tr key={i} className="border-b border-slate-700/30 hover:bg-slate-700/20">
-                                        <td className="px-3 py-2 text-white font-medium">{e.estacion}</td>
-                                        <td className="px-3 py-2 text-slate-400">{e.tipo}</td>
-                                        <td className="px-3 py-2 text-right text-sky-400 font-bold">{e.total_mantenimientos}</td>
-                                        <td className="px-3 py-2 text-right text-emerald-400 font-bold">S/ {Number(e.costo_total).toFixed(2)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      </div>
     )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-lg font-bold text-[var(--text-primary)]">Plan de Mantenimiento 2026</h1>
+        <p className="text-sm text-[var(--text-secondary)]">{activities.length} actividades programadas</p>
+      </div>
+
+      {summary && (
+        <div className="grid grid-cols-3 gap-3">
+          <KpiCard title="Total" value={summary.total_actividades} icon="assignment" colorClass="text-blue-600 dark:text-blue-400" bgClass="bg-blue-50 dark:bg-blue-900/30" />
+          <KpiCard title="Ejecutadas" value={summary.ejecutadas} icon="task_alt" colorClass="text-green-600 dark:text-green-400" bgClass="bg-green-50 dark:bg-green-900/30" />
+          <KpiCard title="Pendientes" value={summary.pendientes} icon="pending_actions" colorClass="text-amber-600 dark:text-amber-400" bgClass="bg-amber-50 dark:bg-amber-900/30" />
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-3">
+        <select value={filterEstacion} onChange={(e) => setFilterEstacion(e.target.value)}
+          className="px-3 py-1.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+          <option value="">Todas las estaciones</option>
+          {estaciones.map((e) => <option key={e} value={e}>{e}</option>)}
+        </select>
+        <select value={filterMes} onChange={(e) => setFilterMes(e.target.value)}
+          className="px-3 py-1.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+          <option value="">Todos los meses</option>
+          {meses.map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <span className="text-xs text-[var(--text-muted)] self-center">{filtered.length} actividades</span>
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-center text-[var(--text-muted)] py-12">Sin actividades</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[var(--bg-tertiary)] text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                <th className="text-left p-3">Código</th>
+                <th className="text-left p-3">Actividad</th>
+                <th className="text-left p-3">Estación</th>
+                <th className="text-left p-3">Mes</th>
+                <th className="text-left p-3">Estado</th>
+                <th className="text-left p-3">Presupuesto</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {filtered.map((a: any) => (
+                <tr key={a.id} className="hover:bg-[var(--bg-hover)] transition-colors">
+                  <td className="p-3 text-[var(--text-primary)] font-medium">{a.codigo || '—'}</td>
+                  <td className="p-3 text-[var(--text-secondary)] max-w-[250px]">{a.descripcion || a.actividad || '—'}</td>
+                  <td className="p-3 text-[var(--text-secondary)]">{a.estacion || a.codigo_estacion || '—'}</td>
+                  <td className="p-3 text-[var(--text-secondary)]">{a.mes || '—'}</td>
+                  <td className="p-3">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${getStatusColor(a.estado)}`}>{a.estado || '—'}</span>
+                  </td>
+                  <td className="p-3 text-[var(--text-secondary)]">S/{Number(a.presupuesto_anual || 0).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
 }

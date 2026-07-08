@@ -9,10 +9,19 @@ export class ApiError extends Error {
 
 /** Cliente HTTP genérico para el backend */
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+    const token = sessionStorage.getItem('token')
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options?.headers as Record<string, string>),
+    }
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+    }
+
     const res = await fetch(`${API_BASE}${url}`, {
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
         ...options,
+        headers,
+        credentials: 'same-origin',
     })
     if (!res.ok) {
         const err = await res.json().catch(() => ({ error: res.statusText }))
@@ -91,8 +100,18 @@ export const api = {
     updateDiagnosis: (assetId: number, data: any) => request<any>(`/diagnosis/${assetId}`, { method: 'PUT', body: JSON.stringify(data) }),
 
     // === KPI ===
-    getKPIGlobal: (desde: string, hasta: string, sector?: string) => request<any>(`/kpi/global?desde=${desde}&hasta=${hasta}${sector && sector !== 'General' ? '&sector=' + encodeURIComponent(sector) : ''}`),
-    getKPIPorActivo: (desde: string, hasta: string, sector?: string) => request<any[]>(`/kpi/por-activo?desde=${desde}&hasta=${hasta}${sector && sector !== 'General' ? '&sector=' + encodeURIComponent(sector) : ''}`),
+    getKPIGlobal: (desde: string, hasta: string, sector?: string, categoria?: string) => {
+      let url = `/kpi/global?desde=${desde}&hasta=${hasta}`
+      if (sector && sector !== 'General') url += '&sector=' + encodeURIComponent(sector)
+      if (categoria) url += '&categoria=' + encodeURIComponent(categoria)
+      return request<any>(url)
+    },
+    getKPIPorActivo: (desde: string, hasta: string, sector?: string, categoria?: string) => {
+      let url = `/kpi/por-activo?desde=${desde}&hasta=${hasta}`
+      if (sector && sector !== 'General') url += '&sector=' + encodeURIComponent(sector)
+      if (categoria) url += '&categoria=' + encodeURIComponent(categoria)
+      return request<any[]>(url)
+    },
 
     // === Producción OPAPTAR ===
     getProduccionBD: (params?: Record<string, string>) => {
@@ -188,4 +207,52 @@ export const api = {
     // === Usuarios ===
     getUsers: () => request<any[]>('/auth/users'),
     getMe: () => request<any>('/auth/me'),
+    approveUser: (id: number, status: 'approved' | 'rejected') =>
+        request<any>(`/auth/approve/${id}`, { method: 'POST', body: JSON.stringify({ status }) }),
+    updateUserRole: (id: number, role: string) =>
+        request<any>(`/auth/update-role/${id}`, { method: 'POST', body: JSON.stringify({ role }) }),
+    adminResetPassword: (id: number, newPassword: string) =>
+        request<any>(`/auth/reset-password/${id}`, { method: 'POST', body: JSON.stringify({ newPassword }) }),
+    changePassword: (currentPassword: string, newPassword: string) =>
+        request<any>('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
+    updateEmail: (email: string) =>
+        request<any>('/auth/me/email', { method: 'PATCH', body: JSON.stringify({ email }) }),
+
+    // === IA Chat ===
+    chatIA: (message: string) =>
+        request<{ answer: string; sources: string[] }>('/ia/chat', { method: 'POST', body: JSON.stringify({ message }) }),
+ 
+    // === Sistema de Inventario y Pedidos ===
+    inventoryLogin: (data: any) => request<any>('/inventory/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+    inventoryGetMe: () => request<any>('/inventory/auth/me'),
+    inventoryGetAreas: () => request<any[]>('/inventory/areas'),
+    inventoryGetSuppliers: () => request<any[]>('/inventory/suppliers'),
+    inventoryCreateSupplier: (data: any) => request<any>('/inventory/suppliers', { method: 'POST', body: JSON.stringify(data) }),
+    inventoryGetProducts: (areaId?: string) => request<any[]>(`/inventory/products${areaId ? `?areaId=${areaId}` : ''}`),
+    inventoryCreateProduct: (data: any) => request<any>('/inventory/products', { method: 'POST', body: JSON.stringify(data) }),
+    inventoryGetStockCurrent: () => request<any[]>('/inventory/stock/current'),
+    inventoryGetProductAvailability: () => request<any[]>('/inventory/stock/availability'),
+    inventoryGetRequests: (params?: Record<string, string>) => {
+        const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+        return request<any[]>(`/inventory/requests${qs}`)
+    },
+    inventoryGetRequestById: (id: string) => request<any>(`/inventory/requests/${id}`),
+    inventoryCreateSalida: (data: { items: any[]; notes?: string }) => request<any>('/inventory/orders', { method: 'POST', body: JSON.stringify(data) }),
+    inventoryRequestAction: (id: string, data: { action: string; approve?: boolean; reason?: string; returnTo?: string; user2Id?: string }) =>
+        request<any>(`/inventory/requests/${id}/action`, { method: 'POST', body: JSON.stringify(data) }),
+    inventoryCreateIngreso: (data: { supplierId: string; areaId: string; items: any[]; notes?: string }) =>
+        request<any>('/inventory/incoming', { method: 'POST', body: JSON.stringify(data) }),
+    inventoryApproveIngreso: (id: string, data: { approve: boolean; reason?: string }) =>
+        request<any>(`/inventory/incoming/${id}/approve`, { method: 'POST', body: JSON.stringify(data) }),
+    inventoryCreateTransfer: (data: { originAreaId: string; destAreaId: string; items: any[]; notes?: string }) =>
+        request<any>('/inventory/transfers', { method: 'POST', body: JSON.stringify(data) }),
+    inventoryTransferAction: (id: string, data: { action: string; reason?: string; returnTo?: string; user2Id?: string }) =>
+        request<any>(`/inventory/transfers/${id}/action`, { method: 'POST', body: JSON.stringify(data) }),
+    inventoryCreateWriteoff: (data: { productId: string; quantity: number; reason: string; areaId?: string }) =>
+        request<any>('/inventory/writeoffs', { method: 'POST', body: JSON.stringify(data) }),
+    inventoryApproveWriteoff: (id: string, data: { approve: boolean; reason?: string }) =>
+        request<any>(`/inventory/writeoffs/${id}/approve`, { method: 'POST', body: JSON.stringify(data) }),
+    inventoryGetKpis: () => request<any>('/inventory/kpis'),
+    inventoryGetNotifications: () => request<any[]>('/inventory/notifications'),
+    inventoryReadNotification: (id: string) => request<any>(`/inventory/notifications/${id}/read`, { method: 'POST' }),
 }

@@ -17,7 +17,7 @@ kpiRouter.get('/global', async (req, res) => {
   if (categoria) paramsAssets.push(String(categoria))
   if (sector && sector !== 'General') paramsAssets.push(String(sector))
 
-  const [horasData, fallasData, preventivoCost, todasFallas, flotaTotal] = await Promise.all([
+  const [horasData, fallasData, preventivoCost, todasFallas, flotaTotal, vencidos] = await Promise.all([
     dbGet(`
       SELECT COALESCE(SUM(d.horas_reales), 0) as horas_reales,
              COALESCE(SUM(d.horas_programadas), 0) as horas_programadas
@@ -54,6 +54,17 @@ kpiRouter.get('/global', async (req, res) => {
       FROM assets a 
       WHERE a.activo = 1 ${categoria ? 'AND a.categoria = ?' : ''} ${sector && sector !== 'General' ? 'AND a.tipo_unidad = ?' : ''}`,
       ...paramsAssets
+    ),
+    dbGet(`
+      SELECT COUNT(*) as total FROM preventive_config pc
+      JOIN assets a ON (pc.asset_id = a.id OR (pc.asset_id IS NULL AND pc.tipo_unidad = a.tipo_unidad))
+      WHERE a.activo = 1 AND pc.unidad_control = 'fecha'
+        AND COALESCE((
+          SELECT MAX(pe.fecha_mantenimiento) FROM preventive_events pe
+          WHERE pe.asset_id = a.id AND pe.tipo_preventivo = pc.tipo_preventivo
+        ), a.fecha_alta) + pc.intervalo * INTERVAL '1 day' < CURRENT_DATE
+        ${categoria ? 'AND a.categoria = ?' : ''} ${sector && sector !== 'General' ? 'AND a.tipo_unidad = ?' : ''}`,
+      ...(categoria ? [categoria] : []), ...(sector && sector !== 'General' ? [sector] : [])
     )
   ]) as any[]
 
@@ -66,17 +77,24 @@ kpiRouter.get('/global', async (req, res) => {
     diasPeriodo, ...paramsAssets
   ) as any;
 
-  const mttr = Number(fallasData.total_fallas) > 0
-    ? Math.round((Number(fallasData.horas_reparacion) / Number(fallasData.total_fallas)) * 100) / 100 : null
-  const mtbf = Number(fallasData.total_fallas) > 0
-    ? Math.round((Number(horasData.horas_programadas) / Number(fallasData.total_fallas)) * 100) / 100 : null
+  const horasReparacion = Number(fallasData.horas_reparacion) || 0
+  const totalFallas = Number(fallasData.total_fallas) || 0
+  const horasProgramadas = Number(horasData.horas_programadas) || 0
+
+  const mttr = totalFallas > 0 ? Math.round((horasReparacion / totalFallas) * 100) / 100 : 0
+
+  // MTBF refinado: (Horas Programadas - Horas Reparación) / Total Fallas
+  const tiempoOperativo = Math.max(0, horasProgramadas - horasReparacion)
+  const mtbf = totalFallas > 0 ? Math.round((tiempoOperativo / totalFallas) * 100) / 100 : Math.round(tiempoOperativo * 100) / 100
   
   const horasPotenciales = Number(capacidadTotal.potencial) || 0;
   const disponibilidad = horasPotenciales > 0
-    ? Math.round(((horasPotenciales - Number(fallasData.horas_reparacion)) / horasPotenciales) * 10000) / 100 : 100;
+    ? Math.round(((horasPotenciales - horasReparacion) / horasPotenciales) * 10000) / 100 : 100;
     
-  const dispConfiabilidad = (mtbf != null && mttr != null && (mtbf + mttr) > 0)
-    ? Math.round((mtbf / (mtbf + mttr)) * 10000) / 100 : null
+  // Confiabilidad Real: R(24h) = e^(-24 / MTBF)
+  const confiabilidad = mtbf > 0
+    ? Math.round(Math.exp(-24 / mtbf) * 10000) / 100
+    : (totalFallas > 0 ? 0 : 100)
   
   const flotaSaludable = await dbGet(`
     SELECT COUNT(*) as total FROM assets a 
@@ -84,8 +102,8 @@ kpiRouter.get('/global', async (req, res) => {
     WHERE a.activo = 1 
       AND a.estado = 'Operativo' 
       AND (id.estado_tecnico_inicial IS NULL OR id.estado_tecnico_inicial NOT IN ('Deteriorada', 'Crítica'))
-      ${sector && sector !== 'General' ? 'AND a.tipo_unidad = ?' : ''}`,
-    ...(sector && sector !== 'General' ? [sector] : [])
+      ${categoria ? 'AND a.categoria = ?' : ''} ${sector && sector !== 'General' ? 'AND a.tipo_unidad = ?' : ''}`,
+    ...paramsAssets
   ) as any;
 
   const flotaOperativaPct = Number(flotaTotal.total) > 0
@@ -95,7 +113,7 @@ kpiRouter.get('/global', async (req, res) => {
     periodo: { desde, hasta, sector: sector || 'General' },
     mttr_global: mttr, mtbf_global: mtbf,
     disponibilidad_global: disponibilidad,
-    disponibilidad_confiabilidad: dispConfiabilidad,
+    disponibilidad_confiabilidad: confiabilidad,
     total_fallas: Number(todasFallas.total),
     fallas_correctivas: Number(fallasData.total_fallas),
     horas_perdidas: Math.round(Number(fallasData.horas_reparacion) * 100) / 100,
@@ -107,7 +125,8 @@ kpiRouter.get('/global', async (req, res) => {
     flota_operativa_pct: flotaOperativaPct,
     flota_total: Number(flotaTotal.total),
     flota_operativa: Number(flotaSaludable.total),
-    preventivos_ejecutados: Number(preventivoCost.preventivos_ejecutados)
+    preventivos_ejecutados: Number(preventivoCost.preventivos_ejecutados),
+    preventivos_vencidos: Number(vencidos.total)
   })
 })
 
@@ -138,19 +157,30 @@ kpiRouter.get('/por-activo', async (req, res) => {
       )
     ]) as any[]
 
-    const mttr = (fallas.total || 0) > 0 ? Math.round((Number(fallas.horas_rep) / Number(fallas.total)) * 100) / 100 : null
-    const mtbf = (fallas.total || 0) > 0 ? Math.round((Number(horas.programadas) / Number(fallas.total)) * 100) / 100 : null
+    const fallasCount = Number(fallas.total) || 0;
+    const horasRep = Number(fallas.horas_rep) || 0;
+    const horasProg = Number(horas.programadas) || 0;
+    
+    const mttr = fallasCount > 0 ? Math.round((horasRep / fallasCount) * 100) / 100 : 0;
+    const tiempoOperativo = Math.max(0, horasProg - horasRep);
+    const mtbf = fallasCount > 0 ? Math.round((tiempoOperativo / fallasCount) * 100) / 100 : Math.round(tiempoOperativo * 100) / 100;
     
     const diasPeriodo = Math.max(1, (new Date(String(hasta)).getTime() - new Date(String(desde)).getTime()) / (1000 * 60 * 60 * 24) + 1);
     const horasPotenciales = (Number(asset.horas_programadas_estandar) || 8) * diasPeriodo;
     
     const disp = horasPotenciales > 0
-      ? Math.round(((horasPotenciales - Number(fallas.horas_rep)) / horasPotenciales) * 10000) / 100 : 100;
+      ? Math.round(((horasPotenciales - horasRep) / horasPotenciales) * 10000) / 100 : 100;
+
+    const severityPenalty = Math.min(fallasCount * 5, 30);
+    const salud = Math.max(0, Math.round((disp - severityPenalty) * 100) / 100);
+
+    const riesgo = salud >= 80 ? 'Bajo' : salud >= 50 ? 'Medio' : 'Alto';
 
     return {
-      asset_id: asset.id, asset_codigo: asset.codigo_patrimonial, asset_tipo: asset.tipo_unidad,
-      mttr, mtbf, disponibilidad: disp, total_fallas: Number(fallas.total) || 0,
-      horas_perdidas: Math.round((Number(fallas.horas_rep) || 0) * 100) / 100, costo_total: Number(fallas.costo) || 0
+      asset_id: asset.id, asset_codigo: asset.codigo_patrimonial, asset_placa: asset.placa_principal, asset_tipo: asset.tipo_unidad,
+      mttr, mtbf, disponibilidad: disp, total_fallas: fallasCount,
+      horas_perdidas: Math.round(horasRep * 100) / 100, costo_total: Number(fallas.costo) || 0,
+      salud, riesgo
     }
   }))
   res.json(result)

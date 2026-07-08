@@ -1,480 +1,297 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
 import { useAssetType } from '../contexts/AssetTypeContext'
+import { formatDateDMY } from '../utils/date'
 
 const emptyForm = {
-    fecha: new Date().toISOString().split('T')[0], asset_id: '', operador_id: '',
-    hora_inicio: '', hora_fin: '', tipo_evento: 'Correctivo no programado',
-    clasificacion_falla: '', sistema_afectado: '', severidad: '',
-    descripcion: '', causa_probable: '', accion_correctiva: '',
-    inmovilizo_unidad: false, es_correctiva_no_programada: true,
-    costo_reparacion: '', observaciones: ''
+  fecha: new Date().toISOString().split('T')[0], asset_id: '', operador_id: '',
+  hora_inicio: '', hora_fin: '', tipo_evento: 'Correctivo no programado',
+  clasificacion_falla: '', sistema_afectado: '', severidad: '',
+  descripcion: '', causa_probable: '', accion_correctiva: '',
+  inmovilizo_unidad: false, es_correctiva_no_programada: true,
+  costo_reparacion: '', observaciones: '',
 }
 
 export default function RegistroFallas() {
-    const { assetType } = useAssetType()
-    const [failures, setFailures] = useState<any[]>([])
-    const [assets, setAssets] = useState<any[]>([])
-    const [operators, setOperators] = useState<any[]>([])
-    const [catalogos, setCatalogos] = useState<any>({})
-    const [loading, setLoading] = useState(true)
-    const [showForm, setShowForm] = useState(false)
-    const [editingId, setEditingId] = useState<number | null>(null)
-    const [filtroPlaca, setFiltroPlaca] = useState('')
-    const [searchAsset, setSearchAsset] = useState('')
-    const [isOpenAsset, setIsOpenAsset] = useState(false)
-    const [toast, setToast] = useState<string | null>(null)
-    const [form, setForm] = useState<any>({ ...emptyForm })
+  const { assetType } = useAssetType()
+  const [failures, setFailures] = useState<any[]>([])
+  const [assets, setAssets] = useState<any[]>([])
+  const [operators, setOperators] = useState<any[]>([])
+  const [catalogos, setCatalogos] = useState<any>({})
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [searchAsset, setSearchAsset] = useState('')
+  const [isOpenAsset, setIsOpenAsset] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [form, setForm] = useState<any>({ ...emptyForm })
 
-    useEffect(() => {
-        api.getAssets({ categoria: assetType }).then(setAssets)
-        api.getOperators().then(setOperators)
-        Promise.all([
-            api.getCatalog('clasificacion_falla'), api.getCatalog('sistema_afectado'),
-            api.getCatalog('severidad'), api.getCatalog('causa_probable'), api.getCatalog('tipo_evento'),
-        ]).then(([clf, sis, sev, cau, tip]) => {
-            setCatalogos({
-                clasificaciones: clf.map((c: any) => c.valor), sistemas: sis.map((c: any) => c.valor),
-                severidades: sev.map((c: any) => c.valor), causas: cau.map((c: any) => c.valor),
-                tipos: tip.map((c: any) => c.valor),
-            })
-        })
-    }, [assetType])
+  useEffect(() => {
+    api.getAssets({ categoria: assetType }).then(setAssets)
+    api.getOperators().then(setOperators)
+    Promise.all([
+      api.getCatalog('clasificacion_falla'), api.getCatalog('sistema_afectado'),
+      api.getCatalog('severidad'), api.getCatalog('causa_probable'), api.getCatalog('tipo_evento'),
+    ]).then(([clf, sis, sev, cau, tip]) => {
+      setCatalogos({
+        clasificaciones: clf.map((c: any) => c.valor), sistemas: sis.map((c: any) => c.valor),
+        severidades: sev.map((c: any) => c.valor), causas: cau.map((c: any) => c.valor),
+        tipos: tip.map((c: any) => c.valor),
+      })
+    })
+  }, [assetType])
 
-    const loadFailures = () => { 
-        setLoading(true); 
-        api.getFailures({ categoria: assetType }).then(d => { setFailures(d); setLoading(false) }) 
+  const loadFailures = () => {
+    setLoading(true)
+    api.getFailures({ categoria: assetType }).then((d) => { setFailures(d); setLoading(false) })
+  }
+  useEffect(() => { loadFailures() }, [assetType])
+
+  const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
+
+  const openNew = () => {
+    setEditingId(null)
+    setForm({ ...emptyForm })
+    setShowForm(true)
+  }
+
+  const openEdit = (f: any) => {
+    setEditingId(f.id)
+    setForm({ ...f, asset_id: f.asset_id || '', operador_id: f.operador_id || '' })
+    setShowForm(true)
+  }
+
+  const handleSave = async () => {
+    try {
+      const payload = { ...form, inmovilizo_unidad: form.inmovilizo_unidad ? 1 : 0, es_correctiva_no_programada: form.es_correctiva_no_programada ? 1 : 0 }
+      if (editingId) {
+        await api.updateFailure(editingId, payload)
+      } else {
+        await api.createFailure(payload)
+      }
+      setToast(editingId ? 'Falla actualizada' : 'Falla registrada')
+      setShowForm(false)
+      setEditingId(null)
+      loadFailures()
+    } catch (e: any) {
+      setToast(e.message)
     }
-    useEffect(() => { loadFailures() }, [assetType])
+    setTimeout(() => setToast(null), 2500)
+  }
 
-    const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
-    const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500) }
+  const handleDelete = async (id: number) => {
+    if (!confirm('¿Eliminar este registro?')) return
+    await api.deleteFailure(id)
+    setFailures((prev) => prev.filter((f) => f.id !== id))
+    setToast('Falla eliminada')
+    setTimeout(() => setToast(null), 2500)
+  }
 
-    let duracionCalc: number | null = null
-    if (form.hora_inicio && form.hora_fin) {
-        const [h1, m1] = form.hora_inicio.split(':').map(Number)
-        const [h2, m2] = form.hora_fin.split(':').map(Number)
-        let d = (h2 * 60 + m2) - (h1 * 60 + m1)
-        if (d < 0) d += 24 * 60
-        duracionCalc = Math.round((d / 60) * 100) / 100
-    }
+  const filteredAssets = assets.filter(
+    (a) => a.codigo_patrimonial?.toLowerCase().includes(searchAsset.toLowerCase()) || a.placa_principal?.toLowerCase().includes(searchAsset.toLowerCase())
+  )
 
-    const openNew = () => {
-        setEditingId(null)
-        setForm({ ...emptyForm })
-        setShowForm(true)
-    }
+  const assetNames = Object.fromEntries(assets.map((a: any) => [a.id, a.placa_principal || a.codigo_patrimonial]))
+  const operatorNames = Object.fromEntries(operators.map((o: any) => [o.id, o.nombre]))
 
-    const openEdit = (f: any) => {
-        setEditingId(f.id)
-        setForm({
-            fecha: f.fecha,
-            asset_id: String(f.asset_id),
-            operador_id: f.operador_id ? String(f.operador_id) : '',
-            hora_inicio: f.hora_inicio || '',
-            hora_fin: f.hora_fin || '',
-            tipo_evento: f.tipo_evento || 'Correctivo no programado',
-            clasificacion_falla: f.clasificacion_falla || '',
-            sistema_afectado: f.sistema_afectado || '',
-            severidad: f.severidad || '',
-            descripcion: f.descripcion || '',
-            causa_probable: f.causa_probable || '',
-            accion_correctiva: f.accion_correctiva || '',
-            inmovilizo_unidad: !!f.inmovilizo_unidad,
-            es_correctiva_no_programada: !!f.es_correctiva_no_programada,
-            costo_reparacion: f.costo_reparacion ?? '',
-            observaciones: f.observaciones || '',
-        })
-        setShowForm(true)
-    }
-
-    const handleSave = async () => {
-        if (!form.asset_id || !form.fecha) return
-        const payload = {
-            ...form, asset_id: Number(form.asset_id),
-            operador_id: form.operador_id ? Number(form.operador_id) : null,
-            duracion_horas: duracionCalc ?? 0,
-            costo_reparacion: form.costo_reparacion !== '' ? Number(form.costo_reparacion) : null,
-        }
-        try {
-            if (editingId) {
-                await api.updateFailure(editingId, payload)
-                notify('Falla actualizada')
-            } else {
-                await api.createFailure(payload)
-                notify('Falla registrada')
-            }
-            setShowForm(false)
-            setEditingId(null)
-            setForm({ ...emptyForm })
-            loadFailures()
-        } catch (e: any) { notify(e.message) }
-    }
-
-    const handleDelete = async (id: number) => {
-        if (!confirm('¿Estás seguro de que deseas eliminar este registro permanentemente?')) return
-        try {
-            await api.deleteFailure(id)
-            notify('Registro eliminado')
-            loadFailures()
-        } catch (e: any) { notify(e.message) }
-    }
-
-    const severidadColor: Record<string, string> = {
-        'Crítica': 'text-rose-400 bg-rose-500/10 border border-rose-500/20', 
-        'Mayor': 'text-amber-400 bg-amber-500/10 border border-amber-500/20', 
-        'Menor': 'text-sky-400 bg-sky-500/10 border border-sky-500/20', 
-        'Observación': 'text-slate-400 bg-slate-500/10 border border-slate-500/20'
-    }
-
-    const filtered = filtroPlaca
-        ? failures.filter(f => {
-            const asset = assets.find(a => a.id === f.asset_id)
-            return (asset?.placa_principal || '').toLowerCase().includes(filtroPlaca.toLowerCase())
-        })
-        : failures
-
+  if (loading) {
     return (
-        <div className="animate-fade-in-up space-y-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-10 rounded-[2.5rem] mb-12 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-10">
-                <div className="flex items-center gap-8">
-                    <div className="w-20 h-20 bg-gradient-to-br from-rose-500 to-rose-700 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-rose-900/50 transform hover:scale-110 transition-transform">
-                        <span className="material-symbols-outlined text-white text-4xl">report_problem</span>
-                    </div>
-                    <div>
-                        <h2 className="text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter">Registro de Fallas</h2>
-                        <p className="text-xs lg:text-sm font-black text-rose-400 uppercase tracking-[0.3em] mt-2 flex items-center gap-3">
-                            <span className="w-2 h-2 bg-rose-400 rounded-full animate-pulse"></span>
-                            Control de Eventos Correctivos & Análisis de MTTR
-                        </p>
-                    </div>
-                </div>
-                
-                <button onClick={openNew}
-                    className="bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white text-xs font-black uppercase tracking-[0.2em] px-12 py-6 rounded-2xl transition-all flex items-center justify-center gap-4 shadow-2xl shadow-rose-900/40 hover:-translate-y-1 active:scale-95 group">
-                    <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">add_alert</span>
-                    Reportar Incidente
-                </button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-8 bg-slate-800/50 border border-slate-700 p-responsive rounded-3xl shadow-premium-xl !p-6 mb-12">
-                <div className="flex items-center gap-4 flex-1 lg:flex-none bg-slate-900/50 px-6 py-3 rounded-2xl border border-slate-700 shadow-inner">
-                    <span className="material-symbols-outlined text-slate-500 text-[20px]">manage_search</span>
-                    <input type="text" value={filtroPlaca} onChange={e => setFiltroPlaca(e.target.value)}
-                        placeholder="Filtrar por placa o patr..." 
-                        className="text-xs font-black text-slate-200 bg-transparent border-none focus:ring-0 w-full lg:w-64 placeholder:text-slate-500" />
-                </div>
-                
-                <div className="h-10 w-px bg-slate-700 hidden lg:block mx-2"></div>
-                
-                <div className="flex items-center gap-12">
-                    <div className="flex items-center gap-4 bg-rose-500/10 px-6 py-4 rounded-3xl border border-rose-500/20">
-                        <div className="w-4 h-4 bg-rose-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.6)]"></div>
-                        <div className="flex flex-col">
-                            <span className="text-4xl font-black text-white leading-none tracking-tighter">{failures.length}</span>
-                            <span className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] mt-1">Eventos Reportados</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {showForm && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => { setShowForm(false); setEditingId(null); }}>
-                    <div className="bg-slate-900 rounded-[2rem] border border-slate-700 w-full max-w-5xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl animate-reveal relative" onClick={e => e.stopPropagation()}>
-                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                            <span className="material-symbols-outlined text-8xl text-slate-500 select-none">warning</span>
-                        </div>
-
-                        <div className="flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-800/20">
-                            <h3 className="text-xl font-black text-slate-100 uppercase tracking-widest flex items-center gap-4">
-                                <span className="w-2.5 h-2.5 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)]"></span>
-                                {editingId ? 'Actualizar Reporte de Falla' : 'Nuevo Registro de Incidencia Técnica'}
-                            </h3>
-                            <button onClick={() => { setShowForm(false); setEditingId(null); }} className="w-10 h-10 bg-slate-800/50 hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors border border-slate-700/50 hover:border-slate-600">
-                                <span className="material-symbols-outlined text-lg">close</span>
-                            </button>
-                        </div>
-
-                        <div className="p-8 space-y-8 relative">
-                            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha Evento</label>
-                                    <input type="date" value={form.fecha} onChange={e => set('fecha', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors uppercase" />
-                                </div>
-                                <div className="md:col-span-2 space-y-2 relative">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Unidad Afectada</label>
-                                    <div className="flex items-center bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 shadow-sm group transition-all focus-within:ring-1 focus-within:ring-rose-500/50 focus-within:border-rose-500/50 cursor-pointer"
-                                        onClick={() => setIsOpenAsset(!isOpenAsset)}>
-                                        <div className="flex-1">
-                                            <div className="text-xs font-black text-slate-200 uppercase truncate">
-                                                {form.asset_id 
-                                                    ? `${assets.find((a: any) => a.id === Number(form.asset_id))?.placa_principal || 'S/P'} — ${assets.find((a: any) => a.id === Number(form.asset_id))?.codigo_patrimonial}`
-                                                    : 'Seleccionar Activo...'}
-                                            </div>
-                                        </div>
-                                        <span className={`material-symbols-outlined text-slate-500 transition-transform duration-300 ${isOpenAsset ? 'rotate-180' : ''}`}>expand_more</span>
-                                    </div>
-
-                                    {isOpenAsset && (
-                                        <>
-                                            <div className="fixed inset-0 z-[110]" onClick={() => setIsOpenAsset(false)}></div>
-                                            <div className="absolute top-full left-0 w-full mt-2 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl z-[120] overflow-hidden animate-reveal">
-                                                <div className="p-3 border-b border-slate-800/50 bg-slate-800/20">
-                                                    <div className="flex items-center bg-slate-950/50 rounded-xl px-3 py-2 border border-slate-700/50">
-                                                        <span className="material-symbols-outlined text-slate-500 text-sm mr-2">search</span>
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Buscar por placa o código..." 
-                                                            value={searchAsset}
-                                                            onChange={e => setSearchAsset(e.target.value)}
-                                                            onClick={e => e.stopPropagation()}
-                                                            className="bg-transparent border-none text-[11px] font-bold text-slate-200 placeholder:text-slate-600 focus:ring-0 p-0 w-full uppercase"
-                                                            autoFocus
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
-                                                    {assets.filter((as: any) => as.categoria === assetType).filter((a: any) => 
-                                                        a.placa_principal?.toLowerCase().includes(searchAsset.toLowerCase()) || 
-                                                        a.codigo_patrimonial?.toLowerCase().includes(searchAsset.toLowerCase())
-                                                    ).length > 0 ? (
-                                                        assets.filter((as: any) => as.categoria === assetType).filter((a: any) => 
-                                                            a.placa_principal?.toLowerCase().includes(searchAsset.toLowerCase()) || 
-                                                            a.codigo_patrimonial?.toLowerCase().includes(searchAsset.toLowerCase())
-                                                        ).map((a: any) => (
-                                                            <div key={a.id} 
-                                                                className={`px-4 py-3 hover:bg-rose-500/10 cursor-pointer transition-colors border-b border-slate-800/30 flex items-center justify-between group ${Number(form.asset_id) === a.id ? 'bg-rose-500/5' : ''}`}
-                                                                onClick={() => { set('asset_id', String(a.id)); setIsOpenAsset(false); setSearchAsset('') }}>
-                                                                <div>
-                                                                    <div className="text-[11px] font-black text-slate-100 uppercase tracking-tight">{a.placa_principal || 'SIN PLACA'}</div>
-                                                                    <div className="text-[9px] font-bold text-slate-500 uppercase">{a.codigo_patrimonial} — {a.tipo_unidad}</div>
-                                                                </div>
-                                                                {Number(form.asset_id) === a.id && <span className="material-symbols-outlined text-rose-500 text-sm">check_circle</span>}
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <div className="p-8 text-center text-slate-500">
-                                                            <span className="material-symbols-outlined block mb-2 opacity-20">search_off</span>
-                                                            <span className="text-[10px] font-bold uppercase">No se hallaron coincidencias</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                                <div className="md:col-span-2 space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Responsable del Turno</label>
-                                    <select value={form.operador_id} onChange={e => set('operador_id', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
-                                        <option value="">Asignar Operador...</option>
-                                        {operators.map((o: any) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="p-8 bg-slate-800/30 rounded-3xl grid grid-cols-1 md:grid-cols-3 gap-10 border border-rose-500/10">
-                                <div className="space-y-4">
-                                    <h4 className="text-[9px] font-black text-rose-400 uppercase tracking-widest ml-1">Cronometría de Reparación</h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[8px] font-black text-slate-400 uppercase">Inicio</label>
-                                            <input type="time" value={form.hora_inicio} onChange={e => set('hora_inicio', e.target.value)} 
-                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors" />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[8px] font-black text-slate-400 uppercase">Fin</label>
-                                            <input type="time" value={form.hora_fin} onChange={e => set('hora_fin', e.target.value)} 
-                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors" />
-                                        </div>
-                                    </div>
-                                    <div className="pt-2">
-                                        <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest block mb-1">MTTR Estimado</span>
-                                        <span className="text-3xl font-black text-white font-mono tracking-tighter">
-                                            {duracionCalc != null ? `${duracionCalc.toFixed(2)}h` : '0.00h'}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="md:col-span-2 space-y-6">
-                                    <h4 className="text-[9px] font-black text-rose-400 uppercase tracking-widest ml-1">Categorización del Incidente</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Clasificación</label>
-                                            <select value={form.clasificacion_falla} onChange={e => set('clasificacion_falla', e.target.value)} 
-                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
-                                                <option value="">Seleccionar...</option>
-                                                {(catalogos.clasificaciones || []).map((c: string) => <option key={c}>{c}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Sistema Crítico</label>
-                                            <select value={form.sistema_afectado} onChange={e => set('sistema_afectado', e.target.value)} 
-                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
-                                                <option value="">Seleccionar...</option>
-                                                {(catalogos.sistemas || []).map((s: string) => <option key={s}>{s}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Impacto (Severidad)</label>
-                                            <select value={form.severidad} onChange={e => set('severidad', e.target.value)} 
-                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-slate-200 outline-none focus:border-rose-500/50 transition-colors appearance-none">
-                                                <option value="">Seleccionar...</option>
-                                                {(catalogos.severidades || []).map((s: string) => <option key={s}>{s}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Presupuesto Ejecutado (S/)</label>
-                                            <input type="number" value={form.costo_reparacion} onChange={e => set('costo_reparacion', e.target.value)} 
-                                                className="w-full text-xs font-black bg-slate-900 border border-slate-700 rounded-xl py-3 px-4 shadow-sm text-rose-400 font-mono outline-none focus:border-rose-500/50 transition-colors" step="0.01" placeholder="0.00" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hallazgos y Síntomas</label>
-                                    <textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-2xl py-4 px-5 shadow-sm min-h-[120px] resize-none focus:border-rose-500/50 text-slate-200 outline-none transition-colors" placeholder="Describa el fallo, ruidos extraños, fugas, etc..."></textarea>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Solución Técnica Aplicada</label>
-                                    <textarea value={form.accion_correctiva} onChange={e => set('accion_correctiva', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-2xl py-4 px-5 shadow-sm min-h-[120px] resize-none focus:border-rose-500/50 text-slate-200 outline-none transition-colors" placeholder="Detalle el procedimiento de reparación realizado..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 border-t border-slate-800/50 bg-slate-900/50">
-                            <div className="flex gap-10">
-                                <label className="flex items-center gap-4 cursor-pointer group">
-                                    <div className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all duration-300 ${form.inmovilizo_unidad ? 'bg-rose-600 border-rose-600 shadow-lg shadow-rose-900/40' : 'bg-slate-800 border-slate-700 group-hover:border-rose-500 shadow-sm'}`}>
-                                        {form.inmovilizo_unidad && <span className="material-symbols-outlined text-white text-[18px] font-black">check</span>}
-                                        <input type="checkbox" className="hidden" checked={form.inmovilizo_unidad} onChange={e => set('inmovilizo_unidad', e.target.checked)} />
-                                    </div>
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-rose-400 transition-colors">Inmovilizó Unidad</span>
-                                </label>
-                                <label className="flex items-center gap-4 cursor-pointer group">
-                                    <div className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all duration-300 ${form.es_correctiva_no_programada ? 'bg-sky-600 border-sky-600 shadow-lg shadow-sky-900/40' : 'bg-slate-800 border-slate-700 group-hover:border-sky-500 shadow-sm'}`}>
-                                        {form.es_correctiva_no_programada && <span className="material-symbols-outlined text-white text-[18px] font-black">check</span>}
-                                        <input type="checkbox" className="hidden" checked={form.es_correctiva_no_programada} onChange={e => set('es_correctiva_no_programada', e.target.checked)} />
-                                    </div>
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-sky-400 transition-colors">Correctiva No Prog.</span>
-                                </label>
-                            </div>
-                            <div className="flex gap-4">
-                                <button onClick={() => { setShowForm(false); setEditingId(null) }} 
-                                    className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-white px-6 py-3 transition-colors">Cancelar</button>
-                                <button onClick={handleSave} 
-                                    className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-rose-900/20 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[18px] font-black">{editingId ? 'update' : 'publish'}</span>
-                                    {editingId ? 'Actualizar Reporte' : 'Registrar Falla'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* TABLA — Listado de Incidencias (Ahora unificada y responsiva) */}
-            <div className="table-premium-container !p-0 overflow-x-auto no-scrollbar">
-                <table className="table-premium">
-                    <thead>
-                        <tr>
-                            <th>Temporalidad</th>
-                            <th>Activo Critico</th>
-                            <th className="text-center">Severidad</th>
-                            <th>Impacto Temporal</th>
-                            <th>Sistema e Incidencia</th>
-                            <th>Costo Ext.</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={7} className="p-24 text-center text-xs font-black text-slate-500 uppercase tracking-[0.4em]">Auditando historial de fallas...</td></tr>
-                        ) : filtered.length === 0 ? (
-                            <tr><td colSpan={7} className="p-24 text-center flex flex-col items-center">
-                                <span className="material-symbols-outlined text-6xl text-slate-800 mb-6 font-thin">history_toggle_off</span>
-                                <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Sin incidencias tecnicas reportadas</p>
-                            </td></tr>
-                        ) : filtered.map((f: any) => {
-                            const asset = assets.find((a: any) => a.id === f.asset_id)
-                            return (
-                                <tr key={f.id} className="group">
-                                    <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-black text-slate-100 font-mono">{f.fecha_falla}</span>
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{f.hora_inicio || '00:00'} — {f.hora_fin || '--:--'}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-slate-800 rounded-2xl flex items-center justify-center text-slate-500 group-hover:bg-rose-600 group-hover:text-white group-hover:shadow-sm transition-all">
-                                                <span className="material-symbols-outlined text-[20px]">precision_manufacturing</span>
-                                            </div>
-                                            <div>
-                                                <p className="text-lg font-black text-white uppercase tracking-tight group-hover:text-rose-400 transition-colors">{asset?.placa_principal || 'S/P'}</p>
-                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">{f.asset_codigo}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="text-center">
-                                        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${severidadColor[f.severidad] || 'text-slate-500 bg-slate-800'}`}>
-                                            {f.severidad || 'Indet.'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-2xl font-black text-rose-400 font-mono tracking-tighter">{f.duracion_horas?.toFixed(2)}<span className="text-xs ml-1 font-black uppercase text-slate-500">h</span></span>
-                                            <div className="flex items-center gap-1.5 mt-1">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiempo Fuera</span>
-                                                {f.inmovilizo_unit && <span className="w-2 h-2 bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="flex flex-col">
-                                            <span className="text-xs font-black text-slate-200 uppercase tracking-wide">{f.sistema_afectado || 'Generico'}</span>
-                                            <span className="text-[10px] font-medium text-slate-500 truncate max-w-[240px] italic">"{f.descripcion || 'Sin descripcion detallada'}"</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="text-xs font-black text-slate-100 font-mono">
-                                            {f.costo_reparacion != null ? `S/ ${Number(f.costo_reparacion).toFixed(2)}` : 'S/ 0.00'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={() => openEdit(f)}
-                                                className="w-10 h-10 bg-transparent border border-transparent rounded-2xl flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-slate-800 hover:border-slate-700 hover:shadow-xl transition-all">
-                                                <span className="material-symbols-outlined text-[18px]">manage_search</span>
-                                            </button>
-                                            <button onClick={() => handleDelete(f.id)}
-                                                className="w-10 h-10 bg-transparent border border-transparent rounded-2xl flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 hover:shadow-md transition-all duration-300">
-                                                <span className="material-symbols-outlined text-[18px]">delete</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
-            </div>
-
-
-            {toast && (
-                <div className="fixed bottom-20 lg:bottom-12 right-4 lg:right-12 z-[100] bg-slate-900/90 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-fade-in-up border-l-4 border-rose-500">
-                    <div className="w-8 h-8 bg-rose-500/20 rounded-full flex items-center justify-center text-rose-500">
-                        <span className="material-symbols-outlined text-sm">notifications</span>
-                    </div>
-                    <span className="text-[11px] font-black uppercase tracking-[0.2em]">{toast}</span>
-                </div>
-            )}
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      </div>
     )
-}
+  }
 
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-bold text-[var(--text-primary)]">Registro de Fallas</h1>
+          <p className="text-sm text-[var(--text-secondary)]">{failures.length} registros</p>
+        </div>
+        <button onClick={openNew} className="px-4 py-1.5 bg-[var(--accent)] text-[var(--text-inverse)] text-sm font-medium rounded-lg hover:opacity-90 transition-all">
+          Nueva Falla
+        </button>
+      </div>
+
+      {failures.length === 0 ? (
+        <p className="text-center text-[var(--text-muted)] py-12">No hay fallas registradas</p>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[var(--bg-tertiary)] text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                <th className="text-left p-3">Fecha</th>
+                <th className="text-left p-3">Activo</th>
+                <th className="text-left p-3">Tipo</th>
+                <th className="text-left p-3">Clasificación</th>
+                <th className="text-left p-3">Severidad</th>
+                <th className="text-left p-3">Duración</th>
+                <th className="text-left p-3">Costo</th>
+                <th className="text-left p-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {failures.map((f) => (
+                <tr key={f.id} className="hover:bg-[var(--bg-hover)] transition-colors">
+                  <td className="p-3 text-[var(--text-primary)]">{formatDateDMY(f.fecha)}</td>
+                  <td className="p-3 text-[var(--text-primary)] font-medium">{assetNames[f.asset_id] || f.asset_codigo || '—'}</td>
+                  <td className="p-3 text-[var(--text-secondary)]">{f.tipo_evento}</td>
+                  <td className="p-3 text-[var(--text-secondary)]">{f.clasificacion_falla}</td>
+                  <td className="p-3">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                      f.severidad === 'Crítica' ? 'bg-[var(--color-error-bg)] text-[var(--color-error)]' :
+                      f.severidad === 'Alta' ? 'bg-[var(--color-critical-bg)] text-[var(--color-critical)]' :
+                      f.severidad === 'Media' ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' :
+                      'bg-[var(--color-success-bg)] text-[var(--color-success)]'
+                    }`}>
+                      {f.severidad}
+                    </span>
+                  </td>
+                  <td className="p-3 text-[var(--text-secondary)]">{f.duracion_horas ? `${f.duracion_horas.toFixed(1)}h` : '—'}</td>
+                  <td className="p-3 text-[var(--text-secondary)]">{f.costo_reparacion ? `S/${Number(f.costo_reparacion).toFixed(2)}` : '—'}</td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(f)} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                      </button>
+                      <button onClick={() => handleDelete(f.id)} className="p-1.5 rounded hover:bg-[var(--color-error-bg)] text-[var(--text-muted)] hover:text-[var(--color-error)]">
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 bg-[var(--bg-overlay)] overflow-y-auto" onClick={() => setShowForm(false)}>
+          <div className="w-full max-w-2xl bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-lg mb-12" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">{editingId ? 'Editar Falla' : 'Nueva Falla'}</h3>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)]"><span className="material-symbols-outlined">close</span></button>
+            </div>
+            <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Fecha</label>
+                  <input type="date" name="fecha" value={form.fecha} onChange={(e) => set('fecha', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div className="relative">
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Activo</label>
+                  <div className="relative">
+                    <input type="text" name="searchAsset" value={searchAsset} onChange={(e) => { setSearchAsset(e.target.value); setIsOpenAsset(true) }}
+                      onFocus={() => setIsOpenAsset(true)}
+                      placeholder={assetNames[form.asset_id] || 'Buscar activo...'}
+                      className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                    {isOpenAsset && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
+                        {filteredAssets.map((a) => (
+                          <button key={a.id} type="button" onClick={() => { set('asset_id', a.id); setSearchAsset(''); setIsOpenAsset(false) }}
+                            className="w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+                            {a.placa_principal || a.codigo_patrimonial} — {a.tipo_unidad}
+                          </button>
+                        ))}
+                        {filteredAssets.length === 0 && <p className="px-3 py-2 text-sm text-[var(--text-muted)]">Sin resultados</p>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Hora Inicio</label>
+                  <input type="time" name="hora_inicio" value={form.hora_inicio} onChange={(e) => set('hora_inicio', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Hora Fin</label>
+                  <input type="time" name="hora_fin" value={form.hora_fin} onChange={(e) => set('hora_fin', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Tipo Evento</label>
+                  <select value={form.tipo_evento} onChange={(e) => set('tipo_evento', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+                    {catalogos.tipos?.map((v: string) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Clasificación</label>
+                  <select value={form.clasificacion_falla} onChange={(e) => set('clasificacion_falla', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+                    <option value="">Seleccionar</option>
+                    {catalogos.clasificaciones?.map((v: string) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Sistema Afectado</label>
+                  <select value={form.sistema_afectado} onChange={(e) => set('sistema_afectado', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+                    <option value="">Seleccionar</option>
+                    {catalogos.sistemas?.map((v: string) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Severidad</label>
+                  <select value={form.severidad} onChange={(e) => set('severidad', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+                    <option value="">Seleccionar</option>
+                    {catalogos.severidades?.map((v: string) => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Costo Reparación</label>
+                  <input type="number" step="0.01" name="costo_reparacion" value={form.costo_reparacion} onChange={(e) => set('costo_reparacion', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div className="flex items-center gap-4 pt-6">
+                  <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <input type="checkbox" name="inmovilizo_unidad" checked={form.inmovilizo_unidad} onChange={(e) => set('inmovilizo_unidad', e.target.checked)}
+                      className="rounded border-[var(--border)]" />
+                    Inmovilizó unidad
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <input type="checkbox" name="es_correctiva_no_programada" checked={form.es_correctiva_no_programada} onChange={(e) => set('es_correctiva_no_programada', e.target.checked)}
+                      className="rounded border-[var(--border)]" />
+                    Correctiva no programada
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Descripción</label>
+                <textarea value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Causa Probable</label>
+                <textarea value={form.causa_probable} onChange={(e) => set('causa_probable', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Acción Correctiva</label>
+                <textarea value={form.accion_correctiva} onChange={(e) => set('accion_correctiva', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-5 border-t border-[var(--border)]">
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Cancelar</button>
+              <button onClick={handleSave} className="px-4 py-2 bg-[var(--accent)] text-[var(--text-inverse)] text-sm font-medium rounded-lg hover:opacity-90">
+                {editingId ? 'Actualizar' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-lg text-sm text-[var(--text-primary)] animate-in">
+          {toast}
+        </div>
+      )}
+    </div>
+  )
+}

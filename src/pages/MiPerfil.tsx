@@ -1,167 +1,127 @@
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../api/client'
 
-const MiPerfil: React.FC = () => {
-    const userStr = localStorage.getItem('user')
-    const user = userStr ? JSON.parse(userStr) : null
-    
-    const [currentPassword, setCurrentPassword] = useState('')
-    const [newPassword, setNewPassword] = useState('')
-    const [confirmPassword, setConfirmPassword] = useState('')
-    const [loading, setLoading] = useState(false)
-    const [toast, setToast] = useState<string | null>(null)
+export default function MiPerfil() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'info' | 'email' | 'password'>('info')
+  const [email, setEmail] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [toast, setToast] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (newPassword !== confirmPassword) {
-            alert('Las contraseñas nuevas no coinciden')
-            return
-        }
+  useEffect(() => {
+    api.getMe().then((u) => { setUser(u); setEmail(u.email || ''); setLoading(false) }).catch(() => setLoading(false))
+  }, [])
 
-        setLoading(true)
-        try {
-            const res = await fetch('/api/auth/change-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ currentPassword, newPassword })
-            })
-            const data = await res.json()
-            if (res.ok) {
-                setToast('Contraseña actualizada con éxito')
-                setCurrentPassword('')
-                setNewPassword('')
-                setConfirmPassword('')
-                setTimeout(() => setToast(null), 3000)
-            } else {
-                alert(data.message || 'Error al cambiar contraseña')
-            }
-        } catch (err) {
-            console.error(err)
-            alert('Error de conexión')
-        } finally {
-            setLoading(false)
-        }
-    }
+  const handleUpdateEmail = async () => {
+    if (!email.includes('@')) { setToast('Email inválido'); setTimeout(() => setToast(null), 2500); return }
+    setSaving(true)
+    try { await api.updateEmail(email); setToast('Email actualizado'); setUser({ ...user, email }); setTab('info') }
+    catch (e: any) { setToast(e.message) }
+    setSaving(false); setTimeout(() => setToast(null), 2500)
+  }
 
+  const handleChangePassword = async () => {
+    if (!currentPassword || newPassword.length < 6) { setToast('Completa todos los campos. Mín 6 caracteres.'); setTimeout(() => setToast(null), 2500); return }
+    setSaving(true)
+    try { await api.changePassword(currentPassword, newPassword); setToast('Contraseña actualizada'); setTab('info'); setCurrentPassword(''); setNewPassword('') }
+    catch (e: any) { setToast(e.message) }
+    setSaving(false); setTimeout(() => setToast(null), 2500)
+  }
+
+  if (loading) {
     return (
-        <div className="max-w-2xl mx-auto space-y-8 animate-reveal py-4 sm:py-10">
-            <header className="space-y-2">
-                <h2 className="text-3xl font-black text-white tracking-tight uppercase">MI PERFIL</h2>
-                <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Configuración de Cuenta de Usuario</p>
-            </header>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* INFO CARD */}
-                <div className="md:col-span-1 space-y-4">
-                    <div className="premium-card p-6 flex flex-col items-center text-center">
-                        <div className="w-20 h-20 bg-gold-gradient rounded-full flex items-center justify-center text-3xl font-black text-white shadow-xl mb-4 border-4 border-white/5">
-                            {user?.username?.substring(0, 2).toUpperCase()}
-                        </div>
-                        <h3 className="text-lg font-black text-white uppercase truncate w-full">{user?.username}</h3>
-                        <p className="text-[10px] font-black text-cyan-500 uppercase tracking-widest mt-1">{user?.role}</p>
-                    </div>
-                    
-                    <div className="premium-card p-4 space-y-3">
-                        <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-slate-500 text-sm">badge</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ID: {user?.id}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-slate-500 text-sm">verified_user</span>
-                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Estado: Activo</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* CHANGE PASSWORD FORM */}
-                <div className="md:col-span-2">
-                    <form onSubmit={handleSubmit} className="premium-card p-8 space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <span className="material-symbols-outlined text-gold-500">lock_reset</span>
-                            <h4 className="text-xs font-black text-white uppercase tracking-widest">Cambiar Contraseña</h4>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Contraseña Actual</label>
-                                <div className="relative">
-                                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">lock</span>
-                                    <input 
-                                        type="password"
-                                        required
-                                        value={currentPassword}
-                                        onChange={e => setCurrentPassword(e.target.value)}
-                                        className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all text-sm"
-                                        placeholder="Ingrese su clave actual"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="h-px bg-slate-800/50 my-2"></div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Nueva Contraseña</label>
-                                    <div className="relative">
-                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">shield</span>
-                                        <input 
-                                            type="password"
-                                            required
-                                            value={newPassword}
-                                            onChange={e => setNewPassword(e.target.value)}
-                                            className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all text-sm font-mono"
-                                            placeholder="Nueva clave"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Confirmar Nueva</label>
-                                    <div className="relative">
-                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">done_all</span>
-                                        <input 
-                                            type="password"
-                                            required
-                                            value={confirmPassword}
-                                            onChange={e => setConfirmPassword(e.target.value)}
-                                            className="w-full bg-[#0a0f1d] border border-slate-800 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all text-sm font-mono"
-                                            placeholder="Repetir clave"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button 
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-gold-gradient text-white font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-lg shadow-gold-900/40 hover:shadow-gold-900/60 transition-all active:scale-[0.98] disabled:opacity-50 text-[11px] flex items-center justify-center gap-3 mt-4"
-                        >
-                            {loading ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                    <span>Actualizando...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span className="material-symbols-outlined text-lg">save</span>
-                                    <span>Guardar Cambios</span>
-                                </>
-                            )}
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {toast && (
-                <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] bg-emerald-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-fade-in-up">
-                    <span className="material-symbols-outlined">verified</span>
-                    <span className="text-[11px] font-black uppercase tracking-widest">{toast}</span>
-                </div>
-            )}
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      </div>
     )
-}
+  }
 
-export default MiPerfil
+  if (!user) {
+    return <div className="flex items-center justify-center h-64 text-[var(--text-muted)]">No se pudo cargar el perfil</div>
+  }
+
+  const infoFields = [
+    { label: 'Usuario', value: user.username },
+    { label: 'Email', value: user.email || '—' },
+    { label: 'Rol', value: user.role },
+    { label: 'Estado', value: user.status },
+  ]
+
+  return (
+    <div className="max-w-lg mx-auto space-y-6">
+      <div className="text-center">
+        <div className="w-16 h-16 rounded-full bg-[var(--accent)] flex items-center justify-center mx-auto mb-4">
+          <span className="text-2xl font-bold text-[var(--text-inverse)]">{user.username?.charAt(0).toUpperCase() || 'U'}</span>
+        </div>
+        <h1 className="text-lg font-bold text-[var(--text-primary)]">{user.username}</h1>
+        <p className="text-sm text-[var(--text-secondary)] capitalize">{user.role}</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-xl bg-[var(--bg-tertiary)] p-1">
+        {(['info', 'email', 'password'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
+              tab === t ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            {t === 'info' ? 'Datos' : t === 'email' ? 'Email' : 'Contraseña'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'info' && (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] divide-y divide-[var(--border)]">
+          {infoFields.map((f) => (
+            <div key={f.label} className="flex items-center justify-between px-5 py-3">
+              <span className="text-xs text-[var(--text-muted)] uppercase tracking-wider">{f.label}</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">{f.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'email' && (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5 space-y-4">
+          <p className="text-xs text-[var(--text-secondary)]">Actualiza tu correo electrónico</p>
+          <input
+            type="email" placeholder="nuevo@correo.com" value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          />
+          <button onClick={handleUpdateEmail} disabled={saving} className="w-full py-2 text-xs font-semibold rounded-lg bg-[var(--accent)] text-[var(--text-inverse)] hover:opacity-90 transition-opacity disabled:opacity-50">
+            {saving ? 'Guardando...' : 'Guardar Email'}
+          </button>
+        </div>
+      )}
+
+      {tab === 'password' && (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5 space-y-4">
+          <p className="text-xs text-[var(--text-secondary)]">Cambia tu contraseña</p>
+          <input
+            type="password" placeholder="Contraseña actual" value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          />
+          <input
+            type="password" placeholder="Nueva contraseña (mín 6 caracteres)" value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          />
+          <button onClick={handleChangePassword} disabled={saving} className="w-full py-2 text-xs font-semibold rounded-lg bg-[var(--accent)] text-[var(--text-inverse)] hover:opacity-90 transition-opacity disabled:opacity-50">
+            {saving ? 'Guardando...' : 'Cambiar Contraseña'}
+          </button>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-lg text-sm text-[var(--text-primary)] animate-in">{toast}</div>
+      )}
+    </div>
+  )
+}

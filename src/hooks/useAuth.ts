@@ -3,7 +3,7 @@ import type { User } from '../models/types'
 
 function getStoredUser(): User | null {
     try {
-        const raw = localStorage.getItem('user')
+        const raw = sessionStorage.getItem('user')
         return raw ? JSON.parse(raw) : null
     } catch {
         return null
@@ -12,28 +12,26 @@ function getStoredUser(): User | null {
 
 export function useAuth() {
     const [user, setUser] = useState<User | null>(getStoredUser)
-    const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
+    const [token, setToken] = useState<string | null>(sessionStorage.getItem('token'))
 
     useEffect(() => {
         const handler = () => {
             setUser(getStoredUser())
-            setToken(localStorage.getItem('token'))
+            setToken(sessionStorage.getItem('token'))
         }
         window.addEventListener('storage', handler)
         return () => window.removeEventListener('storage', handler)
     }, [])
 
     const login = useCallback((tokenVal: string, userVal: User) => {
-        localStorage.setItem('token', tokenVal)
-        localStorage.setItem('user', JSON.stringify(userVal))
+        sessionStorage.setItem('token', tokenVal)
+        sessionStorage.setItem('user', JSON.stringify(userVal))
         setToken(tokenVal)
         setUser(userVal)
     }, [])
 
     const logout = useCallback(() => {
-        const theme = localStorage.getItem('app-theme')
-        localStorage.clear()
-        if (theme) localStorage.setItem('app-theme', theme)
+        sessionStorage.clear()
         setToken(null)
         setUser(null)
     }, [])

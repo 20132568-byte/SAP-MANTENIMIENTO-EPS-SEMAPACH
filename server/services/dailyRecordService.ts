@@ -59,7 +59,7 @@ export async function createDailyRecord(data: DailyRecordInput) {
         data.km_inicial, data.km_final, kmRecorridos,
         data.horometro_inicial, data.horometro_final,
         data.estado_dia || 'Operativo', data.observaciones || '',
-        data.hora_inicio_jornada || '', data.hora_fin_jornada || '', data.jornada_completa ?? 0
+        data.hora_inicio_jornada || '', data.hora_fin_jornada || '', data.jornada_completa ? 1 : 0
     )
 
     if (data.km_final != null) {
@@ -90,7 +90,7 @@ export async function updateDailyRecord(id: number, data: DailyRecordInput) {
         data.horas_parada ?? 0, data.hora_inicio_parada || '', data.hora_fin_parada || '',
         data.km_inicial, data.km_final, kmRecorridos, data.horometro_inicial, data.horometro_final,
         data.estado_dia, data.observaciones || '',
-        data.hora_inicio_jornada || '', data.hora_fin_jornada || '', data.jornada_completa ?? 0, id
+        data.hora_inicio_jornada || '', data.hora_fin_jornada || '', data.jornada_completa ? 1 : 0, id
     )
 
     if (data.km_final != null) {

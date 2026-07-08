@@ -1,7 +1,20 @@
-import { getDb } from './db.js'
+import { getDb } from './database.js'
+import bcrypt from 'bcryptjs'
 
 export async function runSeeds() {
     const pool = getDb()
+
+    // Seed usuario admin por defecto
+    try {
+        const hash = await bcrypt.hash('admin123', 10)
+        const existing = await pool.query("SELECT id FROM users WHERE username = 'admin'")
+        if (existing.rows.length > 0) {
+            await pool.query("UPDATE users SET password_hash=$1, role='gerencia', status='approved' WHERE username='admin'", [hash])
+        } else {
+            await pool.query("INSERT INTO users (username, dni, password_hash, role, status) VALUES ('admin', '99999999', $1, 'gerencia', 'approved')", [hash])
+        }
+        console.log('[SEED] Usuario admin asegurado (admin / admin123)')
+    } catch (e: any) { console.log('[SEED ADMIN]', e.message) }
 
     // Seed actividades 2026
     try {
@@ -103,4 +116,43 @@ export async function runSeeds() {
 
         console.log(`[SEED] ${stations.length} estaciones + ${eqCount} equipos insertados`)
     } catch (e: any) { console.log('[SEED STATIONS]', e.message) }
+
+    // Seed usuarios para el sistema de inventario (esquema aislado)
+    try {
+        const hasUsers = await pool.query('SELECT id FROM inventario.users LIMIT 1')
+        if (hasUsers.rows.length === 0) {
+            console.log('[SEED] Insertando usuarios semilla para el inventario...')
+            // Obtener las áreas creadas
+            const areasRes = await pool.query('SELECT id, code FROM inventario.areas')
+            const areaMap: Record<string, string> = {}
+            for (const r of areasRes.rows) {
+                areaMap[r.code] = r.id
+            }
+
+            const p1 = await bcrypt.hash('admin123', 10)
+            const p2 = await bcrypt.hash('trabajador123', 10)
+            const p3 = await bcrypt.hash('jefe123', 10)
+            const p4 = await bcrypt.hash('almacen123', 10)
+            const p5 = await bcrypt.hash('logistica123', 10)
+
+            await pool.query(
+                `INSERT INTO inventario.users (username, email, password_hash, full_name, area_id, role) VALUES
+                 ('admin_inv', 'admin_inv@semapach.gob.pe', $1, 'Administrador del Módulo', $2, 'admin'),
+                 ('trabajador_inv', 'trabajador_inv@semapach.gob.pe', $3, 'Juan Técnico (Flota)', $4, 'trabajador'),
+                 ('jefe_inv', 'jefe_inv@semapach.gob.pe', $5, 'Ing. Carlos Ramos (Jefe de Área)', $6, 'jefe_area'),
+                 ('almacen_inv', 'almacen_inv@semapach.gob.pe', $7, 'Pedro Almacenero', $8, 'almacenero'),
+                 ('logistica_inv', 'logistica_inv@semapach.gob.pe', $9, 'Lic. Sofia Jefa (Logística)', $10, 'jefe_logistica')`,
+                [
+                    p1, areaMap['LOG'],
+                    p2, areaMap['EM'],
+                    p3, areaMap['PROD'],
+                    p4, areaMap['LOG'],
+                    p5, areaMap['LOG']
+                ]
+            )
+            console.log('[SEED] ✅ Usuarios semilla de inventario creados con éxito')
+        }
+    } catch (e: any) {
+        console.log('[SEED INVENTORY USERS ERROR]', e.message)
+    }
 }

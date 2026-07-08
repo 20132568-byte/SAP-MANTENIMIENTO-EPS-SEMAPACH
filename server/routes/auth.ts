@@ -79,10 +79,14 @@ authRouter.post('/register', validateRegister, async (req, res) => {
             `
         }
 
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) console.error('[EMAIL ERROR]', error)
-            else console.log('[EMAIL SENT]', info.response)
-        })
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS && process.env.EMAIL_TO) {
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) console.error('[EMAIL ERROR]', error)
+                else console.log('[EMAIL SENT]', info.response)
+            })
+        } else {
+            console.log('[DEV] Solicitud de registro recibida para:', username, '(Notificación por email omitida por falta de configuración)')
+        }
 
         res.status(201).json({ message: 'Usuario registrado. Esperando aprobación.' })
     } catch (err: any) {
@@ -95,7 +99,7 @@ authRouter.post('/login', loginLimiter, validateLogin, async (req, res) => {
     const { identifier, password } = req.body  // identifier puede ser username o DNI
 
     try {
-        const user = await dbGet('SELECT * FROM users WHERE username = ? OR dni = ?', identifier, identifier)
+        const user = await dbGet('SELECT * FROM public.users WHERE username = ? OR dni = ?', identifier, identifier)
         if (!user) return res.status(401).json({ message: 'Credenciales inválidas' })
 
         if (user.status !== 'approved') {
@@ -120,7 +124,7 @@ authRouter.post('/login', loginLimiter, validateLogin, async (req, res) => {
 // GET /me
 authRouter.get('/me', authenticateToken, async (req: any, res) => {
     try {
-        const user = await dbGet('SELECT id, username, dni, email, role, status FROM users WHERE id = ?', req.user.id)
+        const user = await dbGet('SELECT id, username, dni, email, role, status FROM public.users WHERE id = ?', req.user.id)
         if (!user) return res.status(404).json({ message: 'Usuario no encontrado' })
         res.json({ id: user.id, username: user.username, email: user.email, role: user.role, status: user.status })
     } catch (err: any) {
@@ -172,8 +176,8 @@ authRouter.post('/forgot-password', rateLimit({ windowMs: 15 * 60 * 1000, max: 5
     if (!identifier) return res.status(400).json({ message: 'Ingresa tu usuario o DNI' })
 
     try {
-        const user = await dbGet('SELECT id, username, dni, email FROM users WHERE username = ? OR dni = ?', identifier, identifier)
-        if (!user) return res.status(404).json({ message: 'No se encontró una cuenta con ese usuario o DNI' })
+        const user = await dbGet('SELECT id, username, dni, email FROM public.users WHERE username = ? OR dni = ? OR email = ?', identifier, identifier, identifier)
+        if (!user) return res.status(404).json({ message: 'No se encontró una cuenta con ese usuario, DNI o email' })
         if (!user.email) return res.status(400).json({ message: 'Esta cuenta no tiene un correo electrónico registrado. Contacta al administrador.' })
 
         const resetToken = jwt.sign(
@@ -184,35 +188,44 @@ authRouter.post('/forgot-password', rateLimit({ windowMs: 15 * 60 * 1000, max: 5
 
         const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: user.email,
-            subject: 'Recuperación de Contraseña — EPS SEMAPACH',
-            html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-                    <h2 style="color: #00a3ff;">Recuperación de Contraseña</h2>
-                    <p>Has solicitado restablecer tu contraseña para el usuario <strong>${user.username}</strong>.</p>
-                    <p>Haz clic en el siguiente enlace para crear una nueva contraseña. Este enlace expira en 1 hora:</p>
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${resetUrl}"
-                           style="background: #00a3ff; color: white; padding: 14px 28px; border-radius: 8px;
-                                  text-decoration: none; font-weight: bold; display: inline-block;">
-                            Restablecer Contraseña
-                        </a>
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: user.email,
+                subject: 'Recuperación de Contraseña — EPS SEMAPACH',
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                        <h2 style="color: #00a3ff;">Recuperación de Contraseña</h2>
+                        <p>Has solicitado restablecer tu contraseña para el usuario <strong>${user.username}</strong>.</p>
+                        <p>Haz clic en el siguiente enlace para crear una nueva contraseña. Este enlace expira en 1 hora:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${resetUrl}"
+                               style="background: #00a3ff; color: white; padding: 14px 28px; border-radius: 8px;
+                                      text-decoration: none; font-weight: bold; display: inline-block;">
+                                Restablecer Contraseña
+                            </a>
+                        </div>
+                        <p style="color: #777; font-size: 12px;">Si no solicitaste este cambio, ignora este mensaje.</p>
+                        <hr />
+                        <p style="font-size: 12px; color: #777;">EPS SEMAPACH — Sistema de Gestión de Mantenimiento</p>
                     </div>
-                    <p style="color: #777; font-size: 12px;">Si no solicitaste este cambio, ignora este mensaje.</p>
-                    <hr />
-                    <p style="font-size: 12px; color: #777;">EPS SEMAPACH — Sistema de Gestión de Mantenimiento</p>
-                </div>
-            `
+                `
+            }
+
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) console.error('[EMAIL ERROR]', error)
+                else console.log('[EMAIL SENT]', info.response)
+            })
+
+            res.json({ message: 'Revisa tu correo electrónico. Recibirás un enlace para restablecer tu contraseña.' })
+        } else {
+            console.log('\n[DEVELOPMENT] === ENLACE DE RESTABLECIMIENTO ===')
+            console.log(resetUrl)
+            console.log('===============================================\n')
+            res.json({ 
+                message: 'Modo Desarrollo: Enlace generado y mostrado en la consola del servidor (credenciales de email no configuradas en .env).' 
+            })
         }
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) console.error('[EMAIL ERROR]', error)
-            else console.log('[EMAIL SENT]', info.response)
-        })
-
-        res.json({ message: 'Revisa tu correo electrónico. Recibirás un enlace para restablecer tu contraseña.' })
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }
@@ -285,6 +298,25 @@ authRouter.post('/reset-password/:id', authenticateToken, async (req: any, res) 
         const hashedPassword = await bcrypt.hash(newPassword, 10)
         await dbRun('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', hashedPassword, req.params.id)
         res.json({ message: 'Contraseña reseteada exitosamente.' })
+    } catch (err: any) {
+        res.status(500).json({ message: err.message })
+    }
+})
+
+// POST /update-role/:id (solo admin)
+authRouter.post('/update-role/:id', authenticateToken, async (req: any, res) => {
+    if (req.user.role !== 'gerencia' && req.user.username !== 'DanielAdmin') return res.status(403).json({ message: 'No autorizado' })
+    const { role } = req.body
+    
+    // Lista de roles/puestos válidos
+    const validRoles = ['gerencia', 'jefatura', 'operador', 'mantenimiento']
+    if (!validRoles.includes(role)) {
+        return res.status(400).json({ message: 'Puesto o rol inválido' })
+    }
+    
+    try {
+        await dbRun('UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', role, req.params.id)
+        res.json({ message: `Puesto actualizado a ${role} con éxito.` })
     } catch (err: any) {
         res.status(500).json({ message: err.message })
     }

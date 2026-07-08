@@ -13,7 +13,7 @@ export const produccionRouter = Router()
 
 produccionRouter.get('/bd', async (req, res) => {
     try {
-        const { desde, hasta, mes, limit = 100 } = req.query
+        const { desde, hasta, mes, limit = 500 } = req.query
         let sql = 'SELECT * FROM produccion_bd WHERE 1=1'
         const params: any[] = []
         if (desde) { sql += ' AND fecha >= ?'; params.push(desde) }
@@ -78,7 +78,7 @@ produccionRouter.post('/bd/bulk', async (req, res) => {
 
 produccionRouter.get('/surtidor', async (req, res) => {
     try {
-        const { desde, hasta, placa, surtidor, limit = 200 } = req.query
+        const { desde, hasta, placa, surtidor, limit = 2000 } = req.query
         let sql = 'SELECT * FROM produccion_surtidor WHERE 1=1'
         const params: any[] = []
         if (desde) { sql += ' AND fecha >= ?'; params.push(desde) }
@@ -380,22 +380,22 @@ produccionRouter.post('/upload', upload.single('file'), async (req, res) => {
     }
 })
 
-// Importar datos desde Excel directamente (procesamiento completo)
+// Importar datos desde Excel directamente (procesamiento multi-hoja completo)
 produccionRouter.post('/import', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' })
 
-        const { tipo } = req.query
         const workbook = XLSX.readFile(req.file.path)
-        const sheetName = workbook.SheetNames[0]
-        const sheet = workbook.Sheets[sheetName]
-        const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 })
+        const sheetNames = workbook.SheetNames
+        
+        let bdImported = 0
+        let surtidorImported = 0
+        let rsjImported = 0
 
-        fs.unlink(req.file.path, () => {})
-
-        let imported = 0
-
-        if (tipo === 'bd') {
+        // 1. Procesar hoja "BD" si existe
+        if (sheetNames.includes('BD')) {
+            const sheet = workbook.Sheets['BD']
+            const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 })
             for (let i = 4; i < rows.length; i++) {
                 const r = rows[i]
                 if (!r || !r[0]) continue
@@ -435,9 +435,14 @@ produccionRouter.post('/import', upload.single('file'), async (req, res) => {
                     r[57], r[58], r[59], r[60], r[61],
                     r[62], r[63], r[64], r[65], r[66]
                 )
-                imported++
+                bdImported++
             }
-        } else if (tipo === 'surtidor') {
+        }
+
+        // 2. Procesar hoja "BDsurtidor" si existe
+        if (sheetNames.includes('BDsurtidor')) {
+            const sheet = workbook.Sheets['BDsurtidor']
+            const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 })
             for (let i = 1; i < rows.length; i++) {
                 const r = rows[i]
                 if (!r || r.length < 5) continue
@@ -445,9 +450,14 @@ produccionRouter.post('/import', upload.single('file'), async (req, res) => {
                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) ON CONFLICT DO NOTHING`,
                     r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
                     r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15])
-                imported++
+                surtidorImported++
             }
-        } else if (tipo === 'rsanjuan') {
+        }
+
+        // 3. Procesar hoja "BDrsanjuan" si existe
+        if (sheetNames.includes('BDrsanjuan')) {
+            const sheet = workbook.Sheets['BDrsanjuan']
+            const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 })
             for (let i = 14; i < rows.length; i++) {
                 const r = rows[i]
                 if (!r || r.length < 5) continue
@@ -457,11 +467,21 @@ produccionRouter.post('/import', upload.single('file'), async (req, res) => {
                 VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING`,
                     Number(anio) || 0, Number(mes) || 0, fecha, r[3] || '',
                     Number(r[4]) || 0, r[5] || '', Number(r[6]) || 0)
-                imported++
+                rsjImported++
             }
         }
 
-        res.json({ success: true, tipo, imported, total: rows.length })
+        fs.unlink(req.file.path, () => {})
+
+        res.json({
+            success: true,
+            imported: {
+                bd: bdImported,
+                surtidor: surtidorImported,
+                rsanjuan: rsjImported
+            },
+            message: `Importación completada: BD (${bdImported}), Surtidor (${surtidorImported}), Río San Juan (${rsjImported})`
+        })
     } catch (error: any) {
         res.status(500).json({ error: error.message })
     }

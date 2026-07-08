@@ -201,6 +201,7 @@ export interface Recommendation {
 export interface AssetKPI {
     asset_id: number
     asset_codigo: string
+    asset_placa?: string
     asset_tipo: string
     mttr: number | null
     mtbf: number | null
@@ -337,14 +338,18 @@ export interface StationRankings {
 
 // § Backlog Preventivo
 export interface PreventiveBacklog {
-    id: number
+    config_id: number
     asset_id: number
     asset_codigo?: string
+    asset_placa?: string
     asset_tipo?: string
     tipo_preventivo: string
-    fecha_vencimiento: string
-    dias_vencidos: number
-    estado: string
+    intervalo: number
+    unidad_control: string
+    fecha_vencimiento: string | null
+    dias_vencidos: number | null
+    ultima_lectura: number
+    ultimo_mantenimiento: string | null
 }
 
 // § Dashboard KPI

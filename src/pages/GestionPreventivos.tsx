@@ -1,516 +1,471 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
 import { useAssetType } from '../contexts/AssetTypeContext'
-import { 
-    PieChart, Pie, Cell, ResponsiveContainer 
-} from 'recharts';
+import { formatDateDMY } from '../utils/date'
+
+type Tab = 'eventos' | 'backlog' | 'config'
+
+const emptyEvent = {
+  asset_id: '', fecha: new Date().toISOString().split('T')[0],
+  tipo_mtto: 'Preventivo', descripcion: '', estado: 'Pendiente',
+  hora_inicio: '', hora_fin: '', duracion_horas: 0,
+  realizado_por: '', costo_real: '', notas: '',
+}
+
+const emptyConfig = {
+  asset_id: '', frecuencia_km: 0, frecuencia_horas: 0, frecuencia_dias: 0,
+  odometro_base: 0, horometro_base: 0, tipo_preventivo: 'Mantenimiento Preventivo',
+  actividades: '', materiales: '', personal_asignado: '',
+}
 
 export default function GestionPreventivos() {
-    const { assetType } = useAssetType()
-    const [events, setEvents] = useState<any[]>([])
-    const [backlog, setBacklog] = useState<any[]>([])
-    const [configs, setConfigs] = useState<any[]>([])
-    const [assets, setAssets] = useState<any[]>([])
-    const [tab, setTab] = useState<'backlog' | 'registros' | 'config'>('backlog')
-    const [loading, setLoading] = useState(true)
-    const [showForm, setShowForm] = useState(false)
-    const [editingId, setEditingId] = useState<number | null>(null)
-    const [toast, setToast] = useState<string | null>(null)
-    const [searchAsset, setSearchAsset] = useState('')
-    const [isOpenAsset, setIsOpenAsset] = useState(false)
-    const [form, setForm] = useState<any>({
-        asset_id: '', tipo_preventivo: 'Cambio de aceite y filtros',
-        fecha_mantenimiento: new Date().toISOString().split('T')[0],
-        lectura_al_momento: 0, intervalo: 5000, unidad_control: 'km', costo: '', observaciones: ''
+  const { assetType } = useAssetType()
+  const [tab, setTab] = useState<Tab>('eventos')
+  const [assets, setAssets] = useState<any[]>([])
+  const [events, setEvents] = useState<any[]>([])
+  const [backlog, setBacklog] = useState<any[]>([])
+  const [configs, setConfigs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [searchAssetE, setSearchAssetE] = useState('')
+  const [isOpenAssetE, setIsOpenAssetE] = useState(false)
+  const [searchAssetC, setSearchAssetC] = useState('')
+  const [isOpenAssetC, setIsOpenAssetC] = useState(false)
+  const [form, setForm] = useState<any>({ ...emptyEvent })
+  const [configForm, setConfigForm] = useState<any>({ ...emptyConfig })
+  const [toast, setToast] = useState<string | null>(null)
+  const [configAssetId, setConfigAssetId] = useState<number | null>(null)
+
+  useEffect(() => {
+    api.getAssets({ categoria: assetType }).then(setAssets)
+  }, [assetType])
+
+  const loadData = () => {
+    setLoading(true)
+    Promise.all([
+      api.getPreventiveEvents({ categoria: assetType }),
+      api.getPreventiveBacklog({ categoria: assetType }),
+      api.getPreventiveConfig(),
+    ]).then(([evt, bck, cfg]) => {
+      setEvents(evt); setBacklog(bck); setConfigs(cfg); setLoading(false)
     })
+  }
+  useEffect(() => { loadData() }, [assetType])
 
-    useEffect(() => {
-        api.getAssets({ categoria: assetType }).then(setAssets)
-        loadAll()
-    }, [assetType])
+  const set = (key: string, v: any) => setForm((f: any) => ({ ...f, [key]: v }))
+  const setC = (key: string, v: any) => setConfigForm((f: any) => ({ ...f, [key]: v }))
 
-    const loadAll = () => {
-        setLoading(true)
-        Promise.all([
-            api.getPreventiveEvents({ categoria: assetType }), 
-            api.getPreventiveBacklog({ categoria: assetType }), 
-            api.getPreventiveConfig()
-        ]).then(([ev, bl, cf]) => { setEvents(ev); setBacklog(bl); setConfigs(cf); setLoading(false) })
+  const assetNames = Object.fromEntries(assets.map((a: any) => [a.id, a.placa_principal || a.codigo_patrimonial]))
+  const filteredAssetsE = assets.filter((a) =>
+    (a.placa_principal || a.codigo_patrimonial)?.toLowerCase().includes(searchAssetE.toLowerCase())
+  )
+  const filteredAssetsC = assets.filter((a) =>
+    (a.placa_principal || a.codigo_patrimonial)?.toLowerCase().includes(searchAssetC.toLowerCase())
+  )
+
+  const openNew = () => {
+    setEditingId(null); setForm({ ...emptyEvent }); setShowForm(true)
+  }
+
+  const openEdit = (e: any) => {
+    setEditingId(e.id); setForm({ ...e, asset_id: e.asset_id || '' }); setShowForm(true)
+  }
+
+  const handleSaveEvent = async () => {
+    try {
+      if (editingId) {
+        await api.updatePreventiveEvent(editingId, form)
+      } else {
+        await api.createPreventiveEvent(form)
+      }
+      setToast(editingId ? 'Evento actualizado' : 'Evento creado')
+      setShowForm(false); setEditingId(null)
+      loadData()
+    } catch (e: any) { setToast(e.message) }
+    setTimeout(() => setToast(null), 2500)
+  }
+
+  const handleDeleteEvent = async (id: number) => {
+    if (!confirm('¿Eliminar este evento?')) return
+    try {
+      await api.deletePreventiveEvent(id)
+      setEvents((prev) => prev.filter((e) => e.id !== id))
+      setToast('Evento eliminado')
+    } catch (e: any) { setToast(e.message) }
+    setTimeout(() => setToast(null), 2500)
+  }
+
+  const handleDeleteConfig = async (id: number) => {
+    if (!confirm('¿Eliminar esta configuración?')) return
+    await api.deletePreventiveConfig(id)
+    setConfigs((prev) => prev.filter((c) => c.id !== id))
+    setToast('Configuración eliminada')
+    setTimeout(() => setToast(null), 2500)
+  }
+
+  const openConfig = (assetId: number) => {
+    const existing = configs.find((c) => c.asset_id === assetId)
+    if (existing) {
+      setConfigForm({ ...existing })
+    } else {
+      setConfigForm({ ...emptyConfig, asset_id: assetId })
     }
+    setConfigAssetId(assetId)
+  }
 
-    const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
+  const handleSaveConfig = async () => {
+    try {
+      const existing = configs.find((c) => c.asset_id === configForm.asset_id)
+      if (existing) {
+        await api.updatePreventiveConfig(existing.id, configForm)
+      } else {
+        await api.createPreventiveConfig(configForm)
+      }
+      setToast('Configuración guardada')
+      setConfigAssetId(null)
+      loadData()
+    } catch (e: any) { setToast(e.message) }
+    setTimeout(() => setToast(null), 2500)
+  }
 
-    const openNewForm = () => {
-        setEditingId(null)
-        setForm({
-            asset_id: '', tipo_preventivo: 'Cambio de aceite y filtros',
-            fecha_mantenimiento: new Date().toISOString().split('T')[0],
-            lectura_al_momento: 0, intervalo: 5000, unidad_control: 'km', costo: '', observaciones: ''
-        })
-        setShowForm(true)
+  const getStatusColor = (s: string) => {
+    switch (s) {
+      case 'Pendiente': return 'text-[var(--color-critical)] bg-[var(--color-critical-bg)]'
+      case 'En Progreso': return 'text-[var(--color-info)] bg-[var(--color-info-bg)]'
+      case 'Completado': return 'text-[var(--color-success)] bg-[var(--color-success-bg)]'
+      default: return 'text-[var(--text-muted)] bg-[var(--bg-tertiary)]'
     }
+  }
 
-    const openEditEvent = (e: any) => {
-        setEditingId(e.id)
-        setForm({
-            asset_id: String(e.asset_id),
-            tipo_preventivo: e.tipo_preventivo || 'Cambio de aceite y filtros',
-            fecha_mantenimiento: e.fecha_mantenimiento || new Date().toISOString().split('T')[0],
-            lectura_al_momento: e.lectura_al_momento || 0,
-            intervalo: e.intervalo || 0,
-            unidad_control: e.unidad_control || 'km',
-            costo: e.costo ?? '',
-            observaciones: e.observaciones || ''
-        })
-        setShowForm(true)
+  const getPrioridadColor = (p: string) => {
+    switch (p) {
+      case 'Crítica': return 'text-[var(--color-error)] bg-[var(--color-error-bg)]'
+      case 'Alta': return 'text-[var(--color-critical)] bg-[var(--color-critical-bg)]'
+      case 'Media': return 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]'
+      case 'Baja': return 'text-[var(--color-success)] bg-[var(--color-success-bg)]'
+      default: return 'text-[var(--text-muted)] bg-[var(--bg-tertiary)]'
     }
+  }
 
-    const handleSave = async () => {
-        if (!form.asset_id) return
-        try {
-            const payload = {
-                ...form, asset_id: Number(form.asset_id),
-                lectura_al_momento: Number(form.lectura_al_momento),
-                intervalo: Number(form.intervalo),
-                costo: form.costo !== '' ? Number(form.costo) : null,
-            }
-            if (editingId) {
-                await api.updatePreventiveEvent(editingId, payload)
-                setToast('Preventivo actualizado')
-            } else {
-                await api.createPreventiveEvent(payload)
-                setToast('Preventivo registrado')
-            }
-            setTimeout(() => setToast(null), 2500)
-            setShowForm(false); setEditingId(null); loadAll()
-        } catch (e: any) { setToast(e.message) }
-    }
-
-    const handleDeleteEvent = async (id: number) => {
-        if (!confirm('¿Estás seguro de que deseas eliminar este registro de mantenimiento preventivo permanentemente?')) return
-        try {
-            await api.deletePreventiveEvent(id)
-            setToast('Registro eliminado'); setTimeout(() => setToast(null), 2500)
-            loadAll()
-        } catch (e: any) { setToast(e.message) }
-    }
-
-    const handleDeleteConfig = async (id: number) => {
-        if (!confirm('¿Estás seguro de que deseas eliminar esta configuración de preventivo permanentemente?')) return
-        try {
-            await api.deletePreventiveConfig(id)
-            setToast('Configuración eliminada'); setTimeout(() => setToast(null), 2500)
-            loadAll()
-        } catch (e: any) { setToast(e.message) }
-    }
-
-    const estadoColors: Record<string, string> = {
-        'Al día': 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20',
-        'Próximo': 'text-amber-400 bg-amber-500/10 border border-amber-500/20',
-        'Crítico': 'text-orange-400 bg-orange-500/10 border border-orange-500/20',
-        'Vencido': 'text-rose-400 bg-rose-500/10 border border-rose-500/20',
-        'Sin dato confiable': 'text-slate-400 bg-slate-500/10 border border-slate-500/20',
-    }
-
-    const progressBarColor = (estado: string) => {
-        if (estado === 'Vencido') return 'bg-rose-500'
-        if (estado === 'Crítico') return 'bg-orange-500'
-        if (estado === 'Próximo') return 'bg-amber-500'
-        return 'bg-emerald-500'
-    }
-
-    const backlogStats = [
-        { name: 'Al día', value: backlog.filter(b => b.estado_preventivo === 'Al día').length, color: '#10B981' },
-        { name: 'Próximo', value: backlog.filter(b => b.estado_preventivo === 'Próximo').length, color: '#F59E0B' },
-        { name: 'Crítico', value: backlog.filter(b => b.estado_preventivo === 'Crítico').length, color: '#F97316' },
-        { name: 'Vencido', value: backlog.filter(b => b.estado_preventivo === 'Vencido').length, color: '#EF4444' }
-    ].filter(s => s.value > 0);
-
+  if (loading) {
     return (
-        <div className="animate-fade-in-up space-y-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-6 rounded-[2rem] mb-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-sky-900/50 group-hover:scale-110 transition-transform">
-                        <span className="material-symbols-outlined text-white text-3xl">event_repeat</span>
-                    </div>
-                    <div>
-                        <h2 className="text-3xl lg:text-4xl font-black text-white uppercase tracking-tighter">Gestión de Preventivos</h2>
-                        <p className="text-[10px] font-black text-sky-400 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 bg-sky-400 rounded-full animate-pulse"></span>
-                            Ciclos Maestros & Mantenimiento
-                        </p>
-                    </div>
-                </div>
-                
-                <button onClick={openNewForm}
-                    className="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-8 py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 group">
-                    <span className="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform">add_task</span>
-                    Registrar Mantenimiento
-                </button>
-            </div>
-
-            <div className="flex flex-col lg:flex-row gap-6 mb-8">
-                <div className="flex-1 bg-slate-900/30 p-4 rounded-[2rem] border border-slate-800/60 backdrop-blur-md flex flex-col gap-6">
-                    <div className="flex bg-slate-950/60 p-1.5 rounded-2xl border border-slate-800/50 self-start">
-                        {(['backlog', 'registros', 'config'] as const).map(t => (
-                            <button key={t} onClick={() => setTab(t)}
-                                className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 ${tab === t ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/40' : 'text-slate-500 hover:text-sky-400 hover:bg-slate-800'}`}>
-                                {t === 'backlog' ? 'Panel de Control' : t === 'registros' ? 'Historial Mtto' : 'Estrategia Operativa'}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex-1 flex items-center justify-center text-center p-8">
-                        <div className="max-w-md">
-                            <span className="material-symbols-outlined text-5xl text-sky-500/30 mb-4">analytics</span>
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Visión de Continuidad</h3>
-                            <p className="text-xs text-slate-500 leading-relaxed font-bold uppercase tracking-widest">Analizando {backlog.length} activos en tiempo real para optimizar la vida útil del equipamiento.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div className="lg:w-[400px] bg-slate-900/40 border border-slate-800/60 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center gap-6 group">
-                    <div className="h-52 w-52 flex-shrink-0 relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie 
-                                    data={backlogStats} 
-                                    innerRadius={70} 
-                                    outerRadius={100} 
-                                    paddingAngle={6} 
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {backlogStats.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} className="focus:outline-none" />
-                                    ))}
-                                </Pie>
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-4xl font-black text-white leading-none tracking-tighter">{backlog.length}</span>
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">
-                                {assetType === 'fleet' ? 'Unidades' : 'Estaciones'}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="w-full">
-                        <div className="grid grid-cols-2 gap-3">
-                            {backlogStats.map((s, i) => (
-                                <div key={i} className="flex items-center gap-3 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }}></div>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-lg font-black text-white tracking-tighter">{s.value}</span>
-                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{s.name}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {showForm && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={() => { setShowForm(false); setEditingId(null); }}>
-                    <div className="bg-slate-900 rounded-[2rem] border border-slate-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl animate-reveal relative" onClick={e => e.stopPropagation()}>
-                        <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                            <span className="material-symbols-outlined text-8xl text-slate-500 select-none">event_repeat</span>
-                        </div>
-
-                        <div className="flex items-center justify-between p-6 border-b border-slate-800/50 bg-slate-800/20">
-                            <h3 className="text-xl font-black text-slate-100 uppercase tracking-widest flex items-center gap-4">
-                                <span className="w-2.5 h-2.5 bg-sky-500 rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]"></span>
-                                {editingId ? 'Editar Mantenimiento Realizado' : 'Declaración de Mantenimiento Realizado'}
-                            </h3>
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); setShowForm(false); setEditingId(null); }} 
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 transition-all border border-slate-700/50"
-                            >
-                                <span className="material-symbols-outlined text-[20px]">close</span>
-                            </button>
-                        </div>
-
-                        <div className="p-8 space-y-8 relative">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="space-y-2 relative">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                                        {assetType === 'fleet' ? 'Unidad' : 'Estación'}
-                                    </label>
-                                    <div className="flex items-center bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 shadow-sm group transition-all focus-within:ring-1 focus-within:ring-sky-500/50 focus-within:border-sky-500/50 cursor-pointer"
-                                        onClick={() => setIsOpenAsset(!isOpenAsset)}>
-                                        <div className="flex-1">
-                                            <div className="text-xs font-black text-slate-200 uppercase truncate">
-                                                {form.asset_id 
-                                                    ? `${assets.find((a: any) => a.id === Number(form.asset_id))?.placa_principal || 'S/P'} — ${assets.find((a: any) => a.id === Number(form.asset_id))?.codigo_patrimonial}`
-                                                    : assetType === 'fleet' ? 'Seleccionar Unidad...' : 'Seleccionar Estación...'}
-                                            </div>
-                                        </div>
-                                        <span className={`material-symbols-outlined text-slate-500 transition-transform duration-300 ${isOpenAsset ? 'rotate-180' : ''}`}>expand_more</span>
-                                    </div>
-
-                                    {isOpenAsset && (
-                                        <>
-                                            <div className="fixed inset-0 z-[110]" onClick={() => setIsOpenAsset(false)}></div>
-                                            <div className="absolute top-full left-0 w-full mt-2 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl z-[120] overflow-hidden animate-reveal">
-                                                <div className="p-3 border-b border-slate-800/50 bg-slate-800/20">
-                                                    <div className="flex items-center bg-slate-950/50 rounded-xl px-3 py-2 border border-slate-700/50">
-                                                        <span className="material-symbols-outlined text-slate-500 text-sm mr-2">search</span>
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Buscar por placa o código..." 
-                                                            value={searchAsset}
-                                                            onChange={e => setSearchAsset(e.target.value)}
-                                                            onClick={e => e.stopPropagation()}
-                                                            className="bg-transparent border-none text-[11px] font-bold text-slate-200 placeholder:text-slate-600 focus:ring-0 p-0 w-full uppercase"
-                                                            autoFocus
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
-                                                    {assets.filter((as: any) => as.categoria === assetType).filter((a: any) => 
-                                                        a.placa_principal?.toLowerCase().includes(searchAsset.toLowerCase()) || 
-                                                        a.codigo_patrimonial?.toLowerCase().includes(searchAsset.toLowerCase())
-                                                    ).length > 0 ? (
-                                                        assets.filter((as: any) => as.categoria === assetType).filter((a: any) => 
-                                                            a.placa_principal?.toLowerCase().includes(searchAsset.toLowerCase()) || 
-                                                            a.codigo_patrimonial?.toLowerCase().includes(searchAsset.toLowerCase())
-                                                        ).map((a: any) => (
-                                                            <div key={a.id} 
-                                                                className={`px-4 py-3 hover:bg-sky-500/10 cursor-pointer transition-colors border-b border-slate-800/30 flex items-center justify-between group ${Number(form.asset_id) === a.id ? 'bg-sky-500/5' : ''}`}
-                                                                onClick={() => { set('asset_id', String(a.id)); setIsOpenAsset(false); setSearchAsset('') }}>
-                                                                <div>
-                                                                    <div className="text-[11px] font-black text-slate-100 uppercase tracking-tight">{a.placa_principal || 'SIN PLACA'}</div>
-                                                                    <div className="text-[9px] font-bold text-slate-500 uppercase">{a.codigo_patrimonial} — {a.tipo_unidad}</div>
-                                                                </div>
-                                                                {Number(form.asset_id) === a.id && <span className="material-symbols-outlined text-sky-500 text-sm">check_circle</span>}
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <div className="p-8 text-center text-slate-500">
-                                                            <span className="material-symbols-outlined block mb-2 opacity-20">search_off</span>
-                                                            <span className="text-[10px] font-bold uppercase">No se hallaron coincidencias</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Servicio</label>
-                                    <select value={form.tipo_preventivo} onChange={e => set('tipo_preventivo', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors appearance-none">
-                                        <option>Cambio de aceite y filtros</option>
-                                        <option>Revisión general</option>
-                                        <option>Afinamiento</option>
-                                        <option>Cambio de frenos</option>
-                                        <option>Engrase general</option>
-                                        <option>Otro</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha de Ejecución</label>
-                                    <input type="date" value={form.fecha_mantenimiento} onChange={e => set('fecha_mantenimiento', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors uppercase" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Metraje al Cierre</label>
-                                    <input type="number" value={form.lectura_al_momento} onChange={e => set('lectura_al_momento', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-sky-400 font-mono outline-none transition-colors" />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Intervalo de Re-entrada</label>
-                                    <input type="number" value={form.intervalo} onChange={e => set('intervalo', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lógica de Control</label>
-                                    <select value={form.unidad_control} onChange={e => set('unidad_control', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors appearance-none">
-                                        <option value="km">Kilometraje (Km)</option>
-                                        <option value="horometro">Horómetro (Hrs)</option>
-                                        <option value="fecha">Temporal (Días)</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Inversión (S/)</label>
-                                    <input type="number" value={form.costo} onChange={e => set('costo', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-sky-400 font-mono outline-none transition-colors" step="0.01" placeholder="0.00" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Observaciones</label>
-                                    <input type="text" value={form.observaciones} onChange={e => set('observaciones', e.target.value)} 
-                                        className="w-full text-xs font-black bg-slate-800/50 border border-slate-700 rounded-xl py-3 px-4 shadow-sm focus:border-sky-500/50 text-slate-200 outline-none transition-colors" placeholder="Detalles del servicio..." />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 p-6 border-t border-slate-800/50 bg-slate-900/50">
-                            <button onClick={() => { setShowForm(false); setEditingId(null); }} 
-                                className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-white px-6 py-3 transition-colors">Cancelar</button>
-                            <button onClick={handleSave} 
-                                className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-black uppercase tracking-widest px-8 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/20 flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[18px]">save_as</span> Confirmar Registro
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="table-premium-container !p-0">
-                <div className="overflow-x-auto no-scrollbar">
-                    {tab === 'backlog' ? (
-                        <table className="table-premium">
-                            <thead>
-                                <tr>
-                                    <th>Activo Crítico</th>
-                                    <th>Tipo de Unidad</th>
-                                    <th className="text-center">Estado de Alerta</th>
-                                    <th>Uso del Ciclo</th>
-                                    <th>Lectura Actual</th>
-                                    <th>Siguiente Hito</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {loading ? (
-                                    <tr><td colSpan={6} className="p-24 text-center text-xs font-black text-slate-500 uppercase tracking-[0.4em]">Analizando ciclos de desgaste...</td></tr>
-                                ) : backlog.length === 0 ? (
-                                    <tr><td colSpan={6} className="p-24 text-center text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Sin datos de backlog preventivo</td></tr>
-                                ) : backlog.map((b: any) => (
-                                    <tr key={b.asset_id} className="group">
-                                        <td>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-slate-800 rounded-2xl flex items-center justify-center text-slate-500 group-hover:bg-sky-600 group-hover:text-white group-hover:shadow-sm transition-all">
-                                                    <span className="material-symbols-outlined text-[20px]">settings_backup_restore</span>
-                                                </div>
-                                                <div>
-                                                    <p className="text-lg font-black text-slate-100 uppercase tracking-tight">
-                                                        {(() => { const a = assets.find((x: any) => x.id === b.asset_id); return a?.placa_principal || b.asset_codigo })()}
-                                                    </p>
-                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">{b.asset_codigo}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="text-sm font-black text-slate-300 uppercase italic">{b.asset_tipo}</td>
-                                        <td className="text-center">
-                                            <span className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg ${estadoColors[b.estado_preventivo] || 'text-slate-400 bg-slate-800/50'}`}>
-                                                {b.estado_preventivo}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div className="flex flex-col gap-2 min-w-[120px]">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-[9px] font-black text-slate-500 uppercase">{b.progreso}% consumido</span>
-                                                </div>
-                                                <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
-                                                    <div className={`h-full ${progressBarColor(b.estado_preventivo)} rounded-full shadow-sm transition-all duration-1000`} style={{ width: `${Math.min(b.progreso, 100)}%` }}></div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-8 text-xl font-black text-white font-mono flex items-center gap-2">
-                                            {b.lectura_actual.toLocaleString()}
-                                            <span className="text-[10px] text-slate-500 uppercase font-black">{b.unidad_control === 'horometro' ? 'Hrs' : 'Km'}</span>
-                                        </td>
-                                        <td>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-sky-400 font-mono">{b.siguiente_objetivo != null ? `${b.siguiente_objetivo} ${b.unidad_control === 'horometro' ? 'h' : 'km'}` : '---'}</span>
-                                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Límite de servicio</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : tab === 'registros' ? (
-                        <table className="table-premium">
-                            <thead>
-                                <tr>
-                                    <th>Fecha Servicio</th>
-                                    <th>Unidad</th>
-                                    <th>Tipo de Preventivo</th>
-                                    <th>Lectura Cierre</th>
-                                    <th>Próximo Hito</th>
-                                    <th>Inversión</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {events.map((e: any) => (
-                                    <tr key={e.id} className="group">
-                                        <td className="text-xs font-black text-slate-100 font-mono">{e.fecha_mantenimiento}</td>
-                                        <td>
-                                            <p className="text-sm font-black text-slate-100 uppercase">{(() => { const a = assets.find((x: any) => x.id === e.asset_id); return a?.placa_principal || e.asset_codigo })()}</p>
-                                            <p className="text-[9px] font-bold text-slate-500 uppercase">{e.asset_codigo}</p>
-                                        </td>
-                                        <td className="text-xs font-black text-slate-400 uppercase">{e.tipo_preventivo}</td>
-                                        <td className="p-6 text-xs font-black text-slate-100 font-mono">{e.lectura_al_momento}</td>
-                                        <td className="p-6 text-xs font-black text-sky-400 font-mono">{e.siguiente_objetivo} {e.unidad_control}</td>
-                                        <td className="p-6 text-xs font-black text-slate-100 font-mono">{e.costo != null ? `S/ ${Number(e.costo).toFixed(2)}` : 'S/ 0.00'}</td>
-                                        <td>
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={() => openEditEvent(e)} 
-                                                    className="w-10 h-10 bg-transparent border border-transparent rounded-2xl flex items-center justify-center text-slate-500 hover:text-sky-400 hover:bg-slate-800 hover:border-slate-700 hover:shadow-xl transition-all">
-                                                    <span className="material-symbols-outlined text-[18px]">manage_search</span>
-                                                </button>
-                                                <button onClick={() => handleDeleteEvent(e.id)} 
-                                                    className="w-10 h-10 bg-transparent border border-transparent rounded-2xl flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 hover:shadow-md transition-all duration-300">
-                                                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <table className="table-premium">
-                            <thead>
-                                <tr>
-                                    <th>Segmento de Flota</th>
-                                    <th>Servicio Estandarizado</th>
-                                    <th className="text-center">Intervalo Maestro</th>
-                                    <th className="text-center">Alerta Early</th>
-                                    <th className="text-center">Alerta Critical</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {configs.map((c: any) => (
-                                    <tr key={c.id} className="group">
-                                        <td className="p-6 text-sm font-black text-slate-100 uppercase">{c.tipo_unidad || 'Global'}</td>
-                                        <td className="p-6 text-xs font-black text-slate-500 uppercase">{c.tipo_preventivo}</td>
-                                        <td className="p-6 text-center">
-                                            <span className="px-4 py-1.5 bg-sky-500/10 text-sky-400 rounded-xl text-[10px] font-black font-mono border border-sky-500/20">
-                                                {c.intervalo} {c.unidad_control}
-                                            </span>
-                                        </td>
-                                        <td className="p-6 text-center text-xs font-black text-amber-400">{c.criterio_alerta_temprana}%</td>
-                                        <td className="p-6 text-center text-xs font-black text-orange-400">{c.criterio_alerta_critica}%</td>
-                                        <td>
-                                            <button onClick={() => handleDeleteConfig(c.id)} 
-                                                className="w-10 h-10 bg-transparent border border-transparent rounded-2xl flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 hover:shadow-md transition-all duration-300">
-                                                <span className="material-symbols-outlined text-[18px]">delete</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-            </div>
-
-            {toast && (
-                <div className="fixed bottom-20 lg:bottom-12 right-4 lg:right-12 z-[100] bg-slate-900/90 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-fade-in-up border-l-4 border-emerald-500">
-                    <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500">
-                        <span className="material-symbols-outlined text-sm">check_circle</span>
-                    </div>
-                    <span className="text-[11px] font-black uppercase tracking-[0.2em]">{toast}</span>
-                </div>
-            )}
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      </div>
     )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-lg font-bold text-[var(--text-primary)]">Gestión de Preventivos</h1>
+        <p className="text-sm text-[var(--text-secondary)]">Planificación y seguimiento de mantenimiento preventivo</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 rounded-xl bg-[var(--bg-tertiary)] w-fit">
+        {(['eventos', 'backlog', 'config'] as Tab[]).map((t) => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${
+              tab === t ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+            }`}>
+            {t === 'eventos' ? 'Eventos' : t === 'backlog' ? 'Backlog' : 'Configuración'}
+          </button>
+        ))}
+      </div>
+
+      {/* Eventos Tab */}
+      {tab === 'eventos' && (
+        <>
+          <div className="flex justify-end">
+            <button onClick={openNew} className="px-4 py-1.5 bg-[var(--accent)] text-[var(--text-inverse)] text-sm font-medium rounded-lg hover:opacity-90">
+              Nuevo Evento
+            </button>
+          </div>
+          {events.length === 0 ? (
+            <p className="text-center text-[var(--text-muted)] py-12">No hay eventos registrados</p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[var(--bg-tertiary)] text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                    <th className="text-left p-3">Fecha</th>
+                    <th className="text-left p-3">Activo</th>
+                    <th className="text-left p-3">Tipo</th>
+                    <th className="text-left p-3">Estado</th>
+                    <th className="text-left p-3">Duración</th>
+                    <th className="text-left p-3">Costo</th>
+                    <th className="text-left p-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {events.map((ev) => (
+                    <tr key={ev.id} className="hover:bg-[var(--bg-hover)] transition-colors">
+                      <td className="p-3 text-[var(--text-primary)]">{formatDateDMY(ev.fecha)}</td>
+                      <td className="p-3 text-[var(--text-primary)] font-medium">{assetNames[ev.asset_id] || ev.asset_codigo || '—'}</td>
+                      <td className="p-3 text-[var(--text-secondary)]">{ev.tipo_mtto}</td>
+                      <td className="p-3">
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${getStatusColor(ev.estado)}`}>{ev.estado}</span>
+                      </td>
+                      <td className="p-3 text-[var(--text-secondary)]">{ev.duracion_horas ? `${ev.duracion_horas}h` : '—'}</td>
+                      <td className="p-3 text-[var(--text-secondary)]">{ev.costo_real ? `S/${Number(ev.costo_real).toFixed(2)}` : '—'}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => openEdit(ev)} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"><span className="material-symbols-outlined text-sm">edit</span></button>
+                          <button onClick={() => handleDeleteEvent(ev.id)} className="p-1.5 rounded hover:bg-[var(--color-error-bg)] text-[var(--text-muted)] hover:text-[var(--color-error)]"><span className="material-symbols-outlined text-sm">delete</span></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Backlog Tab */}
+      {tab === 'backlog' && (
+        <>
+          {backlog.length === 0 ? (
+            <p className="text-center text-[var(--text-muted)] py-12">No hay tareas pendientes</p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[var(--bg-tertiary)] text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                    <th className="text-left p-3">Activo</th>
+                    <th className="text-left p-3">Preventivo</th>
+                    <th className="text-left p-3">Control</th>
+                    <th className="text-left p-3">Último</th>
+                    <th className="text-left p-3">Actual</th>
+                    <th className="text-left p-3">Vence</th>
+                    <th className="text-left p-3">Atraso</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {backlog.map((b: any) => (
+                    <tr key={b.config_id} className="hover:bg-[var(--bg-hover)] transition-colors">
+                      <td className="p-3 text-[var(--text-primary)] font-medium">{b.asset_placa || b.asset_codigo || '—'}</td>
+                      <td className="p-3 text-[var(--text-secondary)]">{b.tipo_preventivo}</td>
+                      <td className="p-3 text-[var(--text-secondary)]">{b.unidad_control === 'fecha' ? 'Fecha' : b.unidad_control === 'km' ? 'Kilometraje' : b.unidad_control === 'horometro' ? 'Horómetro' : b.unidad_control}</td>
+                      <td className="p-3 text-[var(--text-secondary)]">{b.ultima_lectura > 0 ? `${b.ultima_lectura} ${b.unidad_control}` : '—'}</td>
+                      <td className="p-3 text-[var(--text-secondary)]">{b.unidad_control === 'km' ? b.km_actual : b.horometro_actual ?? '—'}</td>
+                      <td className="p-3 text-[var(--text-secondary)]">{formatDateDMY(b.fecha_vencimiento)}</td>
+                      <td className="p-3">
+                        <span className={`text-xs font-semibold ${b.dias_vencidos > 30 ? 'text-[var(--color-error)]' : b.dias_vencidos > 7 ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
+                          {b.dias_vencidos != null ? `${b.dias_vencidos}d` : '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Config Tab */}
+      {tab === 'config' && (
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-secondary)]">Configurar frecuencias de mantenimiento por activo</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {assets.map((asset) => {
+              const cfg = configs.find((c) => c.asset_id === asset.id)
+              return (
+                <button key={asset.id} onClick={() => openConfig(asset.id)}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    configAssetId === asset.id
+                      ? 'border-[var(--accent)] bg-[var(--accent-bg)]'
+                      : 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]'
+                  }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{asset.placa_principal || asset.codigo_patrimonial}</span>
+                    {cfg && <span className="text-[10px] text-[var(--color-success)] bg-[var(--color-success-bg)] px-2 py-0.5 rounded font-semibold">Configurado</span>}
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)]">{asset.tipo_unidad}</p>
+                  {cfg && (
+                    <div className="mt-2 text-[10px] text-[var(--text-muted)]">
+                      {cfg.frecuencia_km > 0 && <span>Cada {cfg.frecuencia_km} km </span>}
+                      {cfg.frecuencia_horas > 0 && <span>Cada {cfg.frecuencia_horas} h </span>}
+                      {cfg.frecuencia_dias > 0 && <span>Cada {cfg.frecuencia_dias} días</span>}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Event Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 bg-[var(--bg-overlay)] overflow-y-auto" onClick={() => setShowForm(false)}>
+          <div className="w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-lg mb-12" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">{editingId ? 'Editar Evento' : 'Nuevo Evento'}</h3>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)]"><span className="material-symbols-outlined">close</span></button>
+            </div>
+            <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Fecha</label>
+                  <input type="date" name="fecha" value={form.fecha} onChange={(e) => set('fecha', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div className="relative">
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Activo</label>
+                  <input type="text" name="searchAssetE" value={searchAssetE} onChange={(e) => { setSearchAssetE(e.target.value); setIsOpenAssetE(true) }}
+                    onFocus={() => setIsOpenAssetE(true)}
+                    placeholder={assetNames[form.asset_id] || 'Buscar...'}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                  {isOpenAssetE && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-lg max-h-40 overflow-y-auto z-10">
+                      {filteredAssetsE.map((a) => (
+                        <button key={a.id} type="button" onClick={() => { set('asset_id', a.id); setSearchAssetE(''); setIsOpenAssetE(false) }}
+                          className="w-full text-left px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+                          {a.placa_principal || a.codigo_patrimonial} — {a.tipo_unidad}
+                        </button>
+                      ))}
+                      {filteredAssetsE.length === 0 && <p className="px-3 py-2 text-sm text-[var(--text-muted)]">Sin resultados</p>}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Tipo</label>
+                  <select value={form.tipo_mtto} onChange={(e) => set('tipo_mtto', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+                    <option value="Preventivo">Preventivo</option>
+                    <option value="Predictivo">Predictivo</option>
+                    <option value="Correctivo">Correctivo</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Estado</label>
+                  <select value={form.estado} onChange={(e) => set('estado', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En Progreso">En Progreso</option>
+                    <option value="Completado">Completado</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Hora Inicio</label>
+                  <input type="time" name="hora_inicio" value={form.hora_inicio} onChange={(e) => set('hora_inicio', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Hora Fin</label>
+                  <input type="time" name="hora_fin" value={form.hora_fin} onChange={(e) => set('hora_fin', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Costo</label>
+                  <input type="number" step="0.01" name="costo_real" value={form.costo_real} onChange={(e) => set('costo_real', e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Duración (h)</label>
+                  <input type="number" step="0.1" name="duracion_horas" value={form.duracion_horas} onChange={(e) => set('duracion_horas', Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Descripción</label>
+                <textarea value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Notas</label>
+                <textarea value={form.notas} onChange={(e) => set('notas', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-5 border-t border-[var(--border)]">
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Cancelar</button>
+              <button onClick={handleSaveEvent} className="px-4 py-2 bg-[var(--accent)] text-[var(--text-inverse)] text-sm font-medium rounded-lg hover:opacity-90">
+                {editingId ? 'Actualizar' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Config Form Modal */}
+      {configAssetId !== null && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 bg-[var(--bg-overlay)] overflow-y-auto" onClick={() => setConfigAssetId(null)}>
+          <div className="w-full max-w-lg bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-lg mb-12" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                Configurar — {assetNames[configForm.asset_id] || 'Activo'}
+              </h3>
+              <button onClick={() => setConfigAssetId(null)} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)]"><span className="material-symbols-outlined">close</span></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Frec. KM</label>
+                  <input type="number" name="frecuencia_km" value={configForm.frecuencia_km} onChange={(e) => setC('frecuencia_km', Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Frec. Horas</label>
+                  <input type="number" name="frecuencia_horas" value={configForm.frecuencia_horas} onChange={(e) => setC('frecuencia_horas', Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Frec. Días</label>
+                  <input type="number" name="frecuencia_dias" value={configForm.frecuencia_dias} onChange={(e) => setC('frecuencia_dias', Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Odómetro Base</label>
+                  <input type="number" name="odometro_base" value={configForm.odometro_base} onChange={(e) => setC('odometro_base', Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[var(--text-secondary)]">Horómetro Base</label>
+                  <input type="number" name="horometro_base" value={configForm.horometro_base} onChange={(e) => setC('horometro_base', Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Tipo Preventivo</label>
+                <select value={configForm.tipo_preventivo} onChange={(e) => setC('tipo_preventivo', e.target.value)}
+                  className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20">
+                  <option value="Mantenimiento Preventivo">Mantenimiento Preventivo</option>
+                  <option value="Mantenimiento Predictivo">Mantenimiento Predictivo</option>
+                  <option value="Inspección">Inspección</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Actividades</label>
+                <textarea value={configForm.actividades} onChange={(e) => setC('actividades', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--text-secondary)]">Materiales</label>
+                <textarea value={configForm.materiales} onChange={(e) => setC('materiales', e.target.value)} rows={2}
+                  className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-5 border-t border-[var(--border)]">
+              <button onClick={() => setConfigAssetId(null)} className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Cancelar</button>
+              <button onClick={handleSaveConfig} className="px-4 py-2 bg-[var(--accent)] text-[var(--text-inverse)] text-sm font-medium rounded-lg hover:opacity-90">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-lg text-sm text-[var(--text-primary)] animate-in">
+          {toast}
+        </div>
+      )}
+    </div>
+  )
 }

@@ -3,77 +3,79 @@ import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 
 export default function ForgotPassword() {
-    const [identifier, setIdentifier] = useState('')
-    const [loading, setLoading] = useState(false)
-    const [message, setMessage] = useState('')
-    const [error, setError] = useState('')
-    const [sent, setSent] = useState(false)
+  const [identifier, setIdentifier] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
-        setError('')
-        setMessage('')
-
-        try {
-            const data = await api.forgotPassword(identifier)
-            setMessage(data.message)
-            setSent(true)
-        } catch (err: any) {
-            setError(err.message || 'Error al procesar la solicitud')
-        } finally {
-            setLoading(false)
-        }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      await api.forgotPassword(identifier)
+      setSent(true)
+    } catch (err: any) {
+      setError(err.message || 'Error al enviar solicitud')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  if (sent) {
     return (
-        <div className="min-h-screen bg-[#030712] flex items-center justify-center p-4 relative overflow-hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px]"></div>
-
-            <div className="w-full max-w-[450px] animate-reveal">
-                <div className="text-center mb-10">
-                    <Link to="/login" className="inline-flex items-center gap-2 mb-6 group">
-                        <span className="material-symbols-outlined text-cyan-400">arrow_back</span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest group-hover:text-cyan-400 transition-colors">Volver al Login</span>
-                    </Link>
-                    <h1 className="text-4xl font-black text-white tracking-tight mb-2">RECUPERAR ACCESO</h1>
-                    <p className="text-slate-400 text-sm font-medium uppercase tracking-widest">Recibe un enlace para restablecer tu contraseña</p>
-                </div>
-
-                <div className="glass-morphism rounded-3xl p-8 shadow-2xl relative">
-                    {error && (
-                        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-tight text-center">{error}</div>
-                    )}
-                    {message && (
-                        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-tight text-center">{message}</div>
-                    )}
-
-                    {!sent ? (
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Usuario o DNI</label>
-                                <input
-                                    type="text" required
-                                    className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
-                                    placeholder="Ingresa tu usuario o DNI registrado"
-                                    value={identifier}
-                                    onChange={e => setIdentifier(e.target.value)}
-                                />
-                            </div>
-                            <button disabled={loading} className="w-full btn-premium btn-premium-cyan mt-4 disabled:opacity-50">
-                                {loading ? 'ENVIANDO...' : 'ENVIAR ENLACE'}
-                            </button>
-                        </form>
-                    ) : (
-                        <div className="text-center py-4">
-                            <span className="material-symbols-outlined text-5xl text-emerald-400 mb-4 block">mark_email_unread</span>
-                            <p className="text-slate-300 text-sm leading-relaxed">
-                                Revisa tu correo electrónico. Si la cuenta existe, recibirás un enlace para restablecer tu contraseña.
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6">
+        <div className="w-full max-w-sm text-center">
+          <div className="w-12 h-12 rounded-full bg-[var(--color-success-bg)] flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-2xl text-[var(--color-success)]">check</span>
+          </div>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Correo Enviado</h1>
+          <p className="text-sm text-[var(--text-secondary)] mb-6">
+            Si el usuario existe, recibirás un enlace para restablecer tu contraseña.
+          </p>
+          <Link to="/login" className="text-sm text-[var(--accent)] hover:underline">
+            Volver al inicio de sesión
+          </Link>
         </div>
+      </div>
     )
+  }
+
+  return (
+    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <Link to="/login" className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mb-6">
+            <span className="material-symbols-outlined">arrow_back</span>
+            Volver
+          </Link>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Recuperar Contraseña</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Ingresa tu usuario o email</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-[var(--color-error-bg)] border border-[var(--color-error-border)] text-sm text-[var(--color-error)]">{error}</div>
+          )}
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Usuario o Email</label>
+            <input
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              className="w-full px-4 py-2.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] transition-all"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-[var(--accent)] text-[var(--text-inverse)] text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
+          >
+            {loading ? 'Enviando...' : 'Enviar Enlace'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
 }

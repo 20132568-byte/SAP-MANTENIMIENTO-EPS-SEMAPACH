@@ -20,7 +20,21 @@ failuresRouter.get('/', async (req, res) => {
     }
 })
 
-failuresRouter.post('/', validateFailure, async (req, res) => {
+function sanitizeFailureBody(req: any, res: any, next: any) {
+    const numericKeys = [
+        'asset_id', 'operador_id', 'costo_reparacion', 'duracion_horas'
+    ]
+    for (const key of numericKeys) {
+        if (req.body[key] === '' || req.body[key] === undefined || req.body[key] === 'null') {
+            req.body[key] = null
+        } else if (req.body[key] !== null) {
+            req.body[key] = Number(req.body[key])
+        }
+    }
+    next()
+}
+
+failuresRouter.post('/', sanitizeFailureBody, validateFailure, async (req, res) => {
     try {
         const created = await createFailure(req.body)
         res.status(201).json(created)
@@ -29,7 +43,7 @@ failuresRouter.post('/', validateFailure, async (req, res) => {
     }
 })
 
-failuresRouter.put('/:id', async (req, res) => {
+failuresRouter.put('/:id', sanitizeFailureBody, async (req, res) => {
     try {
         await updateFailure(Number(req.params.id), req.body)
         res.json({ ok: true })

@@ -1,202 +1,162 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../hooks/useAuth'
 
-const AuthPage: React.FC = () => {
-    const navigate = useNavigate()
-    const location = useLocation()
-    const isLogin = location.pathname === '/login'
-    const { login } = useAuth()
+export default function AuthPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const isLogin = location.pathname === '/login'
+  const { login } = useAuth()
 
-    const [formData, setFormData] = useState({
-        username: '',
-        dni: '',
-        email: '',
-        identifier: '',
-        password: '',
-        role: 'operario'
-    })
-    const [loading, setLoading] = useState(false)
-    const [message, setMessage] = useState('')
-    const [error, setError] = useState('')
+  const [form, setForm] = useState({ username: '', identifier: '', password: '', dni: '', email: '', role: 'operario' })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
-        setError('')
-        setMessage('')
-
-        try {
-            if (isLogin) {
-                const data = await api.login({ identifier: formData.identifier, password: formData.password })
-                login(data.token, data.user)
-                navigate('/home')
-            } else {
-                const data = await api.register({ username: formData.username, dni: formData.dni, email: formData.email, password: formData.password })
-                setMessage(data.message)
-                setFormData({ username: '', dni: '', email: '', identifier: '', password: '', role: 'operario' })
-            }
-        } catch (err: any) {
-            console.error('Auth Error:', err)
-            setError(err.message || 'Error de conexión con el servidor')
-        } finally {
-            setLoading(false)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setMessage('')
+    try {
+      if (isLogin) {
+        const data = await api.login({ identifier: form.identifier, password: form.password })
+        login(data.token, data.user)
+        navigate('/home')
+      } else {
+        if (form.dni.length !== 8) {
+          throw new Error('El DNI debe tener exactamente 8 dígitos.')
         }
+        const data = await api.register({ username: form.username, dni: form.dni, email: form.email, password: form.password })
+        setMessage(data.message || 'Registro exitoso. Espera la aprobación.')
+        setForm({ username: '', identifier: '', password: '', dni: '', email: '', role: 'operario' })
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error de conexión')
+    } finally {
+      setLoading(false)
     }
+  }
 
-    return (
-        <div className="min-h-screen bg-[#030712] flex items-center justify-center p-4 relative overflow-hidden">
-
-            {/* Fondo Decorativo */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px]"></div>
-
-            <div className="w-full max-w-[450px] animate-reveal">
-                <div className="text-center mb-10">
-                    <Link to="/" className="inline-flex items-center gap-2 mb-6 group">
-                        <span className="material-symbols-outlined text-cyan-400">arrow_back</span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest group-hover:text-cyan-400 transition-colors">Volver al Inicio</span>
-                    </Link>
-                    <h1 className="text-4xl font-black text-white tracking-tight mb-2">
-                        {isLogin ? 'BIENVENIDO' : 'ÚNETE AL EQUIPO'}
-                    </h1>
-                    <p className="text-slate-400 text-sm font-medium uppercase tracking-widest">
-                        {isLogin ? 'Ingresa tus credenciales' : 'Registra tu nueva cuenta'}
-                    </p>
-                </div>
-
-                <div className="glass-morphism rounded-3xl p-8 shadow-2xl relative">
-                    {/* Indicador de Estado */}
-                    {error && (
-                        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-tight text-center">
-                            {error}
-                        </div>
-                    )}
-                    {message && (
-                        <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-tight text-center">
-                            {message}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {isLogin ? (
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Usuario o DNI</label>
-                                <input
-                                    type="text" required
-                                    className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
-                                    placeholder="Ingresa tu usuario o DNI"
-                                    value={formData.identifier}
-                                    onChange={e => setFormData({ ...formData, identifier: e.target.value })}
-                                />
-                            </div>
-                        ) : (
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre de Usuario</label>
-                                <input
-                                    type="text" required
-                                    className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
-                                    placeholder="ej. dmax_19"
-                                    value={formData.username}
-                                    onChange={e => setFormData({ ...formData, username: e.target.value })}
-                                />
-                            </div>
-                        )}
-
-                        {!isLogin && (
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">DNI</label>
-                                <input
-                                    type="text" required
-                                    maxLength={12}
-                                    className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
-                                    placeholder="Ingrese su número de DNI"
-                                    value={formData.dni}
-                                    onChange={e => setFormData({ ...formData, dni: e.target.value })}
-                                />
-                            </div>
-                        )}
-
-                        {!isLogin && (
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Correo Electrónico</label>
-                                <input
-                                    type="email" required
-                                    className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
-                                    placeholder="ej. correo@ejemplo.com"
-                                    value={formData.email}
-                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                />
-                            </div>
-                        )}
-
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between ml-1">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contraseña</label>
-                                {isLogin && (
-                                    <Link to="/forgot-password" className="text-[9px] font-bold text-cyan-500 hover:text-cyan-400 uppercase tracking-widest transition-colors">
-                                        ¿Olvidaste tu contraseña?
-                                    </Link>
-                                )}
-                            </div>
-                            <input
-                                type="password" required
-                                className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none"
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={e => setFormData({ ...formData, password: e.target.value })}
-                            />
-                        </div>
-
-                        {!isLogin && (
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Puesto / Rol</label>
-                                <select
-                                    className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500/50 rounded-xl px-4 py-3 text-white transition-all outline-none appearance-none"
-                                    value={formData.role}
-                                    onChange={e => setFormData({ ...formData, role: e.target.value })}
-                                >
-                                    <option value="operario">Operario de Mantenimiento</option>
-                                    <option value="jefatura">Jefatura de Operaciones</option>
-                                    <option value="gerencia">Gerencia General / Admin</option>
-                                </select>
-                            </div>
-                        )}
-
-                        <button
-                            disabled={loading}
-                            className="w-full btn-premium btn-premium-cyan mt-4 disabled:opacity-50"
-                        >
-                            {loading ? 'PROCESANDO...' : isLogin ? 'INICIAR SESIÓN' : 'REGISTRARME'}
-                        </button>
-                    </form>
-
-                    <div className="mt-8 text-center space-y-3">
-                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
-                            {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
-                            <Link
-                                to={isLogin ? '/register' : '/login'}
-                                className="ml-2 text-cyan-400 hover:text-cyan-300 transition-colors"
-                            >
-                                {isLogin ? 'Solicita Registro' : 'Inicia Sesión'}
-                            </Link>
-                        </p>
-                        {isLogin && (
-                            <p>
-                                <Link to="/forgot-password" className="text-slate-500 hover:text-cyan-400 text-[10px] font-bold uppercase tracking-widest transition-colors">
-                                    ¿Olvidaste tu contraseña?
-                                </Link>
-                            </p>
-                        )}
-                    </div>
-                </div>
-
-                <div className="mt-12 text-center opacity-30">
-                    <p className="text-[8px] font-black text-white uppercase tracking-[0.5em]">EPS SEMAPACH - Seguridad Nivel 4</p>
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mb-6">
+            <span className="material-symbols-outlined">arrow_back</span>
+            Volver
+          </Link>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+            {isLogin ? 'Iniciar Sesión' : 'Registrarse'}
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
+            {isLogin ? 'Ingresa tus credenciales' : 'Solicita tu cuenta de acceso'}
+          </p>
         </div>
-    )
-}
 
-export default AuthPage
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-[var(--color-error-bg)] border border-[var(--color-error-border)] text-sm text-[var(--color-error)]">
+              {error}
+            </div>
+          )}
+          {message && (
+            <div className="p-3 rounded-lg bg-[var(--color-success-bg)] border border-[var(--color-success-border)] text-sm text-[var(--color-success)]">
+              {message}
+            </div>
+          )}
+
+          {isLogin ? (
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Usuario o Email</label>
+              <input
+                type="text" name="identifier"
+                value={form.identifier}
+                onChange={(e) => setForm({ ...form, identifier: e.target.value })}
+                className="w-full px-4 py-2.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] transition-all"
+                placeholder="usuario@email.com"
+                required
+              />
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Usuario</label>
+                <input
+                  type="text" name="username"
+                  value={form.username}
+                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">DNI</label>
+                <input
+                  type="text" name="dni"
+                  value={form.dni}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 8)
+                    setForm({ ...form, dni: val })
+                  }}
+                  className="w-full px-4 py-2.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] transition-all"
+                  placeholder="DNI de 8 dígitos"
+                  maxLength={8}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Email</label>
+                <input
+                  type="email" name="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] transition-all"
+                  required
+                />
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Contraseña</label>
+            <input
+              type="password" name="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full px-4 py-2.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] transition-all"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-[var(--accent)] text-[var(--text-inverse)] text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
+          >
+            {loading ? 'Procesando...' : isLogin ? 'Ingresar' : 'Solicitar Registro'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center text-sm">
+          {isLogin ? (
+            <>
+              <Link to="/forgot-password" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                ¿Olvidaste tu contraseña?
+              </Link>
+              <span className="mx-3 text-[var(--text-muted)]">·</span>
+              <Link to="/register" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                Registrarse
+              </Link>
+            </>
+          ) : (
+            <Link to="/login" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+              ¿Ya tienes cuenta? Inicia sesión
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -20,9 +20,17 @@ import { stationsRouter } from './routes/stations.js'
 import { authRouter } from './routes/auth.js'
 import { iaRouter } from './routes/ia.js'
 import { produccionRouter } from './routes/produccion.js'
+import { inventoryRouter } from './routes/inventory.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+process.on('unhandledRejection', (reason) => {
+    console.error('[SERVER] Unhandled Rejection:', reason)
+})
+process.on('uncaughtException', (err) => {
+    console.error('[SERVER] Uncaught Exception:', err)
+})
+
 const PORT = Number(process.env.PORT) || 3001
 
 const allowedOrigins = process.env.CORS_ORIGIN
@@ -73,9 +81,40 @@ async function main() {
     app.use('/api/stations', stationsRouter)
     app.use('/api/ia', iaRouter)
     app.use('/api/produccion', produccionRouter)
+    app.use('/api/inventory', inventoryRouter)
 
     app.get('/api/health', (_req, res) => {
         res.json({ status: 'ok', port: PORT })
+    })
+
+    // Public summary for landing page (no auth required)
+    app.get('/api/public/summary', async (_req, res) => {
+        try {
+            const { getDb } = await import('./database.js')
+            const pool = getDb()
+            const [assets, stations, failures, users, kpi] = await Promise.all([
+                pool.query('SELECT COUNT(*) as count FROM assets'),
+                pool.query('SELECT COUNT(*) as count FROM water_stations'),
+                pool.query('SELECT COUNT(*) as count FROM failures'),
+                pool.query('SELECT COUNT(*) as count FROM users WHERE status = \'approved\''),
+                pool.query(`SELECT COUNT(*) as total_fallas, COALESCE(AVG(disponibilidad_global), 0) as disponibilidad FROM (
+                    SELECT COUNT(*) as total_fallas, NULL as disponibilidad_global FROM failures
+                ) sub`).catch(() => ({ rows: [{ total_fallas: 0, disponibilidad: 0 }] })),
+            ])
+            res.json({
+                assets: parseInt(assets.rows[0]?.count) || 0,
+                stations: parseInt(stations.rows[0]?.count) || 0,
+                failures: parseInt(failures.rows[0]?.count) || 0,
+                users: parseInt(users.rows[0]?.count) || 0,
+            })
+        } catch (e: any) {
+            res.json({ assets: 0, stations: 0, failures: 0, users: 0 })
+        }
+    })
+
+    // 404 rápido para rutas API no encontradas
+    app.use('/api', (_req, res) => {
+        res.status(404).json({ error: 'Endpoint no encontrado' })
     })
 
     // Servir archivos estáticos del cliente en producción
@@ -95,8 +134,12 @@ async function main() {
 
         // Inicializar BD en segundo plano o después de escuchar
         setTimeout(async () => {
-            await initDb()
-            await runSeeds()
+            try {
+                await initDb()
+                await runSeeds()
+            } catch (e: any) {
+                console.error('[SEED] Error (no crítico):', e.message)
+            }
         }, 0)
     })
 }

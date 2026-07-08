@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import {
-    listPreventiveEvents, createPreventiveEvent, updatePreventiveEvent,
+    listPreventiveEvents, createPreventiveEvent, updatePreventiveEvent, deletePreventiveEvent,
     getPreventiveConfig, createPreventiveConfig, updatePreventiveConfig,
     deletePreventiveConfig, getPreventiveBacklog,
 } from '../services/preventiveService.js'
@@ -27,6 +27,15 @@ preventiveRouter.post('/events', async (req, res) => {
 preventiveRouter.put('/events/:id', async (req, res) => {
     try {
         await updatePreventiveEvent(Number(req.params.id), req.body)
+        res.json({ ok: true })
+    } catch (err: any) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+preventiveRouter.delete('/events/:id', async (req, res) => {
+    try {
+        await deletePreventiveEvent(Number(req.params.id))
         res.json({ ok: true })
     } catch (err: any) {
         res.status(500).json({ error: err.message })
@@ -69,8 +78,8 @@ preventiveRouter.delete('/config/:id', async (req, res) => {
 
 preventiveRouter.get('/backlog', async (req, res) => {
     try {
-        const { asset_id } = req.query
-        res.json(await getPreventiveBacklog({ asset_id: asset_id as string }))
+        const { asset_id, categoria } = req.query
+        res.json(await getPreventiveBacklog({ asset_id: asset_id as string, categoria: categoria as string }))
     } catch (err: any) {
         res.status(500).json({ error: err.message })
     }
