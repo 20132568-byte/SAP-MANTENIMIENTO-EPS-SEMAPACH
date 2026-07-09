@@ -57,16 +57,6 @@ export default function DashboardOperativo() {
   const [sector, setSector] = useState('General')
   const [selectedStation, setSelectedStation] = useState<any>(null)
   const [stationEquipment, setStationEquipment] = useState<any[]>([])
-  const shiftWeek = (delta: number) => setWeek(prev => {
-    const { year, week: w } = parseWeek(prev)
-    let d = new Date(year, 0, 4)
-    d.setDate(d.getDate() - ((d.getDay() || 7) - 1) + (w - 1) * 7 + delta * 7)
-    const y = d.getFullYear()
-    const start = new Date(y, 0, 4)
-    const wn = Math.ceil((((d.getTime() - start.getTime()) / 86400000) + (start.getDay() || 7) - 1 + 1) / 7)
-    return `${y}-W${Math.min(wn, 53).toString().padStart(2, '0')}`
-  })
-
   const { desde, hasta } = getWeekBounds(week)
   const isFleet = assetType === 'fleet'
   const isStation = assetType === 'stations'
@@ -155,18 +145,12 @@ export default function DashboardOperativo() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
-            <button onClick={() => shiftWeek(-1)} className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-all cursor-pointer" title="Semana anterior">
-              <span className="material-symbols-outlined text-sm">chevron_left</span>
-            </button>
             <input
-              type="week"
-              value={week}
-              onChange={(e) => { if (e.target.value) setWeek(e.target.value) }}
-              className="px-3 py-1.5 w-[160px] text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 text-center font-mono cursor-pointer"
+              type="date"
+              value={getWeekBounds(week).desde}
+              onChange={(e) => setWeek(dateToWeek(e.target.value))}
+              className="px-3 py-1.5 w-[140px] text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 text-center font-mono cursor-pointer"
             />
-            <button onClick={() => shiftWeek(1)} className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-all cursor-pointer" title="Semana siguiente">
-              <span className="material-symbols-outlined text-sm">chevron_right</span>
-            </button>
           </div>
           {isFleet && (
             <select
