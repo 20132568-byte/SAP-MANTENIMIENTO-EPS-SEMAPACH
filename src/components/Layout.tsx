@@ -101,7 +101,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   const { assetType } = useAssetType()
 
   const isHome = location.pathname === '/home'
-  const assetPagePrefixes = ['/home', '/dashboard', '/dashboard-gerencial', '/activos', '/diagnostico', '/operacion-diaria', '/fallas', '/preventivos', '/mantenimiento', '/apm', '/reportes']
+  const assetPagePrefixes = ['/dashboard', '/dashboard-gerencial', '/activos', '/diagnostico', '/operacion-diaria', '/fallas', '/preventivos', '/mantenimiento', '/apm']
   const showAssetFilter = assetPagePrefixes.some((p) => location.pathname.startsWith(p))
 
   const currentLabel = menuSections
