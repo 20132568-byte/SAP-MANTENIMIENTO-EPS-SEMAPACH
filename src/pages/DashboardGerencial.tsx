@@ -18,6 +18,16 @@ function getCurrentWeek() {
   return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`
 }
 
+function dateToWeek(dateStr: string) {
+  if (!dateStr) return getCurrentWeek();
+  const [y, m, day] = dateStr.split('-');
+  const d = new Date(Date.UTC(parseInt(y), parseInt(m) - 1, parseInt(day)));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+  return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`
+}
+
 function getWeekBounds(week: string) {
   const [y, w] = week.split('-W')
   if (!y || !w) return { desde: '', hasta: '' }
@@ -92,10 +102,11 @@ export default function DashboardGerencial() {
               <span className="material-symbols-outlined text-sm">chevron_left</span>
             </button>
             <input
-              type="text"
-              readOnly
-              value={weekDraft}
-              className="px-3 py-1.5 w-[120px] text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none text-center font-mono cursor-default"
+              type="date"
+              value={getWeekBounds(weekDraft).desde}
+              onChange={(e) => setWeekDraft(dateToWeek(e.target.value))}
+              onKeyDown={(e) => { if (e.key === 'Enter') confirmWeek() }}
+              className="px-3 py-1.5 w-[140px] text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 text-center font-mono cursor-pointer"
             />
             <button onClick={() => shiftDraft(1)} className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-all cursor-pointer" title="Semana siguiente">
               <span className="material-symbols-outlined text-sm">chevron_right</span>
