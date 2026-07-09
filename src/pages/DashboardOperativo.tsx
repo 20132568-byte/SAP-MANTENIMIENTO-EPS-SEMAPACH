@@ -149,11 +149,10 @@ export default function DashboardOperativo() {
               <span className="material-symbols-outlined text-sm">chevron_left</span>
             </button>
             <input
-              type="week"
+              type="text"
+              readOnly
               value={weekDraft}
-              onChange={(e) => setWeekDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') confirmWeek() }}
-              className="px-3 py-1.5 w-[160px] text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 text-center font-mono cursor-pointer"
+              className="px-3 py-1.5 w-[120px] text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none text-center font-mono cursor-default"
             />
             <button onClick={() => shiftDraft(1)} className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-all cursor-pointer" title="Semana siguiente">
               <span className="material-symbols-outlined text-sm">chevron_right</span>
